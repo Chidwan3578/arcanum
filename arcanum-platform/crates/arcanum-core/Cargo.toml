@@ -1,0 +1,67 @@
+[package]
+name = "arcanum-core"
+description = "Core traits, types, and primitives for the Arcanum cryptographic engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["cryptography", "traits", "core"]
+categories = ["cryptography", "no-std"]
+
+[features]
+default = ["std"]
+std = ["zeroize/std", "rand/std", "rand_core/std"]
+alloc = ["zeroize/alloc"]
+serde = ["dep:serde", "secrecy/serde"]
+hazmat = []  # Enable hazardous materials (raw primitives)
+
+[dependencies]
+# Core traits
+zeroize = { workspace = true }
+secrecy = { workspace = true }
+subtle = { workspace = true }
+constant_time_eq = { workspace = true }
+
+# Random number generation
+rand = { workspace = true }
+rand_core = { workspace = true }
+rand_chacha = { workspace = true }
+getrandom = { workspace = true }
+
+# Type utilities
+generic-array = { workspace = true }
+typenum = { workspace = true }
+bytes = { workspace = true }
+smallvec = { workspace = true }
+arrayvec = { workspace = true }
+bitvec = { workspace = true }
+
+# Encoding
+base64ct = { workspace = true }
+base32ct = { workspace = true }
+hex = { workspace = true }
+bs58 = { workspace = true }
+bech32 = { workspace = true }
+multibase = { workspace = true }
+blake3 = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Serialization (optional)
+serde = { workspace = true, optional = true }
+
+# Async
+async-trait = { workspace = true }
+
+# Utilities
+chrono = { workspace = true }
+uuid = { workspace = true }
+parking_lot = { workspace = true }
+once_cell = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+rstest = { workspace = true }

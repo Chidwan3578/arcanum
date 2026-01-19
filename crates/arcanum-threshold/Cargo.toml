@@ -1,0 +1,63 @@
+[package]
+name = "arcanum-threshold"
+description = "Threshold cryptography for the Arcanum cryptographic engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["cryptography", "threshold", "secret-sharing", "frost", "mpc"]
+categories = ["cryptography"]
+
+[features]
+default = ["std", "shamir", "frost"]
+std = []
+
+# Secret sharing schemes
+shamir = []
+feldman = ["shamir"]  # Verifiable secret sharing
+pedersen = ["shamir"] # Information-theoretic hiding VSS
+
+# Threshold signatures
+frost = ["frost-ed25519", "frost-secp256k1"]
+frost-ed25519 = ["dep:frost-ed25519"]
+frost-secp256k1 = ["dep:frost-secp256k1"]
+
+# Advanced features
+proactive = ["shamir"]  # Proactive secret sharing (share refresh)
+dkg = ["frost"]         # Distributed key generation
+
+[dependencies]
+arcanum-core = { workspace = true }
+
+# Secret sharing
+vsss-rs = { workspace = true }
+gf256 = { workspace = true }
+
+# FROST threshold signatures
+frost-core = { workspace = true }
+frost-ed25519 = { workspace = true, optional = true }
+frost-secp256k1 = { workspace = true, optional = true }
+
+# Curve operations
+curve25519-dalek = { workspace = true }
+
+# Core traits
+zeroize = { workspace = true }
+rand_core = { workspace = true }
+rand = "0.8"
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+
+[dev-dependencies]
+proptest = { workspace = true }
+rstest = { workspace = true }
+criterion = { workspace = true }
+itertools = "0.13"
+serde_json = "1.0"
+rand = "0.8"
+
+[[bench]]
+name = "threshold_benchmarks"
+harness = false

@@ -1,0 +1,31 @@
+[package]
+name = "arcanum-benchmarks"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+# Criterion for benchmarking
+criterion = { version = "0.5", features = ["html_reports"] }
+
+# RustCrypto crates (Arcanum's backend)
+aes-gcm = "0.10"
+chacha20poly1305 = "0.10"
+ed25519-dalek = { version = "2.1", features = ["serde", "batch"] }
+p256 = { version = "0.13", features = ["ecdsa"] }
+sha2 = "0.10"
+blake3 = "1.5"
+rand = "0.8"
+rand_core = "0.6"
+
+# ring (BoringSSL wrapper - peer library)
+ring = "0.17"
+
+# Utility
+aead = "0.5"
+
+[[bench]]
+name = "crypto_comparison"
+harness = false

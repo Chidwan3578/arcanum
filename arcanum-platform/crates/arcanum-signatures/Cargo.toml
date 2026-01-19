@@ -1,0 +1,51 @@
+[package]
+name = "arcanum-signatures"
+description = "Digital signature algorithms for the Arcanum cryptographic engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["cryptography", "signatures", "ed25519", "ecdsa", "schnorr"]
+categories = ["cryptography"]
+
+[features]
+default = ["ed25519", "ecdsa"]
+ed25519 = ["dep:ed25519-dalek"]
+ecdsa = ["dep:ecdsa", "dep:p256", "dep:p384", "dep:k256"]
+schnorr = ["dep:k256"]
+batch = ["ed25519-dalek?/batch"]
+all = ["ed25519", "ecdsa", "schnorr", "batch"]
+
+[dependencies]
+arcanum-core = { workspace = true }
+
+# Ed25519
+ed25519-dalek = { workspace = true, optional = true }
+
+# ECDSA
+ecdsa = { workspace = true, optional = true }
+p256 = { workspace = true, optional = true }
+p384 = { workspace = true, optional = true }
+k256 = { workspace = true, optional = true }
+
+# Core traits
+signature = { workspace = true }
+elliptic-curve = { workspace = true }
+zeroize = { workspace = true }
+rand = { workspace = true }
+rand_core = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+hex = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+rstest = { workspace = true }
+criterion = { workspace = true }
+serde_json = { workspace = true }
+
+[[bench]]
+name = "signature_benchmarks"
+harness = false

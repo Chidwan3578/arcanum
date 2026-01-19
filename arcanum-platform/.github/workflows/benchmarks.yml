@@ -1,0 +1,91 @@
+name: Benchmarks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  benchmark:
+    name: Performance Regression Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run symmetric benchmarks
+        run: |
+          cargo bench -p arcanum-symmetric --all-features -- --noplot --save-baseline new
+        continue-on-error: true
+
+      - name: Run signature benchmarks
+        run: |
+          cargo bench -p arcanum-signatures --all-features -- --noplot --save-baseline new
+        continue-on-error: true
+
+      - name: Store benchmark results
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Arcanum Benchmarks
+          tool: cargo
+          output-file-path: target/criterion/**/new/estimates.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          alert-threshold: '150%'
+          comment-on-alert: true
+          fail-on-alert: false
+          alert-comment-cc-users: '@Daemoniorum-LLC/arcanum-maintainers'
+
+  # =============================================================================
+  # BENCHMARK COMPARISON (PRs only)
+  # =============================================================================
+  compare:
+    name: Benchmark Comparison
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install critcmp
+        run: cargo install critcmp
+
+      - name: Checkout base branch
+        run: git checkout ${{ github.base_ref }}
+
+      - name: Run base benchmarks
+        run: |
+          cargo bench -p arcanum-symmetric --all-features -- --noplot --save-baseline base
+          cargo bench -p arcanum-signatures --all-features -- --noplot --save-baseline base
+
+      - name: Checkout PR branch
+        run: git checkout ${{ github.head_ref }}
+
+      - name: Run PR benchmarks
+        run: |
+          cargo bench -p arcanum-symmetric --all-features -- --noplot --save-baseline pr
+          cargo bench -p arcanum-signatures --all-features -- --noplot --save-baseline pr
+
+      - name: Compare benchmarks
+        run: |
+          echo "## Benchmark Comparison" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Symmetric Encryption" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          critcmp base pr 2>/dev/null || echo "No comparison data available" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,321 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/arcanum-core",
+    "crates/arcanum-symmetric",
+    "crates/arcanum-asymmetric",
+    "crates/arcanum-signatures",
+    "crates/arcanum-hash",
+    "crates/arcanum-pqc",
+    "crates/arcanum-zkp",
+    "crates/arcanum-keystore",
+    "crates/arcanum-protocols",
+    "crates/arcanum-formats",
+    "examples",
+]
+exclude = ["fuzz"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/daemoniorum/arcanum"
+authors = ["Daemoniorum Engineering <engineering@daemoniorum.com>"]
+rust-version = "1.85"
+keywords = ["cryptography", "security", "encryption", "post-quantum", "zero-knowledge"]
+categories = ["cryptography", "no-std"]
+
+[workspace.dependencies]
+# ═══════════════════════════════════════════════════════════════════════════════
+# INTERNAL CRATES
+# ═══════════════════════════════════════════════════════════════════════════════
+arcanum-core = { path = "crates/arcanum-core" }
+arcanum-symmetric = { path = "crates/arcanum-symmetric" }
+arcanum-asymmetric = { path = "crates/arcanum-asymmetric" }
+arcanum-signatures = { path = "crates/arcanum-signatures" }
+arcanum-hash = { path = "crates/arcanum-hash" }
+arcanum-pqc = { path = "crates/arcanum-pqc" }
+arcanum-zkp = { path = "crates/arcanum-zkp" }
+arcanum-keystore = { path = "crates/arcanum-keystore" }
+arcanum-protocols = { path = "crates/arcanum-protocols" }
+arcanum-formats = { path = "crates/arcanum-formats" }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SYMMETRIC CRYPTOGRAPHY
+# ═══════════════════════════════════════════════════════════════════════════════
+aes = "0.8"
+aes-gcm = "0.10"
+aes-gcm-siv = "0.11"
+aes-siv = "0.7"
+chacha20 = "0.9"
+chacha20poly1305 = "0.10"
+ctr = "0.9"
+ccm = "0.5"
+eax = "0.5"
+camellia = "0.1"
+cast5 = "0.11"
+blowfish = "0.9"
+twofish = "0.7"
+serpent = "0.5"
+threefish = "0.5"
+salsa20 = "0.10"
+xsalsa20poly1305 = "0.9"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ASYMMETRIC CRYPTOGRAPHY
+# ═══════════════════════════════════════════════════════════════════════════════
+rsa = "0.9"
+x25519-dalek = { version = "2.0", features = ["static_secrets"] }
+x448 = "0.4"
+ecies = "0.2"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ELLIPTIC CURVES
+# ═══════════════════════════════════════════════════════════════════════════════
+elliptic-curve = "0.13"
+p256 = { version = "0.13", features = ["ecdsa", "ecdh", "serde"] }
+p384 = { version = "0.13", features = ["ecdsa", "ecdh", "serde"] }
+p521 = { version = "0.13", features = ["ecdsa", "ecdh"] }
+k256 = { version = "0.13", features = ["ecdsa", "ecdh", "serde", "schnorr"] }
+sec1 = "0.7"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DIGITAL SIGNATURES
+# ═══════════════════════════════════════════════════════════════════════════════
+ed25519-dalek = { version = "2.1", features = ["serde", "hazmat", "batch"] }
+ed448-goldilocks = "0.9"
+ecdsa = { version = "0.16", features = ["signing", "verifying", "der", "pem"] }
+dsa = "0.6"
+schnorr = "0.1"
+bls12_381 = "0.8"
+blst = "0.3"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# HASH FUNCTIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+sha2 = "0.10"
+sha3 = "0.10"
+blake2 = "0.10"
+blake3 = "1.5"
+md-5 = "0.10"
+ripemd = "0.1"
+whirlpool = "0.10"
+groestl = "0.10"
+streebog = "0.10"
+sm3 = "0.4"
+fsb = "0.1"
+k12 = "0.3"
+ascon-hash = "0.2"
+belt-hash = "0.1"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# KEY DERIVATION FUNCTIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+argon2 = "0.5"
+scrypt = "0.11"
+pbkdf2 = "0.12"
+hkdf = "0.12"
+balloon-hash = "0.4"
+bcrypt-pbkdf = "0.10"
+concat-kdf = "0.1"
+ansi-x963-kdf = "0.1"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MESSAGE AUTHENTICATION CODES
+# ═══════════════════════════════════════════════════════════════════════════════
+hmac = "0.12"
+cmac = "0.7"
+pmac = "0.7"
+poly1305 = "0.8"
+ghash = "0.5"
+siphash = "1.0"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# POST-QUANTUM CRYPTOGRAPHY
+# ═══════════════════════════════════════════════════════════════════════════════
+pqcrypto = "0.17"
+pqcrypto-kyber = "0.8"
+pqcrypto-dilithium = "0.5"
+pqcrypto-sphincsplus = "0.7"
+pqcrypto-falcon = "0.3"
+pqcrypto-ntruprime = "0.2"
+pqcrypto-classicmceliece = "0.2"
+pqcrypto-hqc = "0.1"
+pqcrypto-traits = "0.3"
+oqs = "0.9"
+ml-kem = "0.1.0-rc.2"
+ml-dsa = "0.1.0-rc.2"
+slh-dsa = "0.2.0-rc.1"
+fips203 = "0.3"
+fips204 = "0.3"
+hybrid-array = "0.2"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ZERO-KNOWLEDGE PROOFS
+# ═══════════════════════════════════════════════════════════════════════════════
+bulletproofs = "4.0"
+merlin = "3.0"
+curve25519-dalek = { version = "4.1", features = ["serde", "digest", "group"] }
+ark-ff = "0.4"
+ark-ec = "0.4"
+ark-serialize = "0.4"
+ark-std = "0.4"
+ark-bn254 = "0.4"
+ark-bls12-381 = "0.4"
+ark-groth16 = "0.4"
+ark-snark = "0.4"
+ark-relations = "0.4"
+ark-r1cs-std = "0.4"
+bellman = "0.14"
+bellperson = "0.26"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECRET SHARING & THRESHOLD CRYPTO
+# ═══════════════════════════════════════════════════════════════════════════════
+vsss-rs = "4.0"
+frost-core = "2.0"
+frost-ed25519 = "2.0"
+frost-secp256k1 = "2.0"
+frost-p256 = "2.0"
+gf256 = "0.3"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECURE PROTOCOLS
+# ═══════════════════════════════════════════════════════════════════════════════
+noise-protocol = "0.2"
+noise-rust-crypto = "0.6"
+double-ratchet = "0.1"
+signal-crypto = "0.1"
+x3dh = "0.3"
+opaque-ke = "3.0"
+spake2 = "0.4"
+srp = "0.6"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FORMATS & STANDARDS
+# ═══════════════════════════════════════════════════════════════════════════════
+x509-cert = "0.2"
+x509-parser = "0.16"
+pkcs1 = "0.7"
+pkcs5 = "0.7"
+pkcs7 = "0.4"
+pkcs8 = "0.10"
+pkcs12 = "0.1"
+spki = "0.7"
+der = "0.7"
+pem-rfc7468 = "0.7"
+cms = "0.2"
+cose = "0.1"
+cose-rust = "0.1"
+jose-jwk = "0.1"
+josekit = "0.8"
+pgp = "0.13"
+sequoia-openpgp = "1.17"
+ssh-key = "0.6"
+ssh-encoding = "0.2"
+age = "0.10"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# HARDWARE SECURITY
+# ═══════════════════════════════════════════════════════════════════════════════
+cryptoki = "0.6"
+tss-esapi = "7.5"
+yubico-piv = "0.3"
+yubikey = "0.8"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CORE TRAITS & UTILITIES
+# ═══════════════════════════════════════════════════════════════════════════════
+digest = "0.10"
+cipher = "0.4"
+aead = "0.5"
+signature = "2.2"
+crypto-common = "0.1"
+generic-array = "1.1"
+typenum = "1.17"
+subtle = "2.6"
+zeroize = { version = "1.8", features = ["derive", "aarch64"] }
+secrecy = { version = "0.10", features = ["serde"] }
+rand = "0.8"
+rand_core = { version = "0.6", features = ["std"] }
+rand_chacha = "0.3"
+getrandom = { version = "0.2", features = ["std"] }
+constant_time_eq = "0.3"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENCODING
+# ═══════════════════════════════════════════════════════════════════════════════
+base16ct = "0.2"
+base32ct = "0.2"
+base64ct = { version = "1.6", features = ["std"] }
+hex = "0.4"
+bs58 = "0.5"
+bech32 = "0.11"
+multibase = "0.9"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SERIALIZATION
+# ═══════════════════════════════════════════════════════════════════════════════
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_bytes = "0.11"
+bincode = "1.3"
+ciborium = "0.2"
+postcard = { version = "1.0", features = ["use-std"] }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ASYNC RUNTIME
+# ═══════════════════════════════════════════════════════════════════════════════
+tokio = { version = "1.41", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ERROR HANDLING & LOGGING
+# ═══════════════════════════════════════════════════════════════════════════════
+thiserror = "2.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UTILITIES
+# ═══════════════════════════════════════════════════════════════════════════════
+uuid = { version = "1.11", features = ["v4", "v7", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+parking_lot = "0.12"
+once_cell = "1.20"
+bytes = "1.8"
+smallvec = "1.13"
+tinyvec = { version = "1.8", features = ["alloc"] }
+arrayvec = "0.7"
+bitvec = "1.0"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TESTING & BENCHMARKING
+# ═══════════════════════════════════════════════════════════════════════════════
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1.5"
+quickcheck = "1.0"
+test-case = "3.3"
+rstest = "0.23"
+wycheproof = "0.6"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+strip = false
+
+[profile.dev]
+opt-level = 0
+
+[profile.bench]
+inherits = "release"
+debug = true

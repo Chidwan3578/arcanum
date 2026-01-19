@@ -1,0 +1,59 @@
+[package]
+name = "arcanum-holocrypt"
+description = "Holocryptographic framework - unified composable cryptographic data structures"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["cryptography", "zero-knowledge", "threshold", "post-quantum", "composable"]
+categories = ["cryptography"]
+
+[features]
+default = ["std", "full"]
+std = []
+
+# Full holocrypt with all features
+full = ["encryption", "commitment", "merkle", "zkp", "threshold", "pqc", "signatures"]
+
+# Individual layers
+encryption = ["arcanum-symmetric", "arcanum-agile"]
+commitment = ["arcanum-zkp"]
+merkle = ["arcanum-hash"]
+zkp = ["arcanum-zkp"]
+threshold = ["arcanum-threshold"]
+pqc = ["arcanum-pqc"]
+signatures = ["arcanum-signatures"]
+
+# Advanced features
+selective-disclosure = ["merkle", "zkp"]
+property-proofs = ["zkp", "commitment"]
+bbs-credentials = ["zkp"]
+
+[dependencies]
+# Arcanum crates
+arcanum-core = { workspace = true }
+arcanum-symmetric = { workspace = true, optional = true }
+arcanum-asymmetric = { workspace = true }
+arcanum-hash = { workspace = true, optional = true }
+arcanum-signatures = { workspace = true, optional = true }
+arcanum-zkp = { workspace = true, optional = true }
+arcanum-threshold = { workspace = true, optional = true }
+arcanum-pqc = { workspace = true, optional = true }
+arcanum-agile = { workspace = true, optional = true }
+
+# Core utilities
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+zeroize = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+rstest = { workspace = true }
+criterion = { workspace = true }
+
+# [[bench]]
+# name = "holocrypt_benchmarks"
+# harness = false

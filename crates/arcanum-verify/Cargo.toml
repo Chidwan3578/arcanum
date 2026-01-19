@@ -1,0 +1,49 @@
+[package]
+name = "arcanum-verify"
+description = "Formal verification and timing analysis tools for the Arcanum cryptographic engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["cryptography", "verification", "timing", "constant-time", "security"]
+categories = ["cryptography", "development-tools::testing"]
+
+[features]
+default = ["std", "timing"]
+std = []
+
+# Timing analysis (side-channel testing)
+timing = ["dep:dudect-bencher"]
+
+# Model checking (requires nightly + kani)
+kani = []
+
+[dependencies]
+arcanum-core = { workspace = true }
+
+# Timing analysis
+dudect-bencher = { version = "0.4", optional = true }
+
+# Statistical analysis
+statrs = "0.17"
+
+# Core utilities
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+
+[dev-dependencies]
+proptest = { workspace = true }
+rstest = { workspace = true }
+criterion = { workspace = true }
+
+# Crates to test
+arcanum-symmetric = { workspace = true }
+arcanum-asymmetric = { workspace = true }
+arcanum-hash = { workspace = true }
+arcanum-signatures = { workspace = true }
+
+# [[bench]]
+# name = "timing_tests"
+# harness = false

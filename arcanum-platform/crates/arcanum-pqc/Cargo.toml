@@ -1,0 +1,52 @@
+[package]
+name = "arcanum-pqc"
+description = "Post-quantum cryptographic algorithms for the Arcanum engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["cryptography", "post-quantum", "kyber", "dilithium", "sphincs"]
+categories = ["cryptography"]
+
+[features]
+default = ["ml-kem", "ml-dsa"]
+ml-kem = ["dep:ml-kem"]
+ml-dsa = ["dep:ml-dsa"]
+slh-dsa = ["dep:slh-dsa"]
+hybrid = ["ml-kem"]
+all = ["ml-kem", "ml-dsa", "slh-dsa", "hybrid"]
+
+[dependencies]
+arcanum-core = { workspace = true }
+
+# NIST PQC Standards (FIPS 203, 204, 205)
+ml-kem = { workspace = true, optional = true }
+ml-dsa = { workspace = true, optional = true }
+slh-dsa = { workspace = true, optional = true }
+kem = "0.3.0-pre.0"
+signature = { workspace = true }
+
+# For hybrid schemes
+x25519-dalek = { workspace = true }
+sha2 = { workspace = true }
+hkdf = { workspace = true }
+subtle = { workspace = true }
+
+# Core
+zeroize = { workspace = true }
+rand = { workspace = true }
+rand_core = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+hex = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+rstest = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name = "pqc_benchmarks"
+harness = false

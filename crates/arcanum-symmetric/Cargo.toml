@@ -1,0 +1,75 @@
+[package]
+name = "arcanum-symmetric"
+description = "Symmetric encryption algorithms for the Arcanum cryptographic engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["cryptography", "encryption", "aes", "chacha20"]
+categories = ["cryptography"]
+
+[features]
+default = ["std", "backend-native", "aes", "chacha20", "hardware-accel"]
+std = []
+
+# Backend selection - choose implementation strategy
+backend-native = ["dep:arcanum-primitives"]  # Use native Arcanum primitives (recommended)
+backend-rustcrypto = []                       # Use RustCrypto crates (legacy)
+
+# Hardware acceleration (AES-NI, SHA extensions) - enabled by default
+# On x86/x86_64, this uses AES-NI instructions when available (runtime detection)
+# On ARM, this uses ARMv8 cryptography extensions when available
+hardware-accel = []
+
+# Algorithm families
+aes = ["dep:aes", "dep:aes-gcm", "dep:aes-gcm-siv", "dep:ctr"]
+chacha20 = ["dep:chacha20", "dep:chacha20poly1305"]
+xchacha20 = ["chacha20"]
+legacy = ["dep:blowfish", "dep:twofish", "dep:cast5"]
+all = ["aes", "chacha20", "xchacha20", "legacy"]
+
+# For comparative benchmarks against ring
+bench-ring = ["dep:ring"]
+
+[dependencies]
+arcanum-core = { workspace = true }
+arcanum-primitives = { path = "../arcanum-primitives", optional = true, features = ["std", "chacha20poly1305"] }
+
+# AES family
+aes = { workspace = true, optional = true }
+aes-gcm = { workspace = true, optional = true }
+aes-gcm-siv = { workspace = true, optional = true }
+ctr = { workspace = true, optional = true }
+
+# ChaCha20 family
+chacha20 = { workspace = true, optional = true }
+chacha20poly1305 = { workspace = true, optional = true }
+
+# Legacy algorithms (for compatibility)
+blowfish = { workspace = true, optional = true }
+twofish = { workspace = true, optional = true }
+cast5 = { workspace = true, optional = true }
+
+# Core traits
+cipher = { workspace = true }
+aead = { workspace = true }
+zeroize = { workspace = true }
+rand = { workspace = true }
+rand_core = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+
+# Peer libraries for comparative benchmarks (optional)
+ring = { version = "0.17", optional = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+rstest = { workspace = true }
+criterion = { workspace = true }
+hex = { workspace = true }
+
+[[bench]]
+name = "symmetric_benchmarks"
+harness = false

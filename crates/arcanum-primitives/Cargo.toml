@@ -1,0 +1,56 @@
+[package]
+name = "arcanum-primitives"
+version = "0.1.0"
+edition = "2021"
+description = "Native cryptographic primitives for Arcanum"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Daemoniorum-LLC/workspace"
+keywords = ["cryptography", "hash", "cipher", "aead"]
+categories = ["cryptography", "no-std"]
+
+[features]
+default = ["std", "alloc", "simd", "sha2", "blake3", "chacha20poly1305"]
+std = ["alloc"]
+alloc = []
+
+# Algorithm features
+sha2 = []
+blake3 = []
+chacha20 = []
+poly1305 = []
+chacha20poly1305 = ["chacha20", "poly1305"]
+
+# SIMD acceleration (auto-detected at runtime)
+# Enables SSE2/AVX2 on x86_64 for ChaCha20
+simd = ["std"]
+
+# Multi-threaded parallel hashing
+rayon = ["dep:rayon", "std"]
+
+# For benchmarking against other implementations
+bench-comparison = ["sha2-crate", "blake3-crate"]
+
+[dependencies]
+zeroize = { version = "1.8", default-features = false, features = ["derive"] }
+subtle = { version = "2.5", default-features = false }
+rayon = { version = "1.10", optional = true }
+
+# Optional: for benchmark comparisons only
+sha2-crate = { package = "sha2", version = "0.10", optional = true }
+blake3-crate = { package = "blake3", version = "1.5", optional = true }
+
+[dev-dependencies]
+hex = "0.4"
+criterion = "0.5"
+proptest = "1.4"
+# Reference implementations for KAT tests and benchmarks
+sha2 = "0.10"
+blake3 = "1.5"
+chacha20 = "0.9"
+chacha20poly1305 = "0.10"
+poly1305 = "0.8"
+cipher = "0.4"
+
+[[bench]]
+name = "primitives_bench"
+harness = false

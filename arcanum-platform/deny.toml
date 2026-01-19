@@ -1,0 +1,100 @@
+# cargo-deny configuration for Arcanum
+# https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+# Include all features for dependency analysis
+all-features = true
+
+# =============================================================================
+# ADVISORIES - Security vulnerability checking
+# =============================================================================
+[advisories]
+# Check for yanked crates
+yanked = "deny"
+
+# How to handle security advisories
+unmaintained = "workspace"
+
+# Crates to ignore (use sparingly with justification)
+ignore = [
+    # RSA Marvin Attack - known issue, no fix available yet
+    # https://rustsec.org/advisories/RUSTSEC-2023-0071
+    "RUSTSEC-2023-0071",
+]
+
+# =============================================================================
+# LICENSES - License compliance
+# =============================================================================
+[licenses]
+# Confidence threshold for license detection
+confidence-threshold = 0.93
+
+# Allow these licenses
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "CC0-1.0",
+    "Unlicense",
+    "MPL-2.0",
+]
+
+# Deny copyleft licenses that require derivative works to be open source
+# (uncomment if needed)
+# deny = ["GPL-2.0", "GPL-3.0", "AGPL-3.0"]
+
+# Crate-specific license exceptions
+exceptions = []
+
+# Private crates don't need license checking
+private = { ignore = true }
+
+# =============================================================================
+# BANS - Banned crates and duplicate detection
+# =============================================================================
+[bans]
+# Lint level for multiple versions of same crate
+multiple-versions = "warn"
+
+# Lint level for wildcards in dependencies
+wildcards = "deny"
+
+# Allow-list specific crates (default behavior)
+allow = []
+
+# Ban these crates
+deny = [
+    # Use ring instead of openssl for pure Rust
+    # { name = "openssl" },
+
+    # Deprecated crates
+    { name = "term", wrappers = [] },
+]
+
+# Skip these crates when checking for duplicates
+skip = []
+
+# Skip specific versions when checking for duplicates
+skip-tree = []
+
+# =============================================================================
+# SOURCES - Crate source restrictions
+# =============================================================================
+[sources]
+# Crate sources that are allowed
+unknown-registry = "deny"
+unknown-git = "warn"
+
+# Allow crates from crates.io
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+
+# Allow git sources (needed for some dependencies)
+allow-git = []
+
+# Specific source overrides
+[sources.allow-org]
+github = []

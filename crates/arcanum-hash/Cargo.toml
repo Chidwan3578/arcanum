@@ -1,0 +1,91 @@
+[package]
+name = "arcanum-hash"
+description = "Hash functions and key derivation for the Arcanum cryptographic engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["cryptography", "hash", "sha", "blake3", "argon2"]
+categories = ["cryptography"]
+
+[features]
+default = ["std", "backend-native", "sha2", "sha3", "blake3", "kdf", "hardware-accel"]
+std = []
+
+# Backend selection - choose implementation strategy
+backend-native = ["dep:arcanum-primitives"]  # Use native Arcanum primitives (recommended)
+backend-rustcrypto = []                       # Use RustCrypto crates (legacy)
+
+# Hardware acceleration for SHA-2 (SHA-NI, ARMv8 SHA extensions)
+# Enabled by default for maximum performance
+hardware-accel = []
+
+# Hash algorithm families
+sha2 = ["dep:sha2"]
+sha3 = ["dep:sha3"]
+blake2 = ["dep:blake2"]
+blake3 = ["dep:blake3"]
+
+# Feature aliases for clarity
+fast-hashing = ["blake3"]  # BLAKE3 is 4-5x faster than SHA-256
+
+# Key derivation functions
+kdf = ["argon2", "hkdf", "scrypt"]
+argon2 = ["dep:argon2"]
+hkdf = ["dep:hkdf"]
+scrypt = ["dep:scrypt"]
+pbkdf2 = ["dep:pbkdf2"]
+
+# Message authentication codes
+mac = ["dep:hmac"]
+
+# Enable all features
+all = ["sha2", "sha3", "blake2", "blake3", "kdf", "pbkdf2", "mac"]
+
+# For comparative benchmarks against ring
+bench-ring = ["dep:ring"]
+
+[dependencies]
+arcanum-core = { workspace = true }
+arcanum-primitives = { path = "../arcanum-primitives", optional = true, features = ["std", "simd", "rayon", "sha2", "blake3"] }
+
+# SHA-2 family
+sha2 = { workspace = true, optional = true }
+
+# SHA-3 family
+sha3 = { workspace = true, optional = true }
+
+# Blake family
+blake2 = { workspace = true, optional = true }
+blake3 = { workspace = true, optional = true }
+
+# Key derivation
+argon2 = { workspace = true, optional = true }
+hkdf = { workspace = true, optional = true }
+scrypt = { workspace = true, optional = true }
+pbkdf2 = { workspace = true, optional = true }
+
+# MACs
+hmac = { workspace = true, optional = true }
+
+# Core traits
+digest = { workspace = true }
+zeroize = { workspace = true }
+rand = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+hex = { workspace = true }
+
+# Peer libraries for comparative benchmarks (optional)
+ring = { version = "0.17", optional = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+rstest = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name = "hash_benchmarks"
+harness = false

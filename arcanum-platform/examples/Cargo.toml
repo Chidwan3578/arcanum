@@ -1,0 +1,38 @@
+[package]
+name = "arcanum-examples"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Cross-crate integration examples for Arcanum cryptographic platform"
+
+[dependencies]
+arcanum-core = { path = "../crates/arcanum-core" }
+arcanum-symmetric = { path = "../crates/arcanum-symmetric" }
+arcanum-asymmetric = { path = "../crates/arcanum-asymmetric" }
+arcanum-signatures = { path = "../crates/arcanum-signatures" }
+arcanum-hash = { path = "../crates/arcanum-hash" }
+arcanum-pqc = { path = "../crates/arcanum-pqc" }
+arcanum-protocols = { path = "../crates/arcanum-protocols" }
+
+hex = "0.4"
+rand = "0.8"
+
+[[example]]
+name = "hybrid_encryption"
+path = "src/hybrid_encryption.rs"
+
+[[example]]
+name = "sign_then_encrypt"
+path = "src/sign_then_encrypt.rs"
+
+[[example]]
+name = "password_encryption"
+path = "src/password_encryption.rs"
+
+[[example]]
+name = "secure_channel"
+path = "src/secure_channel.rs"
+
+[[example]]
+name = "post_quantum_hybrid"
+path = "src/post_quantum_hybrid.rs"

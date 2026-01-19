@@ -1,0 +1,43 @@
+[package]
+name = "arcanum-agile"
+description = "Cryptographic agility framework for the Arcanum cryptographic engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["cryptography", "agility", "migration", "versioning", "policy"]
+categories = ["cryptography"]
+
+[features]
+default = ["std", "registry", "containers"]
+std = []
+
+# Algorithm registry
+registry = []
+
+# Versioned containers
+containers = []
+
+# Policy engine
+policy = []
+
+# Migration tools
+migration = ["containers"]
+
+[dependencies]
+arcanum-core = { workspace = true }
+arcanum-symmetric = { workspace = true }
+arcanum-asymmetric = { workspace = true }
+arcanum-hash = { workspace = true }
+arcanum-signatures = { workspace = true }
+
+# Core utilities
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+rstest = { workspace = true }

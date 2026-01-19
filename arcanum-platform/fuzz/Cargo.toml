@@ -1,0 +1,63 @@
+[package]
+name = "arcanum-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+
+[dependencies.arcanum-core]
+path = "../crates/arcanum-core"
+
+[dependencies.arcanum-symmetric]
+path = "../crates/arcanum-symmetric"
+
+[dependencies.arcanum-hash]
+path = "../crates/arcanum-hash"
+
+# Fuzz targets for encoding operations
+[[bin]]
+name = "fuzz_encoding"
+path = "fuzz_targets/fuzz_encoding.rs"
+test = false
+doc = false
+bench = false
+
+# Fuzz targets for key operations
+[[bin]]
+name = "fuzz_keys"
+path = "fuzz_targets/fuzz_keys.rs"
+test = false
+doc = false
+bench = false
+
+# Fuzz targets for nonce operations
+[[bin]]
+name = "fuzz_nonce"
+path = "fuzz_targets/fuzz_nonce.rs"
+test = false
+doc = false
+bench = false
+
+# Fuzz targets for AEAD operations
+[[bin]]
+name = "fuzz_aead"
+path = "fuzz_targets/fuzz_aead.rs"
+test = false
+doc = false
+bench = false
+
+# Fuzz targets for hashing
+[[bin]]
+name = "fuzz_hash"
+path = "fuzz_targets/fuzz_hash.rs"
+test = false
+doc = false
+bench = false
