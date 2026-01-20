@@ -152,11 +152,15 @@ impl X448SharedSecret {
         self.bytes.to_vec()
     }
 
-    /// Check if this is a low-order point.
+    /// Check if this is a low-order point (potential attack).
+    ///
+    /// Returns true if the shared secret is all zeros, which indicates
+    /// the peer provided a malicious low-order public key.
     ///
     /// # Security
     ///
-    /// This check is performed in constant time to prevent timing attacks.
+    /// This check is performed in constant time to prevent timing attacks
+    /// that could leak information about the shared secret.
     pub fn is_low_order(&self) -> bool {
         use subtle::ConstantTimeEq;
         let zero = [0u8; 56];

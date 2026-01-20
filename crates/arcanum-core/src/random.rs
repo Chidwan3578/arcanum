@@ -151,7 +151,7 @@ impl ThreadLocalRng {
 
     /// Generate random bytes.
     ///
-    /// # Panics
+    /// # Thread Safety
     ///
     /// This function will not panic even if the mutex was poisoned by a panic
     /// in another thread - it recovers the inner RNG state.
@@ -171,7 +171,7 @@ impl ThreadLocalRng {
 
     /// Reseed from the OS RNG.
     ///
-    /// # Panics
+    /// # Thread Safety
     ///
     /// This function will not panic even if the mutex was poisoned by a panic
     /// in another thread - it recovers and reseeds the RNG.
