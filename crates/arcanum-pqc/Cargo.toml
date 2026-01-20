@@ -17,10 +17,12 @@ default = ["std", "ml-kem"]
 std = []
 ml-kem = ["dep:ml-kem"]
 ml-dsa = ["dep:ml-dsa"]
+# Native ML-DSA implementation (FIPS 204) - TDD scaffold, requires SHAKE primitives
+ml-dsa-native = []
 # Native SLH-DSA implementation (FIPS 205) - no external dependency
 slh-dsa = []
 hybrid = ["ml-kem"]
-all = ["ml-kem", "ml-dsa", "slh-dsa", "hybrid"]
+all = ["ml-kem", "ml-dsa", "ml-dsa-native", "slh-dsa", "hybrid"]
 
 [dependencies]
 arcanum-core = { workspace = true }

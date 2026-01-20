@@ -59,6 +59,9 @@ pub mod kem;
 #[cfg(feature = "ml-dsa")]
 pub mod dsa;
 
+#[cfg(feature = "ml-dsa-native")]
+pub mod ml_dsa;
+
 #[cfg(feature = "slh-dsa")]
 pub mod slh_dsa;
 
