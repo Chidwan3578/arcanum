@@ -1340,6 +1340,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "std", feature = "rayon"))]
     fn bench_apex_scaling() {
         if !is_x86_feature_detected!("avx512f") {
             eprintln!("AVX-512 not supported, skipping benchmark");
@@ -1389,6 +1390,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "std", feature = "rayon"))]
     fn bench_apex_monolithic_scaling() {
         if !is_x86_feature_detected!("avx512f") {
             eprintln!("AVX-512 not supported, skipping benchmark");

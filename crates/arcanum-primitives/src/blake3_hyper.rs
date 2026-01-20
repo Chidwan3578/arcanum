@@ -408,8 +408,9 @@ impl HyperHasher {
     /// Process a batch of chunks in parallel
     fn process_batch(&mut self, batch: &[u8]) -> Vec<[u32; 8]> {
         let num_chunks = batch.len() / CHUNK_LEN;
+        let start_counter = self.chunk_counter;
         let chunk_indices: Vec<u64> = (0..num_chunks as u64)
-            .map(|i| self.chunk_counter + i)
+            .map(|i| start_counter + i)
             .collect();
 
         self.chunk_counter += num_chunks as u64;
@@ -423,7 +424,7 @@ impl HyperHasher {
                     let mut chunks = [[0u8; CHUNK_LEN]; 16];
                     let mut counters = [0u64; 16];
                     for (j, &idx) in indices.iter().enumerate().take(16) {
-                        let local_idx = (idx - self.chunk_counter + indices.len() as u64) as usize;
+                        let local_idx = (idx - start_counter) as usize;
                         chunks[j].copy_from_slice(&batch[local_idx * CHUNK_LEN..(local_idx + 1) * CHUNK_LEN]);
                         counters[j] = idx;
                     }
@@ -432,14 +433,14 @@ impl HyperHasher {
                     let mut chunks = [[0u8; CHUNK_LEN]; 8];
                     let mut counters = [0u64; 8];
                     for (j, &idx) in indices.iter().enumerate().take(8) {
-                        let local_idx = (idx - self.chunk_counter + indices.len() as u64) as usize;
+                        let local_idx = (idx - start_counter) as usize;
                         chunks[j].copy_from_slice(&batch[local_idx * CHUNK_LEN..(local_idx + 1) * CHUNK_LEN]);
                         counters[j] = idx;
                     }
                     hash_8_chunks_parallel(&self.key, &chunks, &counters, 0).to_vec()
                 } else {
                     indices.iter().map(|&idx| {
-                        let local_idx = (idx - self.chunk_counter + indices.len() as u64) as usize;
+                        let local_idx = (idx - start_counter) as usize;
                         hash_single_chunk(&self.key, &batch[local_idx * CHUNK_LEN..(local_idx + 1) * CHUNK_LEN], idx)
                     }).collect()
                 }

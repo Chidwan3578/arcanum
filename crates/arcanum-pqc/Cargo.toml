@@ -11,7 +11,9 @@ keywords = ["cryptography", "post-quantum", "kyber", "dilithium", "sphincs"]
 categories = ["cryptography"]
 
 [features]
-default = ["ml-kem", "ml-dsa"]
+# Note: ml-dsa is excluded from default until it has a stable release
+# (currently depends on rand_core release candidates)
+default = ["ml-kem"]
 ml-kem = ["dep:ml-kem"]
 ml-dsa = ["dep:ml-dsa"]
 slh-dsa = ["dep:slh-dsa"]
