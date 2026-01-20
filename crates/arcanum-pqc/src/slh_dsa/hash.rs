@@ -199,11 +199,18 @@ impl<P: SlhDsaParams> SlhDsaHash<P> for Sha2Hash<P> {
     /// PRF: Pseudorandom function
     ///
     /// FIPS 205 Section 10.1:
-    /// PRF(PK.seed, SK.seed, ADRS) = Trunc_n(SHA-256(PK.seed || ADRS || SK.seed))
+    /// n=16: PRF(PK.seed, SK.seed, ADRS) = Trunc_n(SHA-256(PK.seed || ADRSc || SK.seed))
+    /// n>16: PRF(PK.seed, SK.seed, ADRS) = Trunc_n(SHA-256(PK.seed || toByte(0,64-n) || ADRSc || SK.seed))
     fn prf(pk_seed: &[u8], sk_seed: &[u8], adrs: &Address) -> Vec<u8> {
+        let adrs_c = adrs.to_compressed();
         let mut hasher = Sha256::new();
         hasher.update(pk_seed);
-        hasher.update(adrs.as_bytes());
+        // Add padding for n > 16
+        if P::N > 16 {
+            let padding = [0u8; 64];
+            hasher.update(&padding[..(64 - P::N)]);
+        }
+        hasher.update(&adrs_c);
         hasher.update(sk_seed);
         let hash = hasher.finalize();
         Self::truncate(&hash)
@@ -227,11 +234,17 @@ impl<P: SlhDsaParams> SlhDsaHash<P> for Sha2Hash<P> {
     /// F: Chaining function for WOTS+
     ///
     /// FIPS 205 Section 10.1:
-    /// F(PK.seed, ADRS, M₁) = Trunc_n(SHA-256(PK.seed || ADRS || M₁))
+    /// n=16: F(PK.seed, ADRS, M₁) = Trunc_n(SHA-256(PK.seed || ADRSc || M₁))
+    /// n>16: F(PK.seed, ADRS, M₁) = Trunc_n(SHA-256(PK.seed || toByte(0,64-n) || ADRSc || M₁))
     fn f(pk_seed: &[u8], adrs: &Address, m: &[u8]) -> Vec<u8> {
+        let adrs_c = adrs.to_compressed();
         let mut hasher = Sha256::new();
         hasher.update(pk_seed);
-        hasher.update(adrs.as_bytes());
+        if P::N > 16 {
+            let padding = [0u8; 64];
+            hasher.update(&padding[..(64 - P::N)]);
+        }
+        hasher.update(&adrs_c);
         hasher.update(m);
         let hash = hasher.finalize();
         Self::truncate(&hash)
@@ -240,11 +253,17 @@ impl<P: SlhDsaParams> SlhDsaHash<P> for Sha2Hash<P> {
     /// H: Tree hash function
     ///
     /// FIPS 205 Section 10.1:
-    /// H(PK.seed, ADRS, M₁ || M₂) = Trunc_n(SHA-256(PK.seed || ADRS || M₁ || M₂))
+    /// n=16: H(PK.seed, ADRS, M₁ || M₂) = Trunc_n(SHA-256(PK.seed || ADRSc || M₁ || M₂))
+    /// n>16: H(PK.seed, ADRS, M₁ || M₂) = Trunc_n(SHA-256(PK.seed || toByte(0,64-n) || ADRSc || M₁ || M₂))
     fn h(pk_seed: &[u8], adrs: &Address, m1: &[u8], m2: &[u8]) -> Vec<u8> {
+        let adrs_c = adrs.to_compressed();
         let mut hasher = Sha256::new();
         hasher.update(pk_seed);
-        hasher.update(adrs.as_bytes());
+        if P::N > 16 {
+            let padding = [0u8; 64];
+            hasher.update(&padding[..(64 - P::N)]);
+        }
+        hasher.update(&adrs_c);
         hasher.update(m1);
         hasher.update(m2);
         let hash = hasher.finalize();
@@ -254,11 +273,17 @@ impl<P: SlhDsaParams> SlhDsaHash<P> for Sha2Hash<P> {
     /// T_l: WOTS+ public key compression
     ///
     /// FIPS 205 Section 10.1:
-    /// T_l(PK.seed, ADRS, M) = Trunc_n(SHA-256(PK.seed || ADRS || M))
+    /// n=16: T_l(PK.seed, ADRS, M) = Trunc_n(SHA-256(PK.seed || ADRSc || M))
+    /// n>16: T_l(PK.seed, ADRS, M) = Trunc_n(SHA-256(PK.seed || toByte(0,64-n) || ADRSc || M))
     fn t_l(pk_seed: &[u8], adrs: &Address, m: &[u8]) -> Vec<u8> {
+        let adrs_c = adrs.to_compressed();
         let mut hasher = Sha256::new();
         hasher.update(pk_seed);
-        hasher.update(adrs.as_bytes());
+        if P::N > 16 {
+            let padding = [0u8; 64];
+            hasher.update(&padding[..(64 - P::N)]);
+        }
+        hasher.update(&adrs_c);
         hasher.update(m);
         let hash = hasher.finalize();
         Self::truncate(&hash)

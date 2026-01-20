@@ -246,6 +246,28 @@ impl Address {
     pub fn copy_keypair_address(&mut self, other: &Address) {
         self.data[16..20].copy_from_slice(&other.data[16..20]);
     }
+
+    /// Get compressed address (ADRSc) for SHA-2 variants
+    ///
+    /// FIPS 205 Section 10.1: ADRSc is a 22-byte compressed form:
+    /// ADRSc = ADRS[3] || ADRS[8:16] || ADRS[19] || ADRS[20:32]
+    ///
+    /// Layout:
+    /// - Byte 0: Layer address (LSB of bytes 0-3)
+    /// - Bytes 1-8: Tree address overlap (bytes 8-15: last 4 of tree + type)
+    /// - Byte 9: Keypair address (LSB of bytes 16-19)
+    /// - Bytes 10-21: Type-specific tail (bytes 20-31)
+    ///
+    /// Note: FIPS 205 uses this specific compression to reduce bandwidth
+    /// while preserving necessary domain separation.
+    pub fn to_compressed(&self) -> [u8; 22] {
+        let mut adrs_c = [0u8; 22];
+        adrs_c[0] = self.data[3];            // ADRS[3]: Layer LSB
+        adrs_c[1..9].copy_from_slice(&self.data[8..16]); // ADRS[8:16]
+        adrs_c[9] = self.data[19];           // ADRS[19]: Keypair LSB
+        adrs_c[10..22].copy_from_slice(&self.data[20..32]); // ADRS[20:32]
+        adrs_c
+    }
 }
 
 impl Default for Address {
@@ -364,5 +386,34 @@ mod tests {
         let bytes = *original.as_bytes();
         let restored = Address::from_bytes(bytes);
         assert_eq!(original, restored);
+    }
+
+    #[test]
+    fn test_compressed_address_format() {
+        // Create an address with known values
+        let addr = Address::wots_hash(3, 0x123456789ABCDEF0, 42, 7, 99);
+
+        let adrs_c = addr.to_compressed();
+
+        // Verify 22-byte output
+        assert_eq!(adrs_c.len(), 22);
+
+        // Byte 0: Layer LSB (layer=3, so LSB is 3)
+        assert_eq!(adrs_c[0], 3);
+
+        // Byte 9: Keypair LSB (keypair=42, so LSB is 42)
+        assert_eq!(adrs_c[9], 42);
+    }
+
+    #[test]
+    fn test_compressed_address_different_keypairs() {
+        let addr1 = Address::wots_hash(0, 0, 0, 0, 0);
+        let addr2 = Address::wots_hash(0, 0, 1, 0, 0);
+
+        let adrs_c1 = addr1.to_compressed();
+        let adrs_c2 = addr2.to_compressed();
+
+        // Different keypairs should produce different compressed addresses
+        assert_ne!(adrs_c1, adrs_c2);
     }
 }
