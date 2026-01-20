@@ -72,6 +72,7 @@ impl ShamirScheme {
     ///
     /// Any t shares can reconstruct the secret, but t-1 shares
     /// reveal no information about the secret.
+    #[must_use = "secret sharing result must be checked for errors"]
     pub fn split(secret: &[u8], threshold: usize, total: usize) -> Result<Vec<Share>> {
         if threshold == 0 || threshold > total {
             return Err(ThresholdError::InvalidThreshold { threshold, total });
@@ -114,6 +115,7 @@ impl ShamirScheme {
     /// Combine shares to reconstruct the secret.
     ///
     /// Requires at least threshold shares.
+    #[must_use = "secret reconstruction result must be checked for errors"]
     pub fn combine(shares: &[Share]) -> Result<Vec<u8>> {
         if shares.is_empty() {
             return Err(ThresholdError::InsufficientShares {

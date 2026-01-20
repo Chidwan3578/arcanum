@@ -290,6 +290,7 @@ impl FrostVerifier {
     }
 
     /// Verify a threshold signature.
+    #[must_use = "signature verification must be checked - ignoring bypasses authentication"]
     pub fn verify(&self, message: &[u8], signature: &Signature) -> Result<bool> {
         let sig = frost::Signature::deserialize(&signature.bytes)
             .map_err(|_| ThresholdError::InvalidSignature)?;

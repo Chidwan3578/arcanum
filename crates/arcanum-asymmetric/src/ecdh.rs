@@ -54,6 +54,7 @@ impl P256SecretKey {
     }
 
     /// Perform ECDH key agreement.
+    #[must_use = "key agreement result must be checked for errors"]
     pub fn diffie_hellman(&self, peer_public: &P256PublicKey) -> Result<P256SharedSecret> {
         use p256::ecdh::diffie_hellman;
         let shared = diffie_hellman(
@@ -204,6 +205,7 @@ impl P384SecretKey {
     }
 
     /// Perform ECDH key agreement.
+    #[must_use = "key agreement result must be checked for errors"]
     pub fn diffie_hellman(&self, peer_public: &P384PublicKey) -> Result<P384SharedSecret> {
         use p384::ecdh::diffie_hellman;
         let shared = diffie_hellman(
@@ -347,6 +349,7 @@ impl Secp256k1SecretKey {
     }
 
     /// Perform ECDH key agreement.
+    #[must_use = "key agreement result must be checked for errors"]
     pub fn diffie_hellman(&self, peer_public: &Secp256k1PublicKey) -> Result<Secp256k1SharedSecret> {
         use k256::ecdh::diffie_hellman;
         let shared = diffie_hellman(

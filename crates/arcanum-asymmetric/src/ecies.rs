@@ -141,6 +141,7 @@ impl EciesP256 {
     }
 
     /// Decrypt a message using the recipient's secret key.
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt(
         recipient_secret: &P256SecretKey,
         ciphertext: &EciesCiphertext,
@@ -227,6 +228,7 @@ impl EciesP384 {
     }
 
     /// Decrypt a message using the recipient's secret key.
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt(
         recipient_secret: &P384SecretKey,
         ciphertext: &EciesCiphertext,
@@ -313,6 +315,7 @@ impl EciesSecp256k1 {
     }
 
     /// Decrypt a message using the recipient's secret key.
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt(
         recipient_secret: &Secp256k1SecretKey,
         ciphertext: &EciesCiphertext,

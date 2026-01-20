@@ -5,7 +5,23 @@ use thiserror::Error;
 /// Errors that can occur in threshold operations.
 #[derive(Debug, Error)]
 pub enum ThresholdError {
-    /// Invalid threshold parameters.
+    /// Threshold must be at least 1.
+    #[error("threshold must be at least 1, got {threshold}")]
+    ThresholdTooLow {
+        /// The invalid threshold value.
+        threshold: usize,
+    },
+
+    /// Threshold cannot exceed total number of shares.
+    #[error("threshold ({threshold}) cannot exceed total shares ({total})")]
+    ThresholdExceedsTotal {
+        /// The threshold value.
+        threshold: usize,
+        /// The total number of shares.
+        total: usize,
+    },
+
+    /// Invalid threshold parameters (legacy variant).
     #[error("invalid threshold: need {threshold} of {total} shares, but {threshold} > {total}")]
     InvalidThreshold {
         /// The threshold value.
@@ -49,6 +65,13 @@ pub enum ThresholdError {
     /// Invalid share format.
     #[error("invalid share format")]
     InvalidShareFormat,
+
+    /// Invalid share data with reason.
+    #[error("invalid share data: {reason}")]
+    InvalidShare {
+        /// The reason for invalidity.
+        reason: String,
+    },
 
     /// Invalid commitment.
     #[error("invalid commitment")]

@@ -44,6 +44,7 @@ pub struct RsaPrivateKey {
 
 impl RsaPrivateKey {
     /// Generate a new RSA private key.
+    #[must_use = "key generation result must be checked for errors"]
     pub fn generate(bits: usize) -> Result<Self> {
         let inner = InnerPrivateKey::new(&mut OsRng, bits)
             .map_err(|_| Error::KeyGenerationFailed)?;
@@ -63,6 +64,7 @@ impl RsaPrivateKey {
     }
 
     /// Decrypt using OAEP padding (recommended).
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt_oaep(&self, ciphertext: &[u8]) -> Result<Vec<u8>> {
         let padding = Oaep::new::<Sha256>();
         self.inner
@@ -71,6 +73,7 @@ impl RsaPrivateKey {
     }
 
     /// Decrypt using OAEP with SHA-384.
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt_oaep_sha384(&self, ciphertext: &[u8]) -> Result<Vec<u8>> {
         let padding = Oaep::new::<Sha384>();
         self.inner
@@ -79,6 +82,7 @@ impl RsaPrivateKey {
     }
 
     /// Decrypt using OAEP with SHA-512.
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt_oaep_sha512(&self, ciphertext: &[u8]) -> Result<Vec<u8>> {
         let padding = Oaep::new::<Sha512>();
         self.inner
@@ -207,6 +211,7 @@ impl RsaPublicKey {
     }
 
     /// Verify a PSS signature.
+    #[must_use = "signature verification must be checked - ignoring bypasses authentication"]
     pub fn verify_pss(&self, message: &[u8], signature: &RsaPssSignature) -> Result<()> {
         use rsa::pss::VerifyingKey;
 
@@ -219,6 +224,7 @@ impl RsaPublicKey {
     }
 
     /// Verify a PKCS#1 v1.5 signature.
+    #[must_use = "signature verification must be checked - ignoring bypasses authentication"]
     pub fn verify_pkcs1(&self, message: &[u8], signature: &RsaPkcs1Signature) -> Result<()> {
         use rsa::pkcs1v15::VerifyingKey;
 

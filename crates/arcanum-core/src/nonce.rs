@@ -325,6 +325,7 @@ impl<const N: usize> NonceTracker<N> {
     ///
     /// When at capacity, the least recently checked nonce is automatically
     /// evicted to make room.
+    #[must_use = "nonce reuse check must be verified - reuse is catastrophic"]
     pub fn check(&self, nonce: &Nonce<N>) -> Result<()> {
         let mut cache = self.cache.lock();
 
@@ -348,6 +349,7 @@ impl<const N: usize> NonceTracker<N> {
     /// Use this variant when you want successful checks to refresh
     /// the nonce's position in the LRU cache (preventing eviction
     /// of frequently-used channels).
+    #[must_use = "nonce reuse check must be verified - reuse is catastrophic"]
     pub fn check_and_touch(&self, nonce: &Nonce<N>) -> Result<()> {
         let mut cache = self.cache.lock();
 
