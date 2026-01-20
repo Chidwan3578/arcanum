@@ -247,10 +247,96 @@ fn bench_kem_comparison(c: &mut Criterion) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SLH-DSA Benchmarks (Native FIPS 205 Implementation)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+#[cfg(feature = "slh-dsa")]
+fn bench_slh_dsa_128f(c: &mut Criterion) {
+    use arcanum_pqc::slh_dsa::{SlhDsa, SlhDsaSha2_128f};
+
+    let mut group = c.benchmark_group("SLH-DSA-SHA2-128f");
+
+    // Key generation is slow for SLH-DSA, use fewer samples
+    group.sample_size(10);
+
+    group.bench_function("keygen", |b| {
+        b.iter(|| SlhDsaSha2_128f::generate_keypair())
+    });
+
+    let (sk, vk) = SlhDsaSha2_128f::generate_keypair();
+    let message = b"benchmark message for SLH-DSA-SHA2-128f";
+
+    group.bench_function("sign", |b| {
+        b.iter(|| SlhDsaSha2_128f::sign(&sk, message))
+    });
+
+    let signature = SlhDsaSha2_128f::sign(&sk, message);
+
+    group.bench_function("verify", |b| {
+        b.iter(|| SlhDsaSha2_128f::verify(&vk, message, &signature))
+    });
+
+    group.bench_function("sign_verify_cycle", |b| {
+        b.iter(|| {
+            let sig = SlhDsaSha2_128f::sign(&sk, message);
+            SlhDsaSha2_128f::verify(&vk, message, &sig).unwrap();
+        })
+    });
+
+    group.finish();
+}
+
+#[cfg(feature = "slh-dsa")]
+fn bench_slh_dsa_128s(c: &mut Criterion) {
+    use arcanum_pqc::slh_dsa::{SlhDsa, SlhDsaSha2_128s};
+
+    let mut group = c.benchmark_group("SLH-DSA-SHA2-128s");
+
+    // SLH-DSA-128s has smaller signatures but slower signing
+    group.sample_size(10);
+
+    group.bench_function("keygen", |b| {
+        b.iter(|| SlhDsaSha2_128s::generate_keypair())
+    });
+
+    let (sk, vk) = SlhDsaSha2_128s::generate_keypair();
+    let message = b"benchmark message for SLH-DSA-SHA2-128s";
+
+    group.bench_function("sign", |b| {
+        b.iter(|| SlhDsaSha2_128s::sign(&sk, message))
+    });
+
+    let signature = SlhDsaSha2_128s::sign(&sk, message);
+
+    group.bench_function("verify", |b| {
+        b.iter(|| SlhDsaSha2_128s::verify(&vk, message, &signature))
+    });
+
+    group.finish();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Criterion Groups
 // ═══════════════════════════════════════════════════════════════════════════════
 
-#[cfg(all(feature = "ml-kem", feature = "ml-dsa", feature = "hybrid"))]
+// Full feature set: ml-kem + ml-dsa + hybrid + slh-dsa
+#[cfg(all(feature = "ml-kem", feature = "ml-dsa", feature = "hybrid", feature = "slh-dsa"))]
+criterion_group!(
+    benches,
+    bench_ml_kem_512,
+    bench_ml_kem_768,
+    bench_ml_kem_1024,
+    bench_ml_dsa_44,
+    bench_ml_dsa_65,
+    bench_ml_dsa_87,
+    bench_hybrid_x25519_ml_kem_768,
+    bench_kem_comparison,
+    bench_slh_dsa_128f,
+    bench_slh_dsa_128s,
+);
+
+// ml-kem + ml-dsa + hybrid (no slh-dsa)
+#[cfg(all(feature = "ml-kem", feature = "ml-dsa", feature = "hybrid", not(feature = "slh-dsa")))]
 criterion_group!(
     benches,
     bench_ml_kem_512,
@@ -263,7 +349,22 @@ criterion_group!(
     bench_kem_comparison,
 );
 
-#[cfg(all(feature = "ml-kem", feature = "ml-dsa", not(feature = "hybrid")))]
+// ml-kem + ml-dsa + slh-dsa (no hybrid)
+#[cfg(all(feature = "ml-kem", feature = "ml-dsa", feature = "slh-dsa", not(feature = "hybrid")))]
+criterion_group!(
+    benches,
+    bench_ml_kem_512,
+    bench_ml_kem_768,
+    bench_ml_kem_1024,
+    bench_ml_dsa_44,
+    bench_ml_dsa_65,
+    bench_ml_dsa_87,
+    bench_slh_dsa_128f,
+    bench_slh_dsa_128s,
+);
+
+// ml-kem + ml-dsa only
+#[cfg(all(feature = "ml-kem", feature = "ml-dsa", not(feature = "hybrid"), not(feature = "slh-dsa")))]
 criterion_group!(
     benches,
     bench_ml_kem_512,
@@ -274,7 +375,19 @@ criterion_group!(
     bench_ml_dsa_87,
 );
 
-#[cfg(all(feature = "ml-kem", not(feature = "ml-dsa")))]
+// ml-kem + slh-dsa only
+#[cfg(all(feature = "ml-kem", feature = "slh-dsa", not(feature = "ml-dsa")))]
+criterion_group!(
+    benches,
+    bench_ml_kem_512,
+    bench_ml_kem_768,
+    bench_ml_kem_1024,
+    bench_slh_dsa_128f,
+    bench_slh_dsa_128s,
+);
+
+// ml-kem only
+#[cfg(all(feature = "ml-kem", not(feature = "ml-dsa"), not(feature = "slh-dsa")))]
 criterion_group!(
     benches,
     bench_ml_kem_512,
@@ -282,10 +395,27 @@ criterion_group!(
     bench_ml_kem_1024,
 );
 
-#[cfg(all(not(feature = "ml-kem"), feature = "ml-dsa"))]
+// ml-dsa + slh-dsa only
+#[cfg(all(feature = "ml-dsa", feature = "slh-dsa", not(feature = "ml-kem")))]
+criterion_group!(
+    benches,
+    bench_ml_dsa_44,
+    bench_ml_dsa_65,
+    bench_ml_dsa_87,
+    bench_slh_dsa_128f,
+    bench_slh_dsa_128s,
+);
+
+// ml-dsa only
+#[cfg(all(feature = "ml-dsa", not(feature = "ml-kem"), not(feature = "slh-dsa")))]
 criterion_group!(benches, bench_ml_dsa_44, bench_ml_dsa_65, bench_ml_dsa_87,);
 
-#[cfg(not(any(feature = "ml-kem", feature = "ml-dsa")))]
+// slh-dsa only
+#[cfg(all(feature = "slh-dsa", not(feature = "ml-kem"), not(feature = "ml-dsa")))]
+criterion_group!(benches, bench_slh_dsa_128f, bench_slh_dsa_128s,);
+
+// No features enabled
+#[cfg(not(any(feature = "ml-kem", feature = "ml-dsa", feature = "slh-dsa")))]
 criterion_group!(benches,);
 
 criterion_main!(benches);
