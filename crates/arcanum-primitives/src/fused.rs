@@ -501,6 +501,9 @@ fn use_non_temporal(buffer: &[u8]) -> bool {
 #[cfg(all(feature = "simd", feature = "std"))]
 use crate::poly1305_simd::Poly1305Simd as Poly1305;
 
+#[cfg(all(feature = "simd", feature = "std"))]
+use crate::poly1305_simd::Poly1305Simd512;
+
 #[cfg(not(all(feature = "simd", feature = "std")))]
 use crate::poly1305::Poly1305;
 
@@ -607,7 +610,15 @@ impl FusedChaCha20Poly1305 {
         aad: &[u8],
         buffer: &mut [u8],
     ) -> [u8; TAG_SIZE] {
-        // Initialize Poly1305 with derived key
+        // Use AVX-512 optimized path when available and beneficial
+        #[cfg(all(target_arch = "x86_64", feature = "simd", feature = "std"))]
+        {
+            if has_avx512f() && buffer.len() >= 1024 {
+                return self.encrypt_avx512(nonce, aad, buffer);
+            }
+        }
+
+        // Initialize Poly1305 with derived key (AVX2/scalar path)
         let poly_key = self.poly_key(nonce);
         let mut poly = Poly1305::new(&poly_key);
 
@@ -754,6 +765,113 @@ impl FusedChaCha20Poly1305 {
         }
 
         // Append lengths
+        let aad_len = (aad.len() as u64).to_le_bytes();
+        let ct_len = (buffer.len() as u64).to_le_bytes();
+        poly.update(&aad_len);
+        poly.update(&ct_len);
+
+        poly.finalize()
+    }
+
+    /// AVX-512 optimized encrypt using Poly1305Simd512.
+    ///
+    /// Uses 16-way AVX-512 Poly1305 to match the 16-way ChaCha20 keystream generation.
+    #[cfg(all(target_arch = "x86_64", feature = "simd", feature = "std"))]
+    fn encrypt_avx512(
+        &self,
+        nonce: &[u8; NONCE_SIZE],
+        aad: &[u8],
+        buffer: &mut [u8],
+    ) -> [u8; TAG_SIZE] {
+        let poly_key = self.poly_key(nonce);
+        let mut poly = Poly1305Simd512::new(&poly_key);
+
+        // Process AAD
+        poly.update(aad);
+        let aad_padding = pad16(aad.len());
+        if aad_padding > 0 {
+            poly.update(&[0u8; 16][..aad_padding]);
+        }
+
+        let mut counter: u32 = 1;
+        let mut offset = 0;
+        let use_nt = use_non_temporal(buffer);
+
+        // AVX-512 path: 16 blocks (1024 bytes) at a time
+        while offset + 1024 <= buffer.len() {
+            unsafe { prefetch_ahead(buffer, offset, 1024) };
+
+            let keystream = unsafe {
+                chacha20_simd::avx512::chacha20_blocks_16x(&self.key, counter, nonce)
+            };
+            counter = counter.wrapping_add(16);
+
+            let chunk = &mut buffer[offset..offset + 1024];
+            if use_nt {
+                unsafe { xor_keystream_avx512_nt(chunk, &keystream) };
+            } else {
+                unsafe { xor_keystream_avx512(chunk, &keystream) };
+            }
+
+            poly.update(chunk);
+            offset += 1024;
+        }
+
+        // Handle remaining 512+ bytes with AVX2
+        if has_avx2() && offset + 512 <= buffer.len() {
+            unsafe { prefetch_ahead(buffer, offset, 512) };
+
+            let keystream = unsafe {
+                chacha20_simd::avx2::chacha20_blocks_8x(&self.key, counter, nonce)
+            };
+            counter = counter.wrapping_add(8);
+
+            let chunk = &mut buffer[offset..offset + 512];
+            if use_nt {
+                unsafe { xor_keystream_avx2_nt(chunk, &keystream) };
+            } else {
+                unsafe { xor_keystream_avx2(chunk, &keystream) };
+            }
+
+            poly.update(chunk);
+            offset += 512;
+        }
+
+        // Handle remaining 256+ bytes with SSE2
+        while offset + 256 <= buffer.len() {
+            unsafe { prefetch_ahead(buffer, offset, 256) };
+
+            let keystream = unsafe {
+                chacha20_simd::sse2::chacha20_blocks_4x(&self.key, counter, nonce)
+            };
+            counter = counter.wrapping_add(4);
+
+            let chunk = &mut buffer[offset..offset + 256];
+            xor_keystream(chunk, &keystream);
+            poly.update(chunk);
+            offset += 256;
+        }
+
+        // Handle remaining bytes one block at a time
+        while offset < buffer.len() {
+            let keystream = chacha20_block(&self.key, counter, nonce);
+            counter = counter.wrapping_add(1);
+
+            let remaining = buffer.len() - offset;
+            let process_len = remaining.min(BLOCK_SIZE);
+            let chunk = &mut buffer[offset..offset + process_len];
+
+            xor_keystream(chunk, &keystream[..process_len]);
+            poly.update(chunk);
+            offset += process_len;
+        }
+
+        // Finalize Poly1305
+        let ct_padding = pad16(buffer.len());
+        if ct_padding > 0 {
+            poly.update(&[0u8; 16][..ct_padding]);
+        }
+
         let aad_len = (aad.len() as u64).to_le_bytes();
         let ct_len = (buffer.len() as u64).to_le_bytes();
         poly.update(&aad_len);
