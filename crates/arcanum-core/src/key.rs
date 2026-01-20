@@ -323,11 +323,6 @@ impl KeyId {
         &self.0
     }
 
-    /// Convert to string.
-    pub fn to_string(&self) -> String {
-        self.0.to_string()
-    }
-
     /// Parse from string.
     pub fn parse(s: &str) -> Result<Self> {
         let uuid = Uuid::parse_str(s).map_err(|e| Error::ParseError(e.to_string()))?;

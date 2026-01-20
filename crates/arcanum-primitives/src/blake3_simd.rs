@@ -12,6 +12,9 @@
 //! SIMD functions use unsafe intrinsics but are safe to call when
 //! the CPU supports the required features (checked at runtime).
 
+// Allow `0 * N` patterns for clarity in SIMD offset calculations (e.g., 0*16, 1*16, 2*16, 3*16)
+#![allow(clippy::erasing_op, clippy::identity_op)]
+
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::*;
 

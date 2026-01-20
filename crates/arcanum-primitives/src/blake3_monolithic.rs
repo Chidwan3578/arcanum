@@ -4,6 +4,8 @@
 //! of BLAKE3 compression. All 7 rounds are in a single asm! block with no
 //! function calls, maximizing register utilization and eliminating call overhead.
 
+// Allow `0 * N` patterns for clarity in SIMD offset calculations
+#![allow(clippy::erasing_op, clippy::identity_op)]
 #![allow(unused)]
 
 #[cfg(target_arch = "x86_64")]
