@@ -55,22 +55,22 @@
 extern crate alloc;
 
 pub mod address;
+pub mod fors;
 pub mod hash;
+pub mod hypertree;
 pub mod params;
 pub mod wots;
-
-// Future modules (Phase 2)
-// pub mod xmss;
-// pub mod fors;
-// pub mod hypertree;
+pub mod xmss;
 
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 
-pub use address::Address;
+pub use address::{Address, AddressType};
+pub use fors::Fors;
 pub use hash::{Sha2Hash, ShakeHash, SlhDsaHash};
+pub use hypertree::Hypertree;
 pub use params::{
-    Sha2_128f, Sha2_128s, Sha2_192f, Sha2_192s, Sha2_256f, Sha2_256s, Shake_128f, Shake_128s,
+    Sha2_128f, Sha2_128s, Sha2_192f, Sha2_192s, Sha2_256f, Sha2_256s, Shake128f, Shake128s,
     SlhDsaParams,
 };
 
@@ -353,9 +353,8 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> SlhDsa<P, H> {
         sk_prf: &[u8],
         pk_seed: &[u8],
     ) -> (SlhDsaSigningKey<P>, SlhDsaVerifyingKey<P>) {
-        // TODO: Compute pk_root by building the top XMSS tree
-        // For now, return placeholder
-        let pk_root = vec![0u8; P::N]; // Placeholder
+        // Compute pk_root by building the hypertree root
+        let pk_root = Hypertree::<P, H>::ht_root(sk_seed, pk_seed);
 
         let sk = SlhDsaSigningKey::from_components(
             sk_seed.to_vec(),
@@ -397,23 +396,85 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> SlhDsa<P, H> {
         opt_rand: &[u8],
     ) -> SlhDsaSignature<P> {
         // Step 1: Generate randomness R
-        let _r = H::prf_msg(sk.sk_prf(), opt_rand, message);
+        let r = H::prf_msg(sk.sk_prf(), opt_rand, message);
 
-        // Step 2: Hash message to get FORS indices
-        // TODO: Implement H_msg and extract indices
+        // Step 2: Hash message to get digest for FORS and tree indices
+        // digest = H_msg(R, PK.seed, PK.root, M)
+        // digest length = (k*a + h + 7) / 8 bits
+        let digest_len = (P::K * P::A + P::H + 7) / 8;
+        let digest = H::h_msg(&r, sk.pk_seed(), sk.pk_root(), message, digest_len);
 
-        // Step 3: Generate FORS signature
-        // TODO: Implement FORS signing
+        // Step 3: Extract FORS message digest (k*a bits) and tree/leaf indices
+        let fors_bits = P::K * P::A;
+        let fors_bytes = (fors_bits + 7) / 8;
+        let md = &digest[0..fors_bytes];
 
-        // Step 4: Generate hypertree signature
-        // TODO: Implement hypertree signing
+        // Extract tree index (h - h' bits) and leaf index (h' bits)
+        let tree_bits = P::H - P::H_PRIME;
+        let (idx_tree, idx_leaf) = Self::extract_indices(&digest[fors_bytes..], tree_bits, P::H_PRIME);
 
-        // For now, return placeholder signature
-        let data = vec![0u8; P::SIG_SIZE];
+        // Step 4: Set up FORS address
+        let mut fors_adrs = Address::new();
+        fors_adrs.set_layer_address(0);
+        fors_adrs.set_tree_address(idx_tree);
+        fors_adrs.set_type(AddressType::ForsTree);
+        fors_adrs.set_keypair_address(idx_leaf);
+
+        // Step 5: Generate FORS signature
+        let fors_sig = Fors::<P, H>::fors_sign(md, sk.sk_seed(), sk.pk_seed(), &fors_adrs);
+
+        // Step 6: Compute FORS public key (to be signed by hypertree)
+        let fors_pk = Fors::<P, H>::fors_pk_from_sig(md, &fors_sig, sk.pk_seed(), &fors_adrs);
+
+        // Step 7: Generate hypertree signature
+        let ht_sig = Hypertree::<P, H>::ht_sign(
+            &fors_pk,
+            sk.sk_seed(),
+            sk.pk_seed(),
+            idx_tree,
+            idx_leaf,
+        );
+
+        // Step 8: Assemble signature: R || FORS_SIG || HT_SIG
+        let mut data = Vec::with_capacity(P::SIG_SIZE);
+        data.extend_from_slice(&r);
+        data.extend_from_slice(&fors_sig.to_bytes());
+        data.extend_from_slice(&ht_sig.to_bytes());
+
         SlhDsaSignature {
             data,
             _params: PhantomData,
         }
+    }
+
+    /// Extract tree and leaf indices from digest bytes
+    fn extract_indices(bytes: &[u8], tree_bits: usize, leaf_bits: usize) -> (u64, u32) {
+        let mut idx_tree: u64 = 0;
+        let mut idx_leaf: u32 = 0;
+
+        // Extract tree index (tree_bits bits)
+        let mut bit_offset = 0;
+        for i in 0..tree_bits {
+            let byte_idx = (bit_offset + i) / 8;
+            let bit_idx = 7 - ((bit_offset + i) % 8);
+            if byte_idx < bytes.len() {
+                let bit_val = ((bytes[byte_idx] >> bit_idx) & 1) as u64;
+                idx_tree |= bit_val << (tree_bits - 1 - i);
+            }
+        }
+
+        // Extract leaf index (leaf_bits bits)
+        bit_offset = tree_bits;
+        for i in 0..leaf_bits {
+            let byte_idx = (bit_offset + i) / 8;
+            let bit_idx = 7 - ((bit_offset + i) % 8);
+            if byte_idx < bytes.len() {
+                let bit_val = ((bytes[byte_idx] >> bit_idx) & 1) as u32;
+                idx_leaf |= bit_val << (leaf_bits - 1 - i);
+            }
+        }
+
+        (idx_tree, idx_leaf)
     }
 
     /// Verify a signature
@@ -427,22 +488,59 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> SlhDsa<P, H> {
         }
 
         // Step 1: Extract R from signature
-        let _r = sig.randomness();
+        let r = sig.randomness();
 
-        // Step 2: Hash message to get FORS indices
-        // TODO: Implement H_msg
+        // Step 2: Hash message to get digest
+        let digest_len = (P::K * P::A + P::H + 7) / 8;
+        let digest = H::h_msg(r, vk.pk_seed(), vk.pk_root(), message, digest_len);
 
-        // Step 3: Verify FORS signature, get FORS public key
-        // TODO: Implement FORS verification
+        // Step 3: Extract FORS message digest and indices
+        let fors_bits = P::K * P::A;
+        let fors_bytes = (fors_bits + 7) / 8;
+        let md = &digest[0..fors_bytes];
 
-        // Step 4: Verify hypertree signature
-        // TODO: Implement hypertree verification
+        let tree_bits = P::H - P::H_PRIME;
+        let (idx_tree, idx_leaf) = Self::extract_indices(&digest[fors_bytes..], tree_bits, P::H_PRIME);
 
-        // Step 5: Compare computed root with pk_root
-        let _computed_root = vec![0u8; P::N]; // Placeholder
+        // Step 4: Parse FORS and HT signatures from sig
+        let fors_sig_start = P::N; // After R
+        let fors_sig_size = fors::ForsSignature::<P>::size();
+        let ht_sig_start = fors_sig_start + fors_sig_size;
 
-        // Constant-time comparison
-        if _computed_root != vk.pk_root {
+        let fors_sig = match fors::ForsSignature::<P>::from_bytes(
+            &sig.data[fors_sig_start..fors_sig_start + fors_sig_size],
+        ) {
+            Some(s) => s,
+            None => return Err(SignatureError::InvalidSignature),
+        };
+
+        let ht_sig = match hypertree::HypertreeSignature::<P>::from_bytes(&sig.data[ht_sig_start..])
+        {
+            Some(s) => s,
+            None => return Err(SignatureError::InvalidSignature),
+        };
+
+        // Step 5: Set up FORS address
+        let mut fors_adrs = Address::new();
+        fors_adrs.set_layer_address(0);
+        fors_adrs.set_tree_address(idx_tree);
+        fors_adrs.set_type(AddressType::ForsTree);
+        fors_adrs.set_keypair_address(idx_leaf);
+
+        // Step 6: Compute FORS public key from signature
+        let fors_pk = Fors::<P, H>::fors_pk_from_sig(md, &fors_sig, vk.pk_seed(), &fors_adrs);
+
+        // Step 7: Verify hypertree signature
+        let ht_valid = Hypertree::<P, H>::ht_verify(
+            &fors_pk,
+            &ht_sig,
+            vk.pk_seed(),
+            idx_tree,
+            idx_leaf,
+            vk.pk_root(),
+        );
+
+        if !ht_valid {
             return Err(SignatureError::InvalidSignature);
         }
 

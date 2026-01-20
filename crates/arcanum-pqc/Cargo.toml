@@ -24,6 +24,8 @@ all = ["ml-kem", "ml-dsa", "slh-dsa", "hybrid"]
 
 [dependencies]
 arcanum-core = { workspace = true }
+# Native primitives for SLH-DSA (SHA-256)
+arcanum-primitives = { workspace = true, features = ["sha2"] }
 
 # NIST PQC Standards (FIPS 203, 204)
 ml-kem = { workspace = true, optional = true }

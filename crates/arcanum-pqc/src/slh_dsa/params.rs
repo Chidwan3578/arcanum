@@ -183,9 +183,9 @@ impl SlhDsaParams for Sha2_256f {
 
 /// SLH-DSA-SHAKE-128s: Small signatures, 128-bit security, SHAKE256
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
-pub struct Shake_128s;
+pub struct Shake128s;
 
-impl SlhDsaParams for Shake_128s {
+impl SlhDsaParams for Shake128s {
     const N: usize = 16;
     const H: usize = 63;
     const D: usize = 7;
@@ -203,9 +203,9 @@ impl SlhDsaParams for Shake_128s {
 
 /// SLH-DSA-SHAKE-128f: Fast signing, 128-bit security, SHAKE256
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
-pub struct Shake_128f;
+pub struct Shake128f;
 
-impl SlhDsaParams for Shake_128f {
+impl SlhDsaParams for Shake128f {
     const N: usize = 16;
     const H: usize = 66;
     const D: usize = 22;

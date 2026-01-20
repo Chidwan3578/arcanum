@@ -176,11 +176,16 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Wots<P, H> {
     /// # Returns
     /// WOTS+ public key (n bytes, compressed)
     pub fn keygen(sk_seed: &[u8], pk_seed: &[u8], adrs: &Address) -> Vec<u8> {
+        // Preserve keypair address before type change clears it
+        let keypair = adrs.keypair_address();
+
         let mut sk_adrs = *adrs;
         sk_adrs.set_type(AddressType::WotsPrf);
+        sk_adrs.set_keypair_address(keypair);
 
         let mut wots_pk_adrs = *adrs;
         wots_pk_adrs.set_type(AddressType::WotsPk);
+        wots_pk_adrs.set_keypair_address(keypair);
 
         let mut tmp = Vec::with_capacity(P::WOTS_LEN * P::N);
 
@@ -193,6 +198,7 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Wots<P, H> {
             // Chain to get public key element
             let mut chain_adrs = *adrs;
             chain_adrs.set_type(AddressType::WotsHash);
+            chain_adrs.set_keypair_address(keypair);
             chain_adrs.set_chain_address(i as u32);
 
             let pk_i = Self::chain(&sk_i, 0, (P::W - 1) as u32, pk_seed, &mut chain_adrs);
@@ -216,6 +222,9 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Wots<P, H> {
     /// # Returns
     /// WOTS+ signature
     pub fn sign(msg: &[u8], sk_seed: &[u8], pk_seed: &[u8], adrs: &Address) -> WotsSignature<P> {
+        // Preserve keypair address before type change clears it
+        let keypair = adrs.keypair_address();
+
         // Convert message to base-w
         let len1 = P::N * 8 / 4; // For w=16
         let msg_digits = Self::base_w(msg, len1);
@@ -229,6 +238,7 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Wots<P, H> {
         // Generate signature
         let mut sk_adrs = *adrs;
         sk_adrs.set_type(AddressType::WotsPrf);
+        sk_adrs.set_keypair_address(keypair);
 
         let mut sig_data = Vec::with_capacity(P::WOTS_LEN * P::N);
 
@@ -238,6 +248,7 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Wots<P, H> {
 
             let mut chain_adrs = *adrs;
             chain_adrs.set_type(AddressType::WotsHash);
+            chain_adrs.set_keypair_address(keypair);
             chain_adrs.set_chain_address(i as u32);
 
             let sig_i = Self::chain(&sk_i, 0, digit, pk_seed, &mut chain_adrs);
@@ -268,6 +279,9 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Wots<P, H> {
         pk_seed: &[u8],
         adrs: &Address,
     ) -> Vec<u8> {
+        // Preserve keypair address before type change clears it
+        let keypair = adrs.keypair_address();
+
         // Convert message to base-w
         let len1 = P::N * 8 / 4;
         let msg_digits = Self::base_w(msg, len1);
@@ -281,6 +295,7 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Wots<P, H> {
         // Compute public key from signature
         let mut wots_pk_adrs = *adrs;
         wots_pk_adrs.set_type(AddressType::WotsPk);
+        wots_pk_adrs.set_keypair_address(keypair);
 
         let mut tmp = Vec::with_capacity(P::WOTS_LEN * P::N);
 
@@ -289,6 +304,7 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Wots<P, H> {
 
             let mut chain_adrs = *adrs;
             chain_adrs.set_type(AddressType::WotsHash);
+            chain_adrs.set_keypair_address(keypair);
             chain_adrs.set_chain_address(i as u32);
 
             // Chain from signature value to public key value
@@ -375,7 +391,6 @@ mod tests {
     // ========================================================================
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn test_wots_keygen_output_size() {
         let sk_seed = [0u8; 16];
         let pk_seed = [1u8; 16];
@@ -386,7 +401,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn test_wots_sign_output_size() {
         let msg = [0u8; 16];
         let sk_seed = [1u8; 16];
@@ -398,7 +412,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn test_wots_sign_verify_roundtrip() {
         let msg = [42u8; 16];
         let sk_seed = [1u8; 16];
@@ -418,7 +431,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn test_wots_wrong_message_fails() {
         let msg1 = [1u8; 16];
         let msg2 = [2u8; 16];
@@ -439,7 +451,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn test_wots_different_keypairs_different_keys() {
         let sk_seed = [1u8; 16];
         let pk_seed = [2u8; 16];
@@ -458,7 +469,6 @@ mod tests {
     // ========================================================================
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn test_chain_zero_steps_returns_input() {
         let x = vec![42u8; 16];
         let pk_seed = [0u8; 16];
@@ -469,7 +479,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn test_chain_deterministic() {
         let x = vec![1u8; 16];
         let pk_seed = [2u8; 16];
@@ -483,7 +492,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn test_chain_composition() {
         // chain(x, 0, a+b) == chain(chain(x, 0, a), a, b)
         let x = vec![1u8; 16];

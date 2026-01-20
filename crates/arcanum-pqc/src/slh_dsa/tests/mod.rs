@@ -79,7 +79,7 @@ mod integration {
         let (sk, vk) = SlhDsaSha2_128f::generate_keypair();
         let message = b"Test message";
 
-        let mut signature = SlhDsaSha2_128f::sign(&sk, message);
+        let signature = SlhDsaSha2_128f::sign(&sk, message);
         let mut sig_bytes = signature.to_bytes();
 
         // Flip a bit in the signature
