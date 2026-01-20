@@ -147,8 +147,8 @@ impl PqcEnvelope {
             &nonce,
             content_key,
             Some(b"holocrypt-pqc-wrap"),
-        ).map_err(|e| HoloCryptError::CryptoError {
-            reason: format!("key wrapping failed: {:?}", e),
+        ).map_err(|_| HoloCryptError::CryptoError {
+            reason: "key wrapping failed".into(),
         })?;
 
         Ok(Self {
@@ -167,14 +167,14 @@ impl PqcEnvelope {
     ) -> HoloCryptResult<[u8; 32]> {
         // Reconstruct ciphertext
         let ct = MlKem768Ciphertext::from_bytes(&self.kem_ciphertext)
-            .map_err(|e| HoloCryptError::CryptoError {
-                reason: format!("invalid KEM ciphertext: {:?}", e),
+            .map_err(|_| HoloCryptError::CryptoError {
+                reason: "invalid KEM ciphertext".into(),
             })?;
 
         // Decapsulate to get shared secret
         let ss = MlKem768::decapsulate(recipient_key, &ct)
-            .map_err(|e| HoloCryptError::CryptoError {
-                reason: format!("decapsulation failed: {:?}", e),
+            .map_err(|_| HoloCryptError::CryptoError {
+                reason: "decapsulation failed".into(),
             })?;
 
         // Derive wrapping key
@@ -186,8 +186,8 @@ impl PqcEnvelope {
             &self.nonce,
             &self.wrapped_key,
             Some(b"holocrypt-pqc-wrap"),
-        ).map_err(|e| HoloCryptError::CryptoError {
-            reason: format!("key unwrapping failed: {:?}", e),
+        ).map_err(|_| HoloCryptError::CryptoError {
+            reason: "key unwrapping failed".into(),
         })?;
 
         if content_key.len() != 32 {
@@ -296,8 +296,8 @@ impl<T: Serialize + for<'de> Deserialize<'de>> PqcContainer<T> {
             &data_nonce,
             &plaintext,
             Some(&commitment),
-        ).map_err(|e| HoloCryptError::CryptoError {
-            reason: format!("encryption failed: {:?}", e),
+        ).map_err(|_| HoloCryptError::CryptoError {
+            reason: "encryption failed".into(),
         })?;
 
         // Wrap content key with PQC envelope

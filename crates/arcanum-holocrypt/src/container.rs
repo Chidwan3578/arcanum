@@ -157,8 +157,8 @@ where
             &plaintext,
             Some(&commitment), // Use commitment as AAD
         )
-        .map_err(|e| HoloCryptError::SealFailed {
-            reason: format!("encryption failed: {:?}", e),
+        .map_err(|_| HoloCryptError::SealFailed {
+            reason: "encryption failed".into(),
         })?;
 
         // Step 5: Sign commitment || merkle_root
@@ -404,8 +404,8 @@ pub mod threshold {
 
         /// Deserialize from bytes.
         pub fn from_bytes(bytes: &[u8]) -> HoloCryptResult<Self> {
-            let share = Share::from_bytes(bytes).map_err(|e| HoloCryptError::CryptoError {
-                reason: format!("invalid share: {:?}", e),
+            let share = Share::from_bytes(bytes).map_err(|_| HoloCryptError::CryptoError {
+                reason: "invalid share format".into(),
             })?;
             Ok(Self { share })
         }
@@ -466,9 +466,9 @@ pub mod threshold {
             let symmetric_key = ChaCha20Poly1305Cipher::generate_key();
 
             // Split the symmetric key into shares
-            let shares = ShamirScheme::split(&symmetric_key, threshold, total).map_err(|e| {
+            let shares = ShamirScheme::split(&symmetric_key, threshold, total).map_err(|_| {
                 HoloCryptError::CryptoError {
-                    reason: format!("failed to split key: {:?}", e),
+                    reason: "failed to split key".into(),
                 }
             })?;
 
@@ -518,8 +518,8 @@ pub mod threshold {
 
             // Reconstruct the symmetric key
             let symmetric_key =
-                ShamirScheme::combine(&shamir_shares).map_err(|e| HoloCryptError::KeyReconstructionFailed {
-                    reason: format!("{:?}", e),
+                ShamirScheme::combine(&shamir_shares).map_err(|_| HoloCryptError::KeyReconstructionFailed {
+                    reason: "insufficient or invalid shares".into(),
                 })?;
 
             // Reconstruct verifying key
