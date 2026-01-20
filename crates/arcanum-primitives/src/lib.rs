@@ -79,6 +79,12 @@ pub mod blake3_ultra;
 #[allow(unsafe_code)]
 pub mod blake3_monolithic;
 
+// CUDA-accelerated BLAKE3 for batch hashing on NVIDIA GPUs
+// Optimized for RTX 4500 Ada Lovelace (sm_89) and similar architectures
+#[cfg(feature = "cuda")]
+#[allow(unsafe_code)]
+pub mod blake3_cuda_ffi;
+
 #[cfg(feature = "chacha20")]
 pub mod chacha20;
 
