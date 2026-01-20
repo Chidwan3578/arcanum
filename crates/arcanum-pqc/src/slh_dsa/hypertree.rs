@@ -17,6 +17,7 @@ use super::params::SlhDsaParams;
 use super::xmss::{Xmss, XmssSignature};
 use alloc::vec::Vec;
 use core::marker::PhantomData;
+use subtle::ConstantTimeEq;
 
 /// Hypertree signature containing d XMSS signatures
 #[derive(Clone)]
@@ -174,8 +175,8 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Hypertree<P, H> {
             tree_addr >>= P::H_PRIME;
         }
 
-        // Final computed root should match pk_root
-        current_msg == pk_root
+        // Final computed root should match pk_root (constant-time comparison)
+        bool::from(current_msg.ct_eq(pk_root))
     }
 
     /// Compute the hypertree root (for key generation)
