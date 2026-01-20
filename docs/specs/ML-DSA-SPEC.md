@@ -37,6 +37,28 @@ This specification defines the native implementation of ML-DSA (Module-Lattice-B
 | Key Size | Medium | Small |
 | Maturity | Well-studied | Very conservative |
 
+### 1.4 Prerequisites
+
+**BLOCKING DEPENDENCY**: This implementation requires SHAKE128/SHAKE256 primitives.
+
+| Prerequisite | Location | Status | Spec |
+|--------------|----------|--------|------|
+| SHAKE128 | arcanum-primitives | **NOT IMPLEMENTED** | [SHAKE-SPEC.md](./SHAKE-SPEC.md) |
+| SHAKE256 | arcanum-primitives | **NOT IMPLEMENTED** | [SHAKE-SPEC.md](./SHAKE-SPEC.md) |
+
+ML-DSA uses SHAKE (SHA-3 XOF) extensively for:
+- **ExpandA**: Generating public matrix A (SHAKE128)
+- **ExpandS**: Sampling secret vectors (SHAKE256)
+- **ExpandMask**: Generating masking polynomials (SHAKE256)
+- **H/G functions**: Domain-separated hashing (SHAKE256)
+- **SampleInBall**: Sampling challenge polynomial (SHAKE256)
+
+**Implementation Order**:
+1. Implement SHAKE128/SHAKE256 in arcanum-primitives (see SHAKE-SPEC.md)
+2. Add feature flag `shake` to arcanum-primitives
+3. Update arcanum-pqc dependency on arcanum-primitives
+4. Proceed with ML-DSA Green Phase
+
 ---
 
 ## 2. Algorithm Overview

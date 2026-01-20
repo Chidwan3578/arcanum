@@ -17,6 +17,7 @@
 //! ### Hash Functions
 //! - SHA-256, SHA-384, SHA-512 (FIPS 180-4 compliant)
 //! - BLAKE3 (keyed hashing supported)
+//! - SHAKE128, SHAKE256 (FIPS 202 XOF - for ML-DSA)
 //!
 //! ### Stream Ciphers
 //! - ChaCha20 (RFC 8439)
@@ -51,6 +52,10 @@ pub mod ct;
 
 #[cfg(feature = "sha2")]
 pub mod sha2;
+
+// SHAKE128/SHAKE256 (Keccak-based XOF) - required for ML-DSA
+#[cfg(feature = "shake")]
+pub mod shake;
 
 // SIMD-accelerated SHA-2 (SHA-NI)
 #[cfg(all(feature = "sha2", feature = "simd"))]
@@ -134,6 +139,9 @@ pub mod prelude {
 
     #[cfg(feature = "sha2")]
     pub use crate::sha2::{Sha256, Sha384, Sha512};
+
+    #[cfg(feature = "shake")]
+    pub use crate::shake::{Shake128, Shake256, Shake128Reader, Shake256Reader};
 
     #[cfg(feature = "blake3")]
     pub use crate::blake3::Blake3;
