@@ -176,7 +176,8 @@ impl ThreadLocalRng {
     /// This function will not panic even if the mutex was poisoned by a panic
     /// in another thread - it recovers and reseeds the RNG.
     pub fn reseed(&self) {
-        *self.rng
+        *self
+            .rng
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = ChaCha20Rng::from_entropy();
     }

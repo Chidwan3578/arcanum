@@ -10,10 +10,8 @@
 use crate::traits::{self, BatchVerifier, VerifyingKey};
 use arcanum_core::error::{Error, Result};
 use ed25519_dalek::{
-    Signer, Verifier,
-    SigningKey as DalekSigningKey,
+    Signature as DalekSignature, Signer, SigningKey as DalekSigningKey, Verifier,
     VerifyingKey as DalekVerifyingKey,
-    Signature as DalekSignature,
 };
 use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
@@ -102,7 +100,10 @@ mod verifying_key_serde {
     use super::*;
     use serde::{Deserializer, Serializer};
 
-    pub fn serialize<S>(key: &DalekVerifyingKey, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    pub fn serialize<S>(
+        key: &DalekVerifyingKey,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -121,15 +122,15 @@ mod verifying_key_serde {
         if deserializer.is_human_readable() {
             let s = String::deserialize(deserializer)?;
             let bytes = hex::decode(&s).map_err(serde::de::Error::custom)?;
-            let arr: [u8; 32] = bytes.try_into().map_err(|_| {
-                serde::de::Error::custom("invalid key length")
-            })?;
+            let arr: [u8; 32] = bytes
+                .try_into()
+                .map_err(|_| serde::de::Error::custom("invalid key length"))?;
             DalekVerifyingKey::from_bytes(&arr).map_err(serde::de::Error::custom)
         } else {
             let bytes = <Vec<u8>>::deserialize(deserializer)?;
-            let arr: [u8; 32] = bytes.try_into().map_err(|_| {
-                serde::de::Error::custom("invalid key length")
-            })?;
+            let arr: [u8; 32] = bytes
+                .try_into()
+                .map_err(|_| serde::de::Error::custom("invalid key length"))?;
             DalekVerifyingKey::from_bytes(&arr).map_err(serde::de::Error::custom)
         }
     }
@@ -152,8 +153,8 @@ impl traits::VerifyingKey for Ed25519VerifyingKey {
         let mut key_bytes = [0u8; 32];
         key_bytes.copy_from_slice(bytes);
 
-        let inner = DalekVerifyingKey::from_bytes(&key_bytes)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner =
+            DalekVerifyingKey::from_bytes(&key_bytes).map_err(|_| Error::InvalidKeyFormat)?;
 
         Ok(Self { inner })
     }
@@ -176,7 +177,11 @@ impl traits::VerifyingKey for Ed25519VerifyingKey {
 
 impl std::fmt::Debug for Ed25519VerifyingKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Ed25519VerifyingKey({})", hex::encode(self.inner.to_bytes()))
+        write!(
+            f,
+            "Ed25519VerifyingKey({})",
+            hex::encode(self.inner.to_bytes())
+        )
     }
 }
 
@@ -220,15 +225,15 @@ mod signature_serde {
         if deserializer.is_human_readable() {
             let s = String::deserialize(deserializer)?;
             let bytes = hex::decode(&s).map_err(serde::de::Error::custom)?;
-            let arr: [u8; 64] = bytes.try_into().map_err(|_| {
-                serde::de::Error::custom("invalid signature length")
-            })?;
+            let arr: [u8; 64] = bytes
+                .try_into()
+                .map_err(|_| serde::de::Error::custom("invalid signature length"))?;
             Ok(DalekSignature::from_bytes(&arr))
         } else {
             let bytes = <Vec<u8>>::deserialize(deserializer)?;
-            let arr: [u8; 64] = bytes.try_into().map_err(|_| {
-                serde::de::Error::custom("invalid signature length")
-            })?;
+            let arr: [u8; 64] = bytes
+                .try_into()
+                .map_err(|_| serde::de::Error::custom("invalid signature length"))?;
             Ok(DalekSignature::from_bytes(&arr))
         }
     }
@@ -256,7 +261,11 @@ impl traits::Signature for Ed25519Signature {
 
 impl std::fmt::Debug for Ed25519Signature {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Ed25519Signature({})", hex::encode(self.inner.to_bytes()))
+        write!(
+            f,
+            "Ed25519Signature({})",
+            hex::encode(self.inner.to_bytes())
+        )
     }
 }
 
@@ -271,14 +280,13 @@ impl BatchVerifier for Ed25519BatchVerifier {
     type VerifyingKey = Ed25519VerifyingKey;
     type Signature = Ed25519Signature;
 
-    fn verify_batch(
-        items: &[(&Self::VerifyingKey, &[u8], &Self::Signature)],
-    ) -> Result<()> {
+    fn verify_batch(items: &[(&Self::VerifyingKey, &[u8], &Self::Signature)]) -> Result<()> {
         #[cfg(feature = "batch")]
         {
             let messages: Vec<&[u8]> = items.iter().map(|(_, m, _)| *m).collect();
             let signatures: Vec<DalekSignature> = items.iter().map(|(_, _, s)| s.inner).collect();
-            let verifying_keys: Vec<DalekVerifyingKey> = items.iter().map(|(k, _, _)| k.inner).collect();
+            let verifying_keys: Vec<DalekVerifyingKey> =
+                items.iter().map(|(k, _, _)| k.inner).collect();
 
             ed25519_dalek::verify_batch(&messages, &signatures, &verifying_keys)
                 .map_err(|_| Error::SignatureVerificationFailed)
@@ -326,7 +334,7 @@ pub fn verify(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::{SigningKey, VerifyingKey, Signature};
+    use crate::traits::{Signature, SigningKey, VerifyingKey};
 
     #[test]
     fn test_sign_verify() {
@@ -359,7 +367,12 @@ mod tests {
         let message = b"Hello, Arcanum!";
         let signature = signing_key.sign(message);
 
-        assert!(wrong_key.verifying_key().verify(message, &signature).is_err());
+        assert!(
+            wrong_key
+                .verifying_key()
+                .verify(message, &signature)
+                .is_err()
+        );
     }
 
     #[test]

@@ -63,10 +63,10 @@ pub mod dkg;
 #[cfg(feature = "proactive")]
 pub mod proactive;
 
-pub use error::{ThresholdError, Result};
+pub use error::{Result, ThresholdError};
 
 #[cfg(feature = "shamir")]
-pub use shamir::{Share, ShamirScheme};
+pub use shamir::{ShamirScheme, Share};
 
 #[cfg(feature = "frost")]
 pub use frost::{FrostSigner, FrostVerifier, SigningShare, VerifyingShare};
@@ -79,10 +79,10 @@ pub use proactive::{ProactiveRefresh, RefreshShares};
 
 /// Prelude for convenient imports.
 pub mod prelude {
-    pub use crate::error::{ThresholdError, Result};
+    pub use crate::error::{Result, ThresholdError};
 
     #[cfg(feature = "shamir")]
-    pub use crate::shamir::{Share, ShamirScheme};
+    pub use crate::shamir::{ShamirScheme, Share};
 
     #[cfg(feature = "frost")]
     pub use crate::frost::{FrostSigner, FrostVerifier};

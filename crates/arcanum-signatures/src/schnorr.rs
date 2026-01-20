@@ -10,9 +10,8 @@
 use crate::traits;
 use arcanum_core::error::{Error, Result};
 use k256::schnorr::{
-    SigningKey as SchnorrSigningKeyInner,
+    Signature as SchnorrSignatureInner, SigningKey as SchnorrSigningKeyInner,
     VerifyingKey as SchnorrVerifyingKeyInner,
-    Signature as SchnorrSignatureInner,
 };
 use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
@@ -41,8 +40,8 @@ impl traits::SigningKey for SchnorrSigningKey {
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        let inner = SchnorrSigningKeyInner::from_bytes(bytes)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner =
+            SchnorrSigningKeyInner::from_bytes(bytes).map_err(|_| Error::InvalidKeyFormat)?;
         Ok(Self { inner })
     }
 
@@ -89,7 +88,10 @@ mod schnorr_verifying_key_serde {
     use super::*;
     use serde::{Deserializer, Serializer};
 
-    pub fn serialize<S>(key: &SchnorrVerifyingKeyInner, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    pub fn serialize<S>(
+        key: &SchnorrVerifyingKeyInner,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -101,7 +103,9 @@ mod schnorr_verifying_key_serde {
         }
     }
 
-    pub fn deserialize<'de, D>(deserializer: D) -> std::result::Result<SchnorrVerifyingKeyInner, D::Error>
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> std::result::Result<SchnorrVerifyingKeyInner, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -112,8 +116,7 @@ mod schnorr_verifying_key_serde {
             <Vec<u8>>::deserialize(deserializer)?
         };
 
-        SchnorrVerifyingKeyInner::from_bytes(&bytes)
-            .map_err(serde::de::Error::custom)
+        SchnorrVerifyingKeyInner::from_bytes(&bytes).map_err(serde::de::Error::custom)
     }
 }
 
@@ -124,8 +127,8 @@ impl traits::VerifyingKey for SchnorrVerifyingKey {
     const KEY_SIZE: usize = 32; // X-only (no sign byte)
 
     fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        let inner = SchnorrVerifyingKeyInner::from_bytes(bytes)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner =
+            SchnorrVerifyingKeyInner::from_bytes(bytes).map_err(|_| Error::InvalidKeyFormat)?;
         Ok(Self { inner })
     }
 
@@ -147,7 +150,11 @@ impl traits::VerifyingKey for SchnorrVerifyingKey {
 
 impl std::fmt::Debug for SchnorrVerifyingKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "SchnorrVerifyingKey({})", hex::encode(self.inner.to_bytes()))
+        write!(
+            f,
+            "SchnorrVerifyingKey({})",
+            hex::encode(self.inner.to_bytes())
+        )
     }
 }
 
@@ -172,7 +179,10 @@ mod schnorr_signature_serde {
     use super::*;
     use serde::{Deserializer, Serializer};
 
-    pub fn serialize<S>(sig: &SchnorrSignatureInner, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    pub fn serialize<S>(
+        sig: &SchnorrSignatureInner,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -184,7 +194,9 @@ mod schnorr_signature_serde {
         }
     }
 
-    pub fn deserialize<'de, D>(deserializer: D) -> std::result::Result<SchnorrSignatureInner, D::Error>
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> std::result::Result<SchnorrSignatureInner, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -195,8 +207,7 @@ mod schnorr_signature_serde {
             <Vec<u8>>::deserialize(deserializer)?
         };
 
-        SchnorrSignatureInner::try_from(bytes.as_slice())
-            .map_err(serde::de::Error::custom)
+        SchnorrSignatureInner::try_from(bytes.as_slice()).map_err(serde::de::Error::custom)
     }
 }
 
@@ -204,8 +215,7 @@ impl traits::Signature for SchnorrSignature {
     const SIZE: usize = 64;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        let inner = SchnorrSignatureInner::try_from(bytes)
-            .map_err(|_| Error::InvalidSignature)?;
+        let inner = SchnorrSignatureInner::try_from(bytes).map_err(|_| Error::InvalidSignature)?;
         Ok(Self { inner })
     }
 
@@ -216,7 +226,11 @@ impl traits::Signature for SchnorrSignature {
 
 impl std::fmt::Debug for SchnorrSignature {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "SchnorrSignature({})", hex::encode(self.inner.to_bytes()))
+        write!(
+            f,
+            "SchnorrSignature({})",
+            hex::encode(self.inner.to_bytes())
+        )
     }
 }
 
@@ -235,7 +249,7 @@ pub fn generate_keypair() -> (SchnorrSigningKey, SchnorrVerifyingKey) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::{SigningKey, VerifyingKey, Signature};
+    use crate::traits::{Signature, SigningKey, VerifyingKey};
 
     #[test]
     fn test_sign_verify() {

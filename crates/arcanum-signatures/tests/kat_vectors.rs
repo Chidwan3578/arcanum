@@ -3,13 +3,12 @@
 //! These tests verify our implementations match official test vectors
 //! from RFC 8032 (Ed25519), NIST FIPS 186-4 (ECDSA), and other standards.
 
-use arcanum_signatures::{SigningKey, VerifyingKey, Signature};
-use arcanum_signatures::{Ed25519SigningKey, Ed25519VerifyingKey, Ed25519Signature};
+use arcanum_signatures::{Ed25519Signature, Ed25519SigningKey, Ed25519VerifyingKey};
 use arcanum_signatures::{
-    P256SigningKey, P256VerifyingKey, P256Signature,
-    P384SigningKey, P384VerifyingKey, P384Signature,
-    Secp256k1SigningKey, Secp256k1VerifyingKey, Secp256k1Signature,
+    P256Signature, P256SigningKey, P256VerifyingKey, P384Signature, P384SigningKey,
+    P384VerifyingKey, Secp256k1Signature, Secp256k1SigningKey, Secp256k1VerifyingKey,
 };
+use arcanum_signatures::{Signature, SigningKey, VerifyingKey};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Ed25519 Test Vectors (RFC 8032 Section 7.1)
@@ -19,14 +18,12 @@ use arcanum_signatures::{
 #[test]
 fn ed25519_rfc8032_test1_empty() {
     // Secret key (seed)
-    let secret = hex::decode(
-        "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"
-    ).unwrap();
+    let secret =
+        hex::decode("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60").unwrap();
 
     // Expected public key
-    let expected_public = hex::decode(
-        "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
-    ).unwrap();
+    let expected_public =
+        hex::decode("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a").unwrap();
 
     // Empty message
     let message: &[u8] = b"";
@@ -34,8 +31,9 @@ fn ed25519_rfc8032_test1_empty() {
     // Expected signature
     let expected_signature = hex::decode(
         "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155\
-         5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b"
-    ).unwrap();
+         5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b",
+    )
+    .unwrap();
 
     // Create signing key from seed
     let signing_key = Ed25519SigningKey::from_bytes(&secret).unwrap();
@@ -66,71 +64,89 @@ fn ed25519_rfc8032_test1_empty() {
 /// RFC 8032 Section 7.1 - Test 2 (one byte message)
 #[test]
 fn ed25519_rfc8032_test2_one_byte() {
-    let secret = hex::decode(
-        "4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb"
-    ).unwrap();
+    let secret =
+        hex::decode("4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb").unwrap();
 
-    let expected_public = hex::decode(
-        "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c"
-    ).unwrap();
+    let expected_public =
+        hex::decode("3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c").unwrap();
 
-    let message = hex::decode("72").unwrap();  // 0x72 = 'r'
+    let message = hex::decode("72").unwrap(); // 0x72 = 'r'
 
     let expected_signature = hex::decode(
         "92a009a9f0d4cab8720e820b5f642540a2b27b5416503f8fb3762223ebdb69da\
-         085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00"
-    ).unwrap();
+         085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00",
+    )
+    .unwrap();
 
     let signing_key = Ed25519SigningKey::from_bytes(&secret).unwrap();
     let verifying_key = signing_key.verifying_key();
 
-    assert_eq!(verifying_key.to_bytes(), expected_public, "Public key mismatch");
+    assert_eq!(
+        verifying_key.to_bytes(),
+        expected_public,
+        "Public key mismatch"
+    );
 
     let signature = signing_key.sign(&message);
-    assert_eq!(signature.to_bytes(), expected_signature, "Signature mismatch");
+    assert_eq!(
+        signature.to_bytes(),
+        expected_signature,
+        "Signature mismatch"
+    );
 
-    assert!(verifying_key.verify(&message, &signature).is_ok(), "Verification failed");
+    assert!(
+        verifying_key.verify(&message, &signature).is_ok(),
+        "Verification failed"
+    );
 }
 
 /// RFC 8032 Section 7.1 - Test 3 (two byte message)
 #[test]
 fn ed25519_rfc8032_test3_two_bytes() {
-    let secret = hex::decode(
-        "c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7"
-    ).unwrap();
+    let secret =
+        hex::decode("c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7").unwrap();
 
-    let expected_public = hex::decode(
-        "fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025"
-    ).unwrap();
+    let expected_public =
+        hex::decode("fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025").unwrap();
 
     let message = hex::decode("af82").unwrap();
 
     let expected_signature = hex::decode(
         "6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac\
-         18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a"
-    ).unwrap();
+         18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a",
+    )
+    .unwrap();
 
     let signing_key = Ed25519SigningKey::from_bytes(&secret).unwrap();
     let verifying_key = signing_key.verifying_key();
 
-    assert_eq!(verifying_key.to_bytes(), expected_public, "Public key mismatch");
+    assert_eq!(
+        verifying_key.to_bytes(),
+        expected_public,
+        "Public key mismatch"
+    );
 
     let signature = signing_key.sign(&message);
-    assert_eq!(signature.to_bytes(), expected_signature, "Signature mismatch");
+    assert_eq!(
+        signature.to_bytes(),
+        expected_signature,
+        "Signature mismatch"
+    );
 
-    assert!(verifying_key.verify(&message, &signature).is_ok(), "Verification failed");
+    assert!(
+        verifying_key.verify(&message, &signature).is_ok(),
+        "Verification failed"
+    );
 }
 
 /// RFC 8032 Section 7.1 - Test 1024 (longer message)
 #[test]
 fn ed25519_rfc8032_test_1024() {
-    let secret = hex::decode(
-        "f5e5767cf153319517630f226876b86c8160cc583bc013744c6bf255f5cc0ee5"
-    ).unwrap();
+    let secret =
+        hex::decode("f5e5767cf153319517630f226876b86c8160cc583bc013744c6bf255f5cc0ee5").unwrap();
 
-    let expected_public = hex::decode(
-        "278117fc144c72340f67d0f2316e8386ceffbf2b2428c9c51fef7c597f1d426e"
-    ).unwrap();
+    let expected_public =
+        hex::decode("278117fc144c72340f67d0f2316e8386ceffbf2b2428c9c51fef7c597f1d426e").unwrap();
 
     // 1023 bytes: 0x08, 0xb8, 0xb2, ...
     let message = hex::decode(
@@ -165,23 +181,36 @@ fn ed25519_rfc8032_test_1024() {
          0d334ba77c225bc307ba537152f3f1610e4eafe595f6d9d90d11faa933a15ef1\
          369546868a7f3a45a96768d40fd9d03412c091c6315cf4fde7cb68606937380d\
          b2eaaa707b4c4185c32eddcdd306705e4dc1ffc872eeee475a64dfac86aba41c\
-         0618983f8741c5ef68d3a101e8a3b8cac60c905c15fc910840b94c00a0b9d0"
-    ).unwrap();
+         0618983f8741c5ef68d3a101e8a3b8cac60c905c15fc910840b94c00a0b9d0",
+    )
+    .unwrap();
 
     let expected_signature = hex::decode(
         "0aab4c900501b3e24d7cdf4663326a3a87df5e4843b2cbdb67cbf6e460fec350\
-         aa5371b1508f9f4528ecea23c436d94b5e8fcd4f681e30a6ac00a9704a188a03"
-    ).unwrap();
+         aa5371b1508f9f4528ecea23c436d94b5e8fcd4f681e30a6ac00a9704a188a03",
+    )
+    .unwrap();
 
     let signing_key = Ed25519SigningKey::from_bytes(&secret).unwrap();
     let verifying_key = signing_key.verifying_key();
 
-    assert_eq!(verifying_key.to_bytes(), expected_public, "Public key mismatch");
+    assert_eq!(
+        verifying_key.to_bytes(),
+        expected_public,
+        "Public key mismatch"
+    );
 
     let signature = signing_key.sign(&message);
-    assert_eq!(signature.to_bytes(), expected_signature, "Signature mismatch");
+    assert_eq!(
+        signature.to_bytes(),
+        expected_signature,
+        "Signature mismatch"
+    );
 
-    assert!(verifying_key.verify(&message, &signature).is_ok(), "Verification failed");
+    assert!(
+        verifying_key.verify(&message, &signature).is_ok(),
+        "Verification failed"
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -263,7 +292,11 @@ fn ed25519_deterministic() {
     let sig1 = signing_key.sign(message);
     let sig2 = signing_key.sign(message);
 
-    assert_eq!(sig1.to_bytes(), sig2.to_bytes(), "Ed25519 should be deterministic");
+    assert_eq!(
+        sig1.to_bytes(),
+        sig2.to_bytes(),
+        "Ed25519 should be deterministic"
+    );
 }
 
 /// Ed25519 signature length is always 64 bytes
@@ -274,7 +307,11 @@ fn ed25519_signature_length() {
     for size in [0, 1, 10, 100, 1000] {
         let message = vec![0u8; size];
         let signature = signing_key.sign(&message);
-        assert_eq!(signature.to_bytes().len(), 64, "Signature should be 64 bytes");
+        assert_eq!(
+            signature.to_bytes().len(),
+            64,
+            "Signature should be 64 bytes"
+        );
     }
 }
 
@@ -301,9 +338,8 @@ fn ed25519_key_roundtrip() {
 #[test]
 fn ecdsa_p256_basic_sign_verify() {
     // Well-known test private key (from Wycheproof test vectors)
-    let private_key = hex::decode(
-        "c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721"
-    ).unwrap();
+    let private_key =
+        hex::decode("c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721").unwrap();
 
     let signing_key = P256SigningKey::from_bytes(&private_key).unwrap();
     let verifying_key = signing_key.verifying_key();
@@ -333,15 +369,13 @@ fn ecdsa_p256_basic_sign_verify() {
 fn ecdsa_p256_key_derivation() {
     // RFC 6979 test vector - deterministic ECDSA
     // Private key
-    let private_key = hex::decode(
-        "c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721"
-    ).unwrap();
+    let private_key =
+        hex::decode("c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721").unwrap();
 
     // Expected public key (uncompressed point, 65 bytes: 04 || x || y)
     // We expect compressed format from our API (33 bytes: 02/03 || x)
-    let expected_x = hex::decode(
-        "60fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb6"
-    ).unwrap();
+    let expected_x =
+        hex::decode("60fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb6").unwrap();
 
     let signing_key = P256SigningKey::from_bytes(&private_key).unwrap();
     let verifying_key = signing_key.verifying_key();
@@ -364,7 +398,7 @@ fn ecdsa_p256_key_derivation() {
 /// ECDSA P-256: Signature verification with prehashed message
 #[test]
 fn ecdsa_p256_prehashed_signature() {
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
 
     let signing_key = P256SigningKey::generate();
     let verifying_key = signing_key.verifying_key();
@@ -491,7 +525,7 @@ fn ecdsa_p384_key_sizes() {
 /// ECDSA P-384: Prehashed signature with SHA-384
 #[test]
 fn ecdsa_p384_prehashed_signature() {
-    use sha2::{Sha384, Digest};
+    use sha2::{Digest, Sha384};
 
     let signing_key = P384SigningKey::generate();
     let verifying_key = signing_key.verifying_key();
@@ -585,18 +619,16 @@ fn ecdsa_secp256k1_basic_sign_verify() {
 #[test]
 fn ecdsa_secp256k1_known_key() {
     // Well-known test private key
-    let private_key = hex::decode(
-        "0000000000000000000000000000000000000000000000000000000000000001"
-    ).unwrap();
+    let private_key =
+        hex::decode("0000000000000000000000000000000000000000000000000000000000000001").unwrap();
 
     let signing_key = Secp256k1SigningKey::from_bytes(&private_key).unwrap();
     let verifying_key = signing_key.verifying_key();
 
     // The generator point G as public key (compressed)
     // For private key = 1, public key = G
-    let expected_pubkey_compressed = hex::decode(
-        "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-    ).unwrap();
+    let expected_pubkey_compressed =
+        hex::decode("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798").unwrap();
 
     assert_eq!(
         verifying_key.to_bytes(),
@@ -608,7 +640,7 @@ fn ecdsa_secp256k1_known_key() {
 /// secp256k1: Ethereum-style message signing
 #[test]
 fn ecdsa_secp256k1_ethereum_style() {
-    use sha3::{Keccak256, Digest};
+    use sha3::{Digest, Keccak256};
 
     let signing_key = Secp256k1SigningKey::generate();
     let verifying_key = signing_key.verifying_key();

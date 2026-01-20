@@ -409,9 +409,6 @@ mod tests {
             expected: 32,
             actual: 16,
         };
-        assert_eq!(
-            err.to_string(),
-            "invalid key length: expected 32, got 16"
-        );
+        assert_eq!(err.to_string(), "invalid key length: expected 32, got 16");
     }
 }

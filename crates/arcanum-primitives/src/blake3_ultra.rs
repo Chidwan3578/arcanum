@@ -18,9 +18,7 @@ use core::arch::x86_64::*;
 use rayon::prelude::*;
 
 use super::blake3_simd::{
-    IV, compress_auto,
-    hash_8_chunks_from_ptrs, hash_16_chunks_from_ptrs,
-    has_avx512f,
+    compress_auto, has_avx512f, hash_16_chunks_from_ptrs, hash_8_chunks_from_ptrs, IV,
 };
 
 #[cfg(target_arch = "x86_64")]
@@ -43,7 +41,10 @@ unsafe fn prefetch_chunks(data: &[u8], start_chunk: usize, num_chunks: usize) {
         let chunk_start = (start_chunk + i) * CHUNK_LEN;
         if chunk_start + 128 <= data.len() {
             _mm_prefetch(data.as_ptr().add(chunk_start) as *const i8, _MM_HINT_T0);
-            _mm_prefetch(data.as_ptr().add(chunk_start + 64) as *const i8, _MM_HINT_T0);
+            _mm_prefetch(
+                data.as_ptr().add(chunk_start + 64) as *const i8,
+                _MM_HINT_T0,
+            );
         }
     }
 }
@@ -57,7 +58,7 @@ unsafe fn prefetch_chunks(data: &[u8], start_chunk: usize, num_chunks: usize) {
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2")]
 unsafe fn compute_4_parents_avx2(
-    cvs: &[[u32; 8]; 8],  // 4 pairs of CVs
+    cvs: &[[u32; 8]; 8], // 4 pairs of CVs
     key: &[u32; 8],
     flags: u8,
 ) -> [[u32; 8]; 4] {
@@ -283,11 +284,13 @@ fn process_chunks_with_prefetch(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
 
                         for j in 0..16 {
                             let chunk_idx = batch[i + j];
-                            chunk_ptrs[j] = data[chunk_idx * CHUNK_LEN..(chunk_idx + 1) * CHUNK_LEN].as_ptr();
+                            chunk_ptrs[j] =
+                                data[chunk_idx * CHUNK_LEN..(chunk_idx + 1) * CHUNK_LEN].as_ptr();
                             counters[j] = chunk_idx as u64;
                         }
 
-                        let cvs = unsafe { hash_16_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
+                        let cvs =
+                            unsafe { hash_16_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
                         batch_cvs.extend_from_slice(&cvs);
                         i += 16;
                     } else if remaining >= 8 {
@@ -296,11 +299,13 @@ fn process_chunks_with_prefetch(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
 
                         for j in 0..8 {
                             let chunk_idx = batch[i + j];
-                            chunk_ptrs[j] = data[chunk_idx * CHUNK_LEN..(chunk_idx + 1) * CHUNK_LEN].as_ptr();
+                            chunk_ptrs[j] =
+                                data[chunk_idx * CHUNK_LEN..(chunk_idx + 1) * CHUNK_LEN].as_ptr();
                             counters[j] = chunk_idx as u64;
                         }
 
-                        let cvs = unsafe { hash_8_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
+                        let cvs =
+                            unsafe { hash_8_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
                         batch_cvs.extend_from_slice(&cvs);
                         i += 8;
                     } else {
@@ -361,8 +366,12 @@ fn hash_single_chunk(key: &[u32; 8], data: &[u8], counter: u64) -> [u32; 8] {
         block[..block_len].copy_from_slice(&data[start..end]);
 
         let mut flags = 0u8;
-        if is_first { flags |= CHUNK_START; }
-        if is_last { flags |= CHUNK_END; }
+        if is_first {
+            flags |= CHUNK_START;
+        }
+        if is_last {
+            flags |= CHUNK_END;
+        }
 
         let output = compress_auto(&cv, &block, counter, block_len as u32, flags);
         cv = output[..8].try_into().unwrap();
@@ -393,13 +402,23 @@ pub fn hash_ultra(data: &[u8]) -> [u8; 32] {
     let cvs = process_chunks_with_prefetch(data, &IV);
 
     if cvs.is_empty() {
-        return IV.iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>().try_into().unwrap();
+        return IV
+            .iter()
+            .flat_map(|w| w.to_le_bytes())
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
     }
 
     // Use batched reduction
     let root_cv = reduce_cvs_batched(&cvs, &IV);
 
-    root_cv.iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>().try_into().unwrap()
+    root_cv
+        .iter()
+        .flat_map(|w| w.to_le_bytes())
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap()
 }
 
 /// Hash data using streaming tree reduction (for memory efficiency)
@@ -434,8 +453,8 @@ pub fn hash_adaptive(data: &[u8]) -> [u8; 32] {
     // - Below 2MB: single-threaded SIMD avoids Rayon thread pool overhead
     // - 2MB-8MB: MinimalAlloc balances parallelism with lower overhead
     // - 8MB+: Apex fully parallelizes both chunks and tree reduction
-    const PARALLEL_THRESHOLD: usize = 2 * 1024 * 1024;  // 2MB
-    const APEX_THRESHOLD: usize = 8 * 1024 * 1024;      // 8MB
+    const PARALLEL_THRESHOLD: usize = 2 * 1024 * 1024; // 2MB
+    const APEX_THRESHOLD: usize = 8 * 1024 * 1024; // 8MB
 
     if data.len() < PARALLEL_THRESHOLD {
         // Single-threaded SIMD path - no Rayon overhead
@@ -547,7 +566,8 @@ fn process_chunks_minimal_alloc(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
                             counters[j] = chunk_idx as u64;
                         }
 
-                        let results = unsafe { hash_16_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
+                        let results =
+                            unsafe { hash_16_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
                         batch_cvs.extend_from_slice(&results);
                         i += 16;
                     } else if remaining >= 8 {
@@ -560,7 +580,8 @@ fn process_chunks_minimal_alloc(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
                             counters[j] = chunk_idx as u64;
                         }
 
-                        let results = unsafe { hash_8_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
+                        let results =
+                            unsafe { hash_8_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
                         batch_cvs.extend_from_slice(&results);
                         i += 8;
                     } else {
@@ -615,11 +636,21 @@ pub fn hash_minimal_alloc(data: &[u8]) -> [u8; 32] {
     let cvs = process_chunks_minimal_alloc(data, &IV);
 
     if cvs.is_empty() {
-        return IV.iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>().try_into().unwrap();
+        return IV
+            .iter()
+            .flat_map(|w| w.to_le_bytes())
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
     }
 
     let root_cv = reduce_cvs_batched(&cvs, &IV);
-    root_cv.iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>().try_into().unwrap()
+    root_cv
+        .iter()
+        .flat_map(|w| w.to_le_bytes())
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap()
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -661,7 +692,11 @@ fn reduce_cvs_parallel(cvs: &[[u32; 8]], key: &[u32; 8]) -> [u32; 8] {
                 .map(|i| {
                     let left = &current[i * 2];
                     let right = &current[i * 2 + 1];
-                    let flags = if is_final && i == pairs - 1 { PARENT | ROOT } else { PARENT };
+                    let flags = if is_final && i == pairs - 1 {
+                        PARENT | ROOT
+                    } else {
+                        PARENT
+                    };
                     parent_cv(left, right, key, flags)
                 })
                 .collect()
@@ -671,7 +706,11 @@ fn reduce_cvs_parallel(cvs: &[[u32; 8]], key: &[u32; 8]) -> [u32; 8] {
                 .map(|i| {
                     let left = &current[i * 2];
                     let right = &current[i * 2 + 1];
-                    let flags = if is_final && i == pairs - 1 { PARENT | ROOT } else { PARENT };
+                    let flags = if is_final && i == pairs - 1 {
+                        PARENT | ROOT
+                    } else {
+                        PARENT
+                    };
                     parent_cv(left, right, key, flags)
                 })
                 .collect()
@@ -735,7 +774,8 @@ fn process_chunks_apex(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
                             counters[j] = chunk_idx as u64;
                         }
 
-                        let results = unsafe { hash_16_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
+                        let results =
+                            unsafe { hash_16_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
                         batch_cvs.extend_from_slice(&results);
                         i += 16;
                     } else if remaining >= 8 {
@@ -748,7 +788,8 @@ fn process_chunks_apex(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
                             counters[j] = chunk_idx as u64;
                         }
 
-                        let results = unsafe { hash_8_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
+                        let results =
+                            unsafe { hash_8_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
                         batch_cvs.extend_from_slice(&results);
                         i += 8;
                     } else {
@@ -882,9 +923,7 @@ fn process_chunks_monolithic(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
                     let base_ptr = data[i * CHUNK_LEN..].as_ptr();
                     let counters: [u64; 16] = core::array::from_fn(|j| (i + j) as u64);
 
-                    let results = unsafe {
-                        hash_16_chunks_monolithic(key, base_ptr, &counters, 0)
-                    };
+                    let results = unsafe { hash_16_chunks_monolithic(key, base_ptr, &counters, 0) };
                     batch_cvs.extend_from_slice(&results);
                     i += 16;
                 }
@@ -909,7 +948,11 @@ fn process_chunks_monolithic(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
     if has_partial {
         let partial_start = complete_chunks * CHUNK_LEN;
         let partial_chunk = &data[partial_start..];
-        cvs.push(hash_single_chunk(key, partial_chunk, complete_chunks as u64));
+        cvs.push(hash_single_chunk(
+            key,
+            partial_chunk,
+            complete_chunks as u64,
+        ));
     }
 
     cvs
@@ -952,9 +995,7 @@ fn process_chunks_mega(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
                     let base_ptr = data[i * CHUNK_LEN..].as_ptr();
                     let counters: [u64; 16] = core::array::from_fn(|j| (i + j) as u64);
 
-                    let results = unsafe {
-                        hash_16_chunks_monolithic(key, base_ptr, &counters, 0)
-                    };
+                    let results = unsafe { hash_16_chunks_monolithic(key, base_ptr, &counters, 0) };
                     batch_cvs.extend_from_slice(&results);
                     i += 16;
                 }
@@ -976,7 +1017,11 @@ fn process_chunks_mega(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
     if has_partial {
         let partial_start = complete_chunks * CHUNK_LEN;
         let partial_chunk = &data[partial_start..];
-        cvs.push(hash_single_chunk(key, partial_chunk, complete_chunks as u64));
+        cvs.push(hash_single_chunk(
+            key,
+            partial_chunk,
+            complete_chunks as u64,
+        ));
     }
 
     cvs
@@ -1008,7 +1053,11 @@ fn process_chunks_giga(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
         }
         if has_partial {
             let partial_start = complete_chunks * CHUNK_LEN;
-            cvs.push(hash_single_chunk(key, &data[partial_start..], complete_chunks as u64));
+            cvs.push(hash_single_chunk(
+                key,
+                &data[partial_start..],
+                complete_chunks as u64,
+            ));
         }
         return cvs;
     }
@@ -1030,9 +1079,7 @@ fn process_chunks_giga(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
                 let base_ptr = unsafe { data.as_ptr().add(i * CHUNK_LEN) };
                 let counters: [u64; 16] = core::array::from_fn(|j| (i + j) as u64);
 
-                let results = unsafe {
-                    hash_16_chunks_monolithic(key, base_ptr, &counters, 0)
-                };
+                let results = unsafe { hash_16_chunks_monolithic(key, base_ptr, &counters, 0) };
                 batch_cvs.extend_from_slice(&results);
                 i += 16;
             }
@@ -1060,7 +1107,11 @@ fn process_chunks_giga(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
     // Handle partial chunk
     if has_partial {
         let partial_start = complete_chunks * CHUNK_LEN;
-        cvs.push(hash_single_chunk(key, &data[partial_start..], complete_chunks as u64));
+        cvs.push(hash_single_chunk(
+            key,
+            &data[partial_start..],
+            complete_chunks as u64,
+        ));
     }
 
     cvs
@@ -1125,7 +1176,12 @@ mod tests {
             let data = vec![0x42u8; size];
             let ultra_hash = hash_ultra(&data);
             let reference_hash = blake3::hash(&data);
-            assert_eq!(ultra_hash, *reference_hash.as_bytes(), "Mismatch at size {}", size);
+            assert_eq!(
+                ultra_hash,
+                *reference_hash.as_bytes(),
+                "Mismatch at size {}",
+                size
+            );
         }
     }
 
@@ -1137,7 +1193,12 @@ mod tests {
             let data = vec![0x42u8; size];
             let streaming_hash = hash_ultra_streaming(&data);
             let reference_hash = blake3::hash(&data);
-            assert_eq!(streaming_hash, *reference_hash.as_bytes(), "Streaming mismatch at size {}", size);
+            assert_eq!(
+                streaming_hash,
+                *reference_hash.as_bytes(),
+                "Streaming mismatch at size {}",
+                size
+            );
         }
     }
 
@@ -1145,11 +1206,22 @@ mod tests {
     #[cfg(feature = "rayon")]
     fn test_adaptive_matches_reference() {
         // Test across all size ranges
-        for size in [64 * 1024, 256 * 1024, 1024 * 1024, 4 * 1024 * 1024, 8 * 1024 * 1024] {
+        for size in [
+            64 * 1024,
+            256 * 1024,
+            1024 * 1024,
+            4 * 1024 * 1024,
+            8 * 1024 * 1024,
+        ] {
             let data = vec![0x42u8; size];
             let adaptive_hash = hash_adaptive(&data);
             let reference_hash = blake3::hash(&data);
-            assert_eq!(adaptive_hash, *reference_hash.as_bytes(), "Adaptive mismatch at size {}", size);
+            assert_eq!(
+                adaptive_hash,
+                *reference_hash.as_bytes(),
+                "Adaptive mismatch at size {}",
+                size
+            );
         }
     }
 
@@ -1160,7 +1232,12 @@ mod tests {
             let data = vec![0x42u8; size];
             let minimal_hash = hash_minimal_alloc(&data);
             let reference_hash = blake3::hash(&data);
-            assert_eq!(minimal_hash, *reference_hash.as_bytes(), "Minimal alloc mismatch at size {}", size);
+            assert_eq!(
+                minimal_hash,
+                *reference_hash.as_bytes(),
+                "Minimal alloc mismatch at size {}",
+                size
+            );
         }
     }
 
@@ -1171,18 +1248,34 @@ mod tests {
             let data = vec![0x42u8; size];
             let apex_hash = hash_apex(&data);
             let reference_hash = blake3::hash(&data);
-            assert_eq!(apex_hash, *reference_hash.as_bytes(), "Apex mismatch at size {}", size);
+            assert_eq!(
+                apex_hash,
+                *reference_hash.as_bytes(),
+                "Apex mismatch at size {}",
+                size
+            );
         }
     }
 
     #[test]
     #[cfg(all(feature = "rayon", target_arch = "x86_64"))]
     fn test_apex_monolithic_matches_reference() {
-        for size in [256 * 1024, 1024 * 1024, 4 * 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024] {
+        for size in [
+            256 * 1024,
+            1024 * 1024,
+            4 * 1024 * 1024,
+            16 * 1024 * 1024,
+            64 * 1024 * 1024,
+        ] {
             let data = vec![0x42u8; size];
             let apex_hash = hash_apex_monolithic(&data);
             let reference_hash = blake3::hash(&data);
-            assert_eq!(apex_hash, *reference_hash.as_bytes(), "Apex monolithic mismatch at size {}", size);
+            assert_eq!(
+                apex_hash,
+                *reference_hash.as_bytes(),
+                "Apex monolithic mismatch at size {}",
+                size
+            );
         }
     }
 
@@ -1193,7 +1286,12 @@ mod tests {
             let data = vec![0x42u8; size];
             let apex_hash = hash_apex_mega(&data);
             let reference_hash = blake3::hash(&data);
-            assert_eq!(apex_hash, *reference_hash.as_bytes(), "Apex mega mismatch at size {}", size);
+            assert_eq!(
+                apex_hash,
+                *reference_hash.as_bytes(),
+                "Apex mega mismatch at size {}",
+                size
+            );
         }
     }
 
@@ -1204,7 +1302,12 @@ mod tests {
             let data = vec![0x42u8; size];
             let apex_hash = hash_apex_giga(&data);
             let reference_hash = blake3::hash(&data);
-            assert_eq!(apex_hash, *reference_hash.as_bytes(), "Apex giga mismatch at size {}", size);
+            assert_eq!(
+                apex_hash,
+                *reference_hash.as_bytes(),
+                "Apex giga mismatch at size {}",
+                size
+            );
         }
     }
 
@@ -1216,7 +1319,10 @@ mod tests {
         let sizes_mb: Vec<usize> = vec![256, 512, 1024];
 
         eprintln!("\n=== Gigabyte-Scale Performance ===");
-        eprintln!("{:>8} {:>14} {:>14} {:>14} {:>14} {:>10}", "Size", "Apex Giga", "Apex Mega", "Apex Mono", "blake3", "vs blake3");
+        eprintln!(
+            "{:>8} {:>14} {:>14} {:>14} {:>14} {:>10}",
+            "Size", "Apex Giga", "Apex Mega", "Apex Mono", "blake3", "vs blake3"
+        );
 
         for size_mb in sizes_mb {
             let size = size_mb * 1024 * 1024;
@@ -1257,14 +1363,25 @@ mod tests {
             }
             let blake3_elapsed = start.elapsed();
 
-            let giga_gib_s = (iterations as f64 * size as f64) / (giga_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
-            let mega_gib_s = (iterations as f64 * size as f64) / (mega_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
-            let mono_gib_s = (iterations as f64 * size as f64) / (mono_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
-            let blake3_gib_s = (iterations as f64 * size as f64) / (blake3_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let giga_gib_s = (iterations as f64 * size as f64)
+                / (giga_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let mega_gib_s = (iterations as f64 * size as f64)
+                / (mega_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let mono_gib_s = (iterations as f64 * size as f64)
+                / (mono_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let blake3_gib_s = (iterations as f64 * size as f64)
+                / (blake3_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
 
             let best = giga_gib_s.max(mega_gib_s).max(mono_gib_s);
-            eprintln!("{:>6}MB {:>12.2} GiB/s {:>12.2} GiB/s {:>12.2} GiB/s {:>12.2} GiB/s {:>8.2}x",
-                size_mb, giga_gib_s, mega_gib_s, mono_gib_s, blake3_gib_s, best / blake3_gib_s);
+            eprintln!(
+                "{:>6}MB {:>12.2} GiB/s {:>12.2} GiB/s {:>12.2} GiB/s {:>12.2} GiB/s {:>8.2}x",
+                size_mb,
+                giga_gib_s,
+                mega_gib_s,
+                mono_gib_s,
+                blake3_gib_s,
+                best / blake3_gib_s
+            );
         }
     }
 
@@ -1283,6 +1400,9 @@ mod tests {
         let result = reduce_cvs_batched(&cvs, &IV);
 
         // Should be 8 non-zero u32 values
-        assert!(result.iter().any(|&w| w != 0), "Result should not be all zeros");
+        assert!(
+            result.iter().any(|&w| w != 0),
+            "Result should not be all zeros"
+        );
     }
 }

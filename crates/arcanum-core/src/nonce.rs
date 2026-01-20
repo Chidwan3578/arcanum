@@ -310,8 +310,8 @@ impl<const N: usize> NonceTracker<N> {
     ///
     /// Panics if `max_entries` is 0.
     pub fn new(max_entries: usize) -> Self {
-        let max_entries = NonZeroUsize::new(max_entries)
-            .expect("NonceTracker capacity must be greater than 0");
+        let max_entries =
+            NonZeroUsize::new(max_entries).expect("NonceTracker capacity must be greater than 0");
         Self {
             cache: Mutex::new(LruCache::new(max_entries)),
             max_entries,

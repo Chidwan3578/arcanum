@@ -21,7 +21,9 @@ use crate::traits::{HashOutput, Hasher};
 /// Use native Arcanum primitives when backend-native is enabled
 #[cfg(feature = "backend-native")]
 mod backend {
-    pub use arcanum_primitives::sha2::{Sha256 as Sha256Inner, Sha384 as Sha384Inner, Sha512 as Sha512Inner};
+    pub use arcanum_primitives::sha2::{
+        Sha256 as Sha256Inner, Sha384 as Sha384Inner, Sha512 as Sha512Inner,
+    };
 }
 
 /// Fall back to RustCrypto when backend-native is not enabled

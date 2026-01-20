@@ -15,8 +15,7 @@ use core::arch::x86_64::*;
 
 /// BLAKE3 IV constants
 pub const IV: [u32; 8] = [
-    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-    0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
 ];
 
 /// Message schedule for all 7 rounds
@@ -35,17 +34,15 @@ const MSG_SCHEDULE: [[usize; 16]; 7] = [
 struct AlignedMask([u8; 64]);
 
 static ROT16_MASK: AlignedMask = AlignedMask([
-    2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
-    2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
-    2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
-    2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
+    2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14,
+    15, 12, 13, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13, 2, 3, 0, 1, 6, 7, 4, 5, 10,
+    11, 8, 9, 14, 15, 12, 13,
 ]);
 
 static ROT8_MASK: AlignedMask = AlignedMask([
-    1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12,
-    1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12,
-    1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12,
-    1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12,
+    1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12, 1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13,
+    14, 15, 12, 1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12, 1, 2, 3, 0, 5, 6, 7, 4, 9,
+    10, 11, 8, 13, 14, 15, 12,
 ]);
 
 /// G function macro using inline assembly with AVX-512.
@@ -95,25 +92,89 @@ macro_rules! round_asm {
         let sched = &MSG_SCHEDULE[$round];
 
         // Column step: G(0,4,8,12), G(1,5,9,13), G(2,6,10,14), G(3,7,11,15)
-        g16_asm!($state[0], $state[4], $state[8], $state[12],
-                $m[sched[0]], $m[sched[1]], $rot16, $rot8);
-        g16_asm!($state[1], $state[5], $state[9], $state[13],
-                $m[sched[2]], $m[sched[3]], $rot16, $rot8);
-        g16_asm!($state[2], $state[6], $state[10], $state[14],
-                $m[sched[4]], $m[sched[5]], $rot16, $rot8);
-        g16_asm!($state[3], $state[7], $state[11], $state[15],
-                $m[sched[6]], $m[sched[7]], $rot16, $rot8);
+        g16_asm!(
+            $state[0],
+            $state[4],
+            $state[8],
+            $state[12],
+            $m[sched[0]],
+            $m[sched[1]],
+            $rot16,
+            $rot8
+        );
+        g16_asm!(
+            $state[1],
+            $state[5],
+            $state[9],
+            $state[13],
+            $m[sched[2]],
+            $m[sched[3]],
+            $rot16,
+            $rot8
+        );
+        g16_asm!(
+            $state[2],
+            $state[6],
+            $state[10],
+            $state[14],
+            $m[sched[4]],
+            $m[sched[5]],
+            $rot16,
+            $rot8
+        );
+        g16_asm!(
+            $state[3],
+            $state[7],
+            $state[11],
+            $state[15],
+            $m[sched[6]],
+            $m[sched[7]],
+            $rot16,
+            $rot8
+        );
 
         // Diagonal step: G(0,5,10,15), G(1,6,11,12), G(2,7,8,13), G(3,4,9,14)
-        g16_asm!($state[0], $state[5], $state[10], $state[15],
-                $m[sched[8]], $m[sched[9]], $rot16, $rot8);
-        g16_asm!($state[1], $state[6], $state[11], $state[12],
-                $m[sched[10]], $m[sched[11]], $rot16, $rot8);
-        g16_asm!($state[2], $state[7], $state[8], $state[13],
-                $m[sched[12]], $m[sched[13]], $rot16, $rot8);
-        g16_asm!($state[3], $state[4], $state[9], $state[14],
-                $m[sched[14]], $m[sched[15]], $rot16, $rot8);
-    }}
+        g16_asm!(
+            $state[0],
+            $state[5],
+            $state[10],
+            $state[15],
+            $m[sched[8]],
+            $m[sched[9]],
+            $rot16,
+            $rot8
+        );
+        g16_asm!(
+            $state[1],
+            $state[6],
+            $state[11],
+            $state[12],
+            $m[sched[10]],
+            $m[sched[11]],
+            $rot16,
+            $rot8
+        );
+        g16_asm!(
+            $state[2],
+            $state[7],
+            $state[8],
+            $state[13],
+            $m[sched[12]],
+            $m[sched[13]],
+            $rot16,
+            $rot8
+        );
+        g16_asm!(
+            $state[3],
+            $state[4],
+            $state[9],
+            $state[14],
+            $m[sched[14]],
+            $m[sched[15]],
+            $rot16,
+            $rot8
+        );
+    }};
 }
 
 /// Compress 16 blocks using assembly-optimized G function.
@@ -138,46 +199,250 @@ pub unsafe fn compress_16blocks_asm(
     let m: [__m512i; 16] = core::array::from_fn(|word_idx| {
         let offset = word_idx * 4;
         _mm512_set_epi32(
-            i32::from_le_bytes(blocks[15][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[14][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[13][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[12][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[11][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[10][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[9][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[8][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[7][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[6][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[5][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[4][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[3][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[2][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[1][offset..offset+4].try_into().unwrap()),
-            i32::from_le_bytes(blocks[0][offset..offset+4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[15][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[14][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[13][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[12][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[11][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[10][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[9][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[8][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[7][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[6][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[5][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[4][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[3][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[2][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[1][offset..offset + 4].try_into().unwrap()),
+            i32::from_le_bytes(blocks[0][offset..offset + 4].try_into().unwrap()),
         )
     });
 
     // Initialize state (transposed)
     let mut state: [__m512i; 16] = [
         // s0-s7: CV words
-        _mm512_set_epi32(cvs[15][0] as i32, cvs[14][0] as i32, cvs[13][0] as i32, cvs[12][0] as i32, cvs[11][0] as i32, cvs[10][0] as i32, cvs[9][0] as i32, cvs[8][0] as i32, cvs[7][0] as i32, cvs[6][0] as i32, cvs[5][0] as i32, cvs[4][0] as i32, cvs[3][0] as i32, cvs[2][0] as i32, cvs[1][0] as i32, cvs[0][0] as i32),
-        _mm512_set_epi32(cvs[15][1] as i32, cvs[14][1] as i32, cvs[13][1] as i32, cvs[12][1] as i32, cvs[11][1] as i32, cvs[10][1] as i32, cvs[9][1] as i32, cvs[8][1] as i32, cvs[7][1] as i32, cvs[6][1] as i32, cvs[5][1] as i32, cvs[4][1] as i32, cvs[3][1] as i32, cvs[2][1] as i32, cvs[1][1] as i32, cvs[0][1] as i32),
-        _mm512_set_epi32(cvs[15][2] as i32, cvs[14][2] as i32, cvs[13][2] as i32, cvs[12][2] as i32, cvs[11][2] as i32, cvs[10][2] as i32, cvs[9][2] as i32, cvs[8][2] as i32, cvs[7][2] as i32, cvs[6][2] as i32, cvs[5][2] as i32, cvs[4][2] as i32, cvs[3][2] as i32, cvs[2][2] as i32, cvs[1][2] as i32, cvs[0][2] as i32),
-        _mm512_set_epi32(cvs[15][3] as i32, cvs[14][3] as i32, cvs[13][3] as i32, cvs[12][3] as i32, cvs[11][3] as i32, cvs[10][3] as i32, cvs[9][3] as i32, cvs[8][3] as i32, cvs[7][3] as i32, cvs[6][3] as i32, cvs[5][3] as i32, cvs[4][3] as i32, cvs[3][3] as i32, cvs[2][3] as i32, cvs[1][3] as i32, cvs[0][3] as i32),
-        _mm512_set_epi32(cvs[15][4] as i32, cvs[14][4] as i32, cvs[13][4] as i32, cvs[12][4] as i32, cvs[11][4] as i32, cvs[10][4] as i32, cvs[9][4] as i32, cvs[8][4] as i32, cvs[7][4] as i32, cvs[6][4] as i32, cvs[5][4] as i32, cvs[4][4] as i32, cvs[3][4] as i32, cvs[2][4] as i32, cvs[1][4] as i32, cvs[0][4] as i32),
-        _mm512_set_epi32(cvs[15][5] as i32, cvs[14][5] as i32, cvs[13][5] as i32, cvs[12][5] as i32, cvs[11][5] as i32, cvs[10][5] as i32, cvs[9][5] as i32, cvs[8][5] as i32, cvs[7][5] as i32, cvs[6][5] as i32, cvs[5][5] as i32, cvs[4][5] as i32, cvs[3][5] as i32, cvs[2][5] as i32, cvs[1][5] as i32, cvs[0][5] as i32),
-        _mm512_set_epi32(cvs[15][6] as i32, cvs[14][6] as i32, cvs[13][6] as i32, cvs[12][6] as i32, cvs[11][6] as i32, cvs[10][6] as i32, cvs[9][6] as i32, cvs[8][6] as i32, cvs[7][6] as i32, cvs[6][6] as i32, cvs[5][6] as i32, cvs[4][6] as i32, cvs[3][6] as i32, cvs[2][6] as i32, cvs[1][6] as i32, cvs[0][6] as i32),
-        _mm512_set_epi32(cvs[15][7] as i32, cvs[14][7] as i32, cvs[13][7] as i32, cvs[12][7] as i32, cvs[11][7] as i32, cvs[10][7] as i32, cvs[9][7] as i32, cvs[8][7] as i32, cvs[7][7] as i32, cvs[6][7] as i32, cvs[5][7] as i32, cvs[4][7] as i32, cvs[3][7] as i32, cvs[2][7] as i32, cvs[1][7] as i32, cvs[0][7] as i32),
+        _mm512_set_epi32(
+            cvs[15][0] as i32,
+            cvs[14][0] as i32,
+            cvs[13][0] as i32,
+            cvs[12][0] as i32,
+            cvs[11][0] as i32,
+            cvs[10][0] as i32,
+            cvs[9][0] as i32,
+            cvs[8][0] as i32,
+            cvs[7][0] as i32,
+            cvs[6][0] as i32,
+            cvs[5][0] as i32,
+            cvs[4][0] as i32,
+            cvs[3][0] as i32,
+            cvs[2][0] as i32,
+            cvs[1][0] as i32,
+            cvs[0][0] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][1] as i32,
+            cvs[14][1] as i32,
+            cvs[13][1] as i32,
+            cvs[12][1] as i32,
+            cvs[11][1] as i32,
+            cvs[10][1] as i32,
+            cvs[9][1] as i32,
+            cvs[8][1] as i32,
+            cvs[7][1] as i32,
+            cvs[6][1] as i32,
+            cvs[5][1] as i32,
+            cvs[4][1] as i32,
+            cvs[3][1] as i32,
+            cvs[2][1] as i32,
+            cvs[1][1] as i32,
+            cvs[0][1] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][2] as i32,
+            cvs[14][2] as i32,
+            cvs[13][2] as i32,
+            cvs[12][2] as i32,
+            cvs[11][2] as i32,
+            cvs[10][2] as i32,
+            cvs[9][2] as i32,
+            cvs[8][2] as i32,
+            cvs[7][2] as i32,
+            cvs[6][2] as i32,
+            cvs[5][2] as i32,
+            cvs[4][2] as i32,
+            cvs[3][2] as i32,
+            cvs[2][2] as i32,
+            cvs[1][2] as i32,
+            cvs[0][2] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][3] as i32,
+            cvs[14][3] as i32,
+            cvs[13][3] as i32,
+            cvs[12][3] as i32,
+            cvs[11][3] as i32,
+            cvs[10][3] as i32,
+            cvs[9][3] as i32,
+            cvs[8][3] as i32,
+            cvs[7][3] as i32,
+            cvs[6][3] as i32,
+            cvs[5][3] as i32,
+            cvs[4][3] as i32,
+            cvs[3][3] as i32,
+            cvs[2][3] as i32,
+            cvs[1][3] as i32,
+            cvs[0][3] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][4] as i32,
+            cvs[14][4] as i32,
+            cvs[13][4] as i32,
+            cvs[12][4] as i32,
+            cvs[11][4] as i32,
+            cvs[10][4] as i32,
+            cvs[9][4] as i32,
+            cvs[8][4] as i32,
+            cvs[7][4] as i32,
+            cvs[6][4] as i32,
+            cvs[5][4] as i32,
+            cvs[4][4] as i32,
+            cvs[3][4] as i32,
+            cvs[2][4] as i32,
+            cvs[1][4] as i32,
+            cvs[0][4] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][5] as i32,
+            cvs[14][5] as i32,
+            cvs[13][5] as i32,
+            cvs[12][5] as i32,
+            cvs[11][5] as i32,
+            cvs[10][5] as i32,
+            cvs[9][5] as i32,
+            cvs[8][5] as i32,
+            cvs[7][5] as i32,
+            cvs[6][5] as i32,
+            cvs[5][5] as i32,
+            cvs[4][5] as i32,
+            cvs[3][5] as i32,
+            cvs[2][5] as i32,
+            cvs[1][5] as i32,
+            cvs[0][5] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][6] as i32,
+            cvs[14][6] as i32,
+            cvs[13][6] as i32,
+            cvs[12][6] as i32,
+            cvs[11][6] as i32,
+            cvs[10][6] as i32,
+            cvs[9][6] as i32,
+            cvs[8][6] as i32,
+            cvs[7][6] as i32,
+            cvs[6][6] as i32,
+            cvs[5][6] as i32,
+            cvs[4][6] as i32,
+            cvs[3][6] as i32,
+            cvs[2][6] as i32,
+            cvs[1][6] as i32,
+            cvs[0][6] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][7] as i32,
+            cvs[14][7] as i32,
+            cvs[13][7] as i32,
+            cvs[12][7] as i32,
+            cvs[11][7] as i32,
+            cvs[10][7] as i32,
+            cvs[9][7] as i32,
+            cvs[8][7] as i32,
+            cvs[7][7] as i32,
+            cvs[6][7] as i32,
+            cvs[5][7] as i32,
+            cvs[4][7] as i32,
+            cvs[3][7] as i32,
+            cvs[2][7] as i32,
+            cvs[1][7] as i32,
+            cvs[0][7] as i32,
+        ),
         // s8-s11: IV constants
         _mm512_set1_epi32(IV[0] as i32),
         _mm512_set1_epi32(IV[1] as i32),
         _mm512_set1_epi32(IV[2] as i32),
         _mm512_set1_epi32(IV[3] as i32),
         // s12-s15: counter_lo, counter_hi, block_len, flags
-        _mm512_set_epi32(counters[15] as i32, counters[14] as i32, counters[13] as i32, counters[12] as i32, counters[11] as i32, counters[10] as i32, counters[9] as i32, counters[8] as i32, counters[7] as i32, counters[6] as i32, counters[5] as i32, counters[4] as i32, counters[3] as i32, counters[2] as i32, counters[1] as i32, counters[0] as i32),
-        _mm512_set_epi32((counters[15] >> 32) as i32, (counters[14] >> 32) as i32, (counters[13] >> 32) as i32, (counters[12] >> 32) as i32, (counters[11] >> 32) as i32, (counters[10] >> 32) as i32, (counters[9] >> 32) as i32, (counters[8] >> 32) as i32, (counters[7] >> 32) as i32, (counters[6] >> 32) as i32, (counters[5] >> 32) as i32, (counters[4] >> 32) as i32, (counters[3] >> 32) as i32, (counters[2] >> 32) as i32, (counters[1] >> 32) as i32, (counters[0] >> 32) as i32),
-        _mm512_set_epi32(block_lens[15] as i32, block_lens[14] as i32, block_lens[13] as i32, block_lens[12] as i32, block_lens[11] as i32, block_lens[10] as i32, block_lens[9] as i32, block_lens[8] as i32, block_lens[7] as i32, block_lens[6] as i32, block_lens[5] as i32, block_lens[4] as i32, block_lens[3] as i32, block_lens[2] as i32, block_lens[1] as i32, block_lens[0] as i32),
-        _mm512_set_epi32(flags[15] as i32, flags[14] as i32, flags[13] as i32, flags[12] as i32, flags[11] as i32, flags[10] as i32, flags[9] as i32, flags[8] as i32, flags[7] as i32, flags[6] as i32, flags[5] as i32, flags[4] as i32, flags[3] as i32, flags[2] as i32, flags[1] as i32, flags[0] as i32),
+        _mm512_set_epi32(
+            counters[15] as i32,
+            counters[14] as i32,
+            counters[13] as i32,
+            counters[12] as i32,
+            counters[11] as i32,
+            counters[10] as i32,
+            counters[9] as i32,
+            counters[8] as i32,
+            counters[7] as i32,
+            counters[6] as i32,
+            counters[5] as i32,
+            counters[4] as i32,
+            counters[3] as i32,
+            counters[2] as i32,
+            counters[1] as i32,
+            counters[0] as i32,
+        ),
+        _mm512_set_epi32(
+            (counters[15] >> 32) as i32,
+            (counters[14] >> 32) as i32,
+            (counters[13] >> 32) as i32,
+            (counters[12] >> 32) as i32,
+            (counters[11] >> 32) as i32,
+            (counters[10] >> 32) as i32,
+            (counters[9] >> 32) as i32,
+            (counters[8] >> 32) as i32,
+            (counters[7] >> 32) as i32,
+            (counters[6] >> 32) as i32,
+            (counters[5] >> 32) as i32,
+            (counters[4] >> 32) as i32,
+            (counters[3] >> 32) as i32,
+            (counters[2] >> 32) as i32,
+            (counters[1] >> 32) as i32,
+            (counters[0] >> 32) as i32,
+        ),
+        _mm512_set_epi32(
+            block_lens[15] as i32,
+            block_lens[14] as i32,
+            block_lens[13] as i32,
+            block_lens[12] as i32,
+            block_lens[11] as i32,
+            block_lens[10] as i32,
+            block_lens[9] as i32,
+            block_lens[8] as i32,
+            block_lens[7] as i32,
+            block_lens[6] as i32,
+            block_lens[5] as i32,
+            block_lens[4] as i32,
+            block_lens[3] as i32,
+            block_lens[2] as i32,
+            block_lens[1] as i32,
+            block_lens[0] as i32,
+        ),
+        _mm512_set_epi32(
+            flags[15] as i32,
+            flags[14] as i32,
+            flags[13] as i32,
+            flags[12] as i32,
+            flags[11] as i32,
+            flags[10] as i32,
+            flags[9] as i32,
+            flags[8] as i32,
+            flags[7] as i32,
+            flags[6] as i32,
+            flags[5] as i32,
+            flags[4] as i32,
+            flags[3] as i32,
+            flags[2] as i32,
+            flags[1] as i32,
+            flags[0] as i32,
+        ),
     ];
 
     // All 7 rounds with assembly G function
@@ -268,22 +533,226 @@ pub unsafe fn compress_16blocks_from_ptrs_asm(
 
     // Initialize state (transposed)
     let mut state: [__m512i; 16] = [
-        _mm512_set_epi32(cvs[15][0] as i32, cvs[14][0] as i32, cvs[13][0] as i32, cvs[12][0] as i32, cvs[11][0] as i32, cvs[10][0] as i32, cvs[9][0] as i32, cvs[8][0] as i32, cvs[7][0] as i32, cvs[6][0] as i32, cvs[5][0] as i32, cvs[4][0] as i32, cvs[3][0] as i32, cvs[2][0] as i32, cvs[1][0] as i32, cvs[0][0] as i32),
-        _mm512_set_epi32(cvs[15][1] as i32, cvs[14][1] as i32, cvs[13][1] as i32, cvs[12][1] as i32, cvs[11][1] as i32, cvs[10][1] as i32, cvs[9][1] as i32, cvs[8][1] as i32, cvs[7][1] as i32, cvs[6][1] as i32, cvs[5][1] as i32, cvs[4][1] as i32, cvs[3][1] as i32, cvs[2][1] as i32, cvs[1][1] as i32, cvs[0][1] as i32),
-        _mm512_set_epi32(cvs[15][2] as i32, cvs[14][2] as i32, cvs[13][2] as i32, cvs[12][2] as i32, cvs[11][2] as i32, cvs[10][2] as i32, cvs[9][2] as i32, cvs[8][2] as i32, cvs[7][2] as i32, cvs[6][2] as i32, cvs[5][2] as i32, cvs[4][2] as i32, cvs[3][2] as i32, cvs[2][2] as i32, cvs[1][2] as i32, cvs[0][2] as i32),
-        _mm512_set_epi32(cvs[15][3] as i32, cvs[14][3] as i32, cvs[13][3] as i32, cvs[12][3] as i32, cvs[11][3] as i32, cvs[10][3] as i32, cvs[9][3] as i32, cvs[8][3] as i32, cvs[7][3] as i32, cvs[6][3] as i32, cvs[5][3] as i32, cvs[4][3] as i32, cvs[3][3] as i32, cvs[2][3] as i32, cvs[1][3] as i32, cvs[0][3] as i32),
-        _mm512_set_epi32(cvs[15][4] as i32, cvs[14][4] as i32, cvs[13][4] as i32, cvs[12][4] as i32, cvs[11][4] as i32, cvs[10][4] as i32, cvs[9][4] as i32, cvs[8][4] as i32, cvs[7][4] as i32, cvs[6][4] as i32, cvs[5][4] as i32, cvs[4][4] as i32, cvs[3][4] as i32, cvs[2][4] as i32, cvs[1][4] as i32, cvs[0][4] as i32),
-        _mm512_set_epi32(cvs[15][5] as i32, cvs[14][5] as i32, cvs[13][5] as i32, cvs[12][5] as i32, cvs[11][5] as i32, cvs[10][5] as i32, cvs[9][5] as i32, cvs[8][5] as i32, cvs[7][5] as i32, cvs[6][5] as i32, cvs[5][5] as i32, cvs[4][5] as i32, cvs[3][5] as i32, cvs[2][5] as i32, cvs[1][5] as i32, cvs[0][5] as i32),
-        _mm512_set_epi32(cvs[15][6] as i32, cvs[14][6] as i32, cvs[13][6] as i32, cvs[12][6] as i32, cvs[11][6] as i32, cvs[10][6] as i32, cvs[9][6] as i32, cvs[8][6] as i32, cvs[7][6] as i32, cvs[6][6] as i32, cvs[5][6] as i32, cvs[4][6] as i32, cvs[3][6] as i32, cvs[2][6] as i32, cvs[1][6] as i32, cvs[0][6] as i32),
-        _mm512_set_epi32(cvs[15][7] as i32, cvs[14][7] as i32, cvs[13][7] as i32, cvs[12][7] as i32, cvs[11][7] as i32, cvs[10][7] as i32, cvs[9][7] as i32, cvs[8][7] as i32, cvs[7][7] as i32, cvs[6][7] as i32, cvs[5][7] as i32, cvs[4][7] as i32, cvs[3][7] as i32, cvs[2][7] as i32, cvs[1][7] as i32, cvs[0][7] as i32),
+        _mm512_set_epi32(
+            cvs[15][0] as i32,
+            cvs[14][0] as i32,
+            cvs[13][0] as i32,
+            cvs[12][0] as i32,
+            cvs[11][0] as i32,
+            cvs[10][0] as i32,
+            cvs[9][0] as i32,
+            cvs[8][0] as i32,
+            cvs[7][0] as i32,
+            cvs[6][0] as i32,
+            cvs[5][0] as i32,
+            cvs[4][0] as i32,
+            cvs[3][0] as i32,
+            cvs[2][0] as i32,
+            cvs[1][0] as i32,
+            cvs[0][0] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][1] as i32,
+            cvs[14][1] as i32,
+            cvs[13][1] as i32,
+            cvs[12][1] as i32,
+            cvs[11][1] as i32,
+            cvs[10][1] as i32,
+            cvs[9][1] as i32,
+            cvs[8][1] as i32,
+            cvs[7][1] as i32,
+            cvs[6][1] as i32,
+            cvs[5][1] as i32,
+            cvs[4][1] as i32,
+            cvs[3][1] as i32,
+            cvs[2][1] as i32,
+            cvs[1][1] as i32,
+            cvs[0][1] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][2] as i32,
+            cvs[14][2] as i32,
+            cvs[13][2] as i32,
+            cvs[12][2] as i32,
+            cvs[11][2] as i32,
+            cvs[10][2] as i32,
+            cvs[9][2] as i32,
+            cvs[8][2] as i32,
+            cvs[7][2] as i32,
+            cvs[6][2] as i32,
+            cvs[5][2] as i32,
+            cvs[4][2] as i32,
+            cvs[3][2] as i32,
+            cvs[2][2] as i32,
+            cvs[1][2] as i32,
+            cvs[0][2] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][3] as i32,
+            cvs[14][3] as i32,
+            cvs[13][3] as i32,
+            cvs[12][3] as i32,
+            cvs[11][3] as i32,
+            cvs[10][3] as i32,
+            cvs[9][3] as i32,
+            cvs[8][3] as i32,
+            cvs[7][3] as i32,
+            cvs[6][3] as i32,
+            cvs[5][3] as i32,
+            cvs[4][3] as i32,
+            cvs[3][3] as i32,
+            cvs[2][3] as i32,
+            cvs[1][3] as i32,
+            cvs[0][3] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][4] as i32,
+            cvs[14][4] as i32,
+            cvs[13][4] as i32,
+            cvs[12][4] as i32,
+            cvs[11][4] as i32,
+            cvs[10][4] as i32,
+            cvs[9][4] as i32,
+            cvs[8][4] as i32,
+            cvs[7][4] as i32,
+            cvs[6][4] as i32,
+            cvs[5][4] as i32,
+            cvs[4][4] as i32,
+            cvs[3][4] as i32,
+            cvs[2][4] as i32,
+            cvs[1][4] as i32,
+            cvs[0][4] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][5] as i32,
+            cvs[14][5] as i32,
+            cvs[13][5] as i32,
+            cvs[12][5] as i32,
+            cvs[11][5] as i32,
+            cvs[10][5] as i32,
+            cvs[9][5] as i32,
+            cvs[8][5] as i32,
+            cvs[7][5] as i32,
+            cvs[6][5] as i32,
+            cvs[5][5] as i32,
+            cvs[4][5] as i32,
+            cvs[3][5] as i32,
+            cvs[2][5] as i32,
+            cvs[1][5] as i32,
+            cvs[0][5] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][6] as i32,
+            cvs[14][6] as i32,
+            cvs[13][6] as i32,
+            cvs[12][6] as i32,
+            cvs[11][6] as i32,
+            cvs[10][6] as i32,
+            cvs[9][6] as i32,
+            cvs[8][6] as i32,
+            cvs[7][6] as i32,
+            cvs[6][6] as i32,
+            cvs[5][6] as i32,
+            cvs[4][6] as i32,
+            cvs[3][6] as i32,
+            cvs[2][6] as i32,
+            cvs[1][6] as i32,
+            cvs[0][6] as i32,
+        ),
+        _mm512_set_epi32(
+            cvs[15][7] as i32,
+            cvs[14][7] as i32,
+            cvs[13][7] as i32,
+            cvs[12][7] as i32,
+            cvs[11][7] as i32,
+            cvs[10][7] as i32,
+            cvs[9][7] as i32,
+            cvs[8][7] as i32,
+            cvs[7][7] as i32,
+            cvs[6][7] as i32,
+            cvs[5][7] as i32,
+            cvs[4][7] as i32,
+            cvs[3][7] as i32,
+            cvs[2][7] as i32,
+            cvs[1][7] as i32,
+            cvs[0][7] as i32,
+        ),
         _mm512_set1_epi32(IV[0] as i32),
         _mm512_set1_epi32(IV[1] as i32),
         _mm512_set1_epi32(IV[2] as i32),
         _mm512_set1_epi32(IV[3] as i32),
-        _mm512_set_epi32(counters[15] as i32, counters[14] as i32, counters[13] as i32, counters[12] as i32, counters[11] as i32, counters[10] as i32, counters[9] as i32, counters[8] as i32, counters[7] as i32, counters[6] as i32, counters[5] as i32, counters[4] as i32, counters[3] as i32, counters[2] as i32, counters[1] as i32, counters[0] as i32),
-        _mm512_set_epi32((counters[15] >> 32) as i32, (counters[14] >> 32) as i32, (counters[13] >> 32) as i32, (counters[12] >> 32) as i32, (counters[11] >> 32) as i32, (counters[10] >> 32) as i32, (counters[9] >> 32) as i32, (counters[8] >> 32) as i32, (counters[7] >> 32) as i32, (counters[6] >> 32) as i32, (counters[5] >> 32) as i32, (counters[4] >> 32) as i32, (counters[3] >> 32) as i32, (counters[2] >> 32) as i32, (counters[1] >> 32) as i32, (counters[0] >> 32) as i32),
-        _mm512_set_epi32(block_lens[15] as i32, block_lens[14] as i32, block_lens[13] as i32, block_lens[12] as i32, block_lens[11] as i32, block_lens[10] as i32, block_lens[9] as i32, block_lens[8] as i32, block_lens[7] as i32, block_lens[6] as i32, block_lens[5] as i32, block_lens[4] as i32, block_lens[3] as i32, block_lens[2] as i32, block_lens[1] as i32, block_lens[0] as i32),
-        _mm512_set_epi32(flags[15] as i32, flags[14] as i32, flags[13] as i32, flags[12] as i32, flags[11] as i32, flags[10] as i32, flags[9] as i32, flags[8] as i32, flags[7] as i32, flags[6] as i32, flags[5] as i32, flags[4] as i32, flags[3] as i32, flags[2] as i32, flags[1] as i32, flags[0] as i32),
+        _mm512_set_epi32(
+            counters[15] as i32,
+            counters[14] as i32,
+            counters[13] as i32,
+            counters[12] as i32,
+            counters[11] as i32,
+            counters[10] as i32,
+            counters[9] as i32,
+            counters[8] as i32,
+            counters[7] as i32,
+            counters[6] as i32,
+            counters[5] as i32,
+            counters[4] as i32,
+            counters[3] as i32,
+            counters[2] as i32,
+            counters[1] as i32,
+            counters[0] as i32,
+        ),
+        _mm512_set_epi32(
+            (counters[15] >> 32) as i32,
+            (counters[14] >> 32) as i32,
+            (counters[13] >> 32) as i32,
+            (counters[12] >> 32) as i32,
+            (counters[11] >> 32) as i32,
+            (counters[10] >> 32) as i32,
+            (counters[9] >> 32) as i32,
+            (counters[8] >> 32) as i32,
+            (counters[7] >> 32) as i32,
+            (counters[6] >> 32) as i32,
+            (counters[5] >> 32) as i32,
+            (counters[4] >> 32) as i32,
+            (counters[3] >> 32) as i32,
+            (counters[2] >> 32) as i32,
+            (counters[1] >> 32) as i32,
+            (counters[0] >> 32) as i32,
+        ),
+        _mm512_set_epi32(
+            block_lens[15] as i32,
+            block_lens[14] as i32,
+            block_lens[13] as i32,
+            block_lens[12] as i32,
+            block_lens[11] as i32,
+            block_lens[10] as i32,
+            block_lens[9] as i32,
+            block_lens[8] as i32,
+            block_lens[7] as i32,
+            block_lens[6] as i32,
+            block_lens[5] as i32,
+            block_lens[4] as i32,
+            block_lens[3] as i32,
+            block_lens[2] as i32,
+            block_lens[1] as i32,
+            block_lens[0] as i32,
+        ),
+        _mm512_set_epi32(
+            flags[15] as i32,
+            flags[14] as i32,
+            flags[13] as i32,
+            flags[12] as i32,
+            flags[11] as i32,
+            flags[10] as i32,
+            flags[9] as i32,
+            flags[8] as i32,
+            flags[7] as i32,
+            flags[6] as i32,
+            flags[5] as i32,
+            flags[4] as i32,
+            flags[3] as i32,
+            flags[2] as i32,
+            flags[1] as i32,
+            flags[0] as i32,
+        ),
     ];
 
     // All 7 rounds with assembly G function
@@ -368,7 +837,7 @@ fn hash_empty() -> [u8; 32] {
 
     let mut result = [0u8; 32];
     for (i, word) in cv.iter().enumerate() {
-        result[i*4..(i+1)*4].copy_from_slice(&word.to_le_bytes());
+        result[i * 4..(i + 1) * 4].copy_from_slice(&word.to_le_bytes());
     }
     result
 }
@@ -396,25 +865,44 @@ fn hash_single_chunk(data: &[u8]) -> [u8; 32] {
 
     let mut result = [0u8; 32];
     for (i, word) in cv.iter().enumerate() {
-        result[i*4..(i+1)*4].copy_from_slice(&word.to_le_bytes());
+        result[i * 4..(i + 1) * 4].copy_from_slice(&word.to_le_bytes());
     }
     result
 }
 
 /// Single block compression (non-SIMD fallback for small data)
-fn compress_single(cv: &[u32; 8], block: &[u8; 64], counter: u64, block_len: u32, flags: u8) -> [u32; 8] {
+fn compress_single(
+    cv: &[u32; 8],
+    block: &[u8; 64],
+    counter: u64,
+    block_len: u32,
+    flags: u8,
+) -> [u32; 8] {
     // Parse message words
     let mut m = [0u32; 16];
     for (i, word) in m.iter_mut().enumerate() {
         let offset = i * 4;
-        *word = u32::from_le_bytes(block[offset..offset+4].try_into().unwrap());
+        *word = u32::from_le_bytes(block[offset..offset + 4].try_into().unwrap());
     }
 
     // Initialize state
     let mut s = [
-        cv[0], cv[1], cv[2], cv[3], cv[4], cv[5], cv[6], cv[7],
-        IV[0], IV[1], IV[2], IV[3],
-        counter as u32, (counter >> 32) as u32, block_len, flags as u32,
+        cv[0],
+        cv[1],
+        cv[2],
+        cv[3],
+        cv[4],
+        cv[5],
+        cv[6],
+        cv[7],
+        IV[0],
+        IV[1],
+        IV[2],
+        IV[3],
+        counter as u32,
+        (counter >> 32) as u32,
+        block_len,
+        flags as u32,
     ];
 
     // 7 rounds
@@ -434,8 +922,14 @@ fn compress_single(cv: &[u32; 8], block: &[u8; 64], counter: u64, block_len: u32
 
     // Finalize
     [
-        s[0] ^ s[8], s[1] ^ s[9], s[2] ^ s[10], s[3] ^ s[11],
-        s[4] ^ s[12], s[5] ^ s[13], s[6] ^ s[14], s[7] ^ s[15],
+        s[0] ^ s[8],
+        s[1] ^ s[9],
+        s[2] ^ s[10],
+        s[3] ^ s[11],
+        s[4] ^ s[12],
+        s[5] ^ s[13],
+        s[6] ^ s[14],
+        s[7] ^ s[15],
     ]
 }
 
@@ -468,9 +962,10 @@ unsafe fn hash_parallel_asm(data: &[u8]) -> [u8; 32] {
                 process_16_chunks_asm(data, &chunk_indices)
             } else {
                 // Process remaining chunks individually
-                chunk_indices.iter().map(|&chunk_idx| {
-                    process_single_chunk(data, chunk_idx, num_chunks)
-                }).collect()
+                chunk_indices
+                    .iter()
+                    .map(|&chunk_idx| process_single_chunk(data, chunk_idx, num_chunks))
+                    .collect()
             }
         })
         .collect();
@@ -484,10 +979,13 @@ unsafe fn hash_parallel_asm(data: &[u8]) -> [u8; 32] {
 fn process_16_chunks_asm(data: &[u8], chunk_indices: &[usize]) -> Vec<[u32; 8]> {
     if !is_x86_feature_detected!("avx512f") || !is_x86_feature_detected!("avx512bw") {
         // Fallback
-        return chunk_indices.iter().map(|&idx| {
-            let num_chunks = (data.len() + CHUNK_LEN - 1) / CHUNK_LEN;
-            process_single_chunk(data, idx, num_chunks)
-        }).collect();
+        return chunk_indices
+            .iter()
+            .map(|&idx| {
+                let num_chunks = (data.len() + CHUNK_LEN - 1) / CHUNK_LEN;
+                process_single_chunk(data, idx, num_chunks)
+            })
+            .collect();
     }
 
     unsafe { process_16_chunks_asm_inner(data, chunk_indices) }
@@ -601,7 +1099,7 @@ fn reduce_to_root(cvs: &[[u32; 8]]) -> [u8; 32] {
         // Single CV: apply ROOT flag
         let mut result = [0u8; 32];
         for (i, word) in cvs[0].iter().enumerate() {
-            result[i*4..(i+1)*4].copy_from_slice(&word.to_le_bytes());
+            result[i * 4..(i + 1) * 4].copy_from_slice(&word.to_le_bytes());
         }
         return result;
     }
@@ -617,10 +1115,10 @@ fn reduce_to_root(cvs: &[[u32; 8]]) -> [u8; 32] {
                 // Compress two CVs into parent
                 let mut block = [0u8; 64];
                 for (i, word) in pair[0].iter().enumerate() {
-                    block[i*4..(i+1)*4].copy_from_slice(&word.to_le_bytes());
+                    block[i * 4..(i + 1) * 4].copy_from_slice(&word.to_le_bytes());
                 }
                 for (i, word) in pair[1].iter().enumerate() {
-                    block[32 + i*4..32 + (i+1)*4].copy_from_slice(&word.to_le_bytes());
+                    block[32 + i * 4..32 + (i + 1) * 4].copy_from_slice(&word.to_le_bytes());
                 }
 
                 let is_root = current.len() == 2;
@@ -638,7 +1136,7 @@ fn reduce_to_root(cvs: &[[u32; 8]]) -> [u8; 32] {
 
     let mut result = [0u8; 32];
     for (i, word) in current[0].iter().enumerate() {
-        result[i*4..(i+1)*4].copy_from_slice(&word.to_le_bytes());
+        result[i * 4..(i + 1) * 4].copy_from_slice(&word.to_le_bytes());
     }
     result
 }
@@ -666,8 +1164,11 @@ mod tests {
 
             // Verify results are non-zero (basic sanity check)
             for i in 0..16 {
-                assert!(asm_result[i].iter().any(|&x| x != 0),
-                    "Result {} should be non-zero", i);
+                assert!(
+                    asm_result[i].iter().any(|&x| x != 0),
+                    "Result {} should be non-zero",
+                    i
+                );
             }
         }
     }
@@ -686,7 +1187,8 @@ mod tests {
             assert_eq!(
                 asm_hash,
                 *blake3_hash.as_bytes(),
-                "hash_asm mismatch at size {} bytes", size
+                "hash_asm mismatch at size {} bytes",
+                size
             );
         }
     }
@@ -720,16 +1222,16 @@ mod tests {
         let cvs: [[u32; 8]; 16] = core::array::from_fn(|i| {
             core::array::from_fn(|j| ((i * 8 + j) as u32).wrapping_mul(0x01010101))
         });
-        let blocks: [[u8; 64]; 16] = core::array::from_fn(|i| {
-            core::array::from_fn(|j| ((i * 64 + j) % 256) as u8)
-        });
+        let blocks: [[u8; 64]; 16] =
+            core::array::from_fn(|i| core::array::from_fn(|j| ((i * 64 + j) % 256) as u8));
         let counters: [u64; 16] = core::array::from_fn(|i| i as u64);
         let block_lens = [64u32; 16];
         let flags: [u8; 16] = core::array::from_fn(|i| (i % 4) as u8);
 
         unsafe {
             let asm_result = compress_16blocks_asm(&cvs, &blocks, &counters, &block_lens, &flags);
-            let intrinsics_result = compress_16blocks(&cvs, &blocks, &counters, &block_lens, &flags);
+            let intrinsics_result =
+                compress_16blocks(&cvs, &blocks, &counters, &block_lens, &flags);
 
             for i in 0..16 {
                 assert_eq!(

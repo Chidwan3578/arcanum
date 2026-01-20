@@ -13,8 +13,7 @@ use core::arch::x86_64::*;
 
 /// BLAKE3 IV constants
 const IV: [u32; 8] = [
-    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-    0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
 ];
 
 /// Message schedule for all 7 rounds
@@ -41,10 +40,7 @@ const MSG_SCHEDULE: [[usize; 16]; 7] = [
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512f")]
 #[inline(never)] // Prevent inlining to keep the hot loop tight
-pub unsafe fn compress_16blocks_monolithic(
-    state: &mut [__m512i; 16],
-    msg: &[__m512i; 16],
-) {
+pub unsafe fn compress_16blocks_monolithic(state: &mut [__m512i; 16], msg: &[__m512i; 16]) {
     use core::arch::asm;
 
     // Load all message words - they'll be permuted per-round inside asm
@@ -971,21 +967,17 @@ pub unsafe fn compress_16blocks_monolithic(
 
 /// Pre-computed broadcast IV vectors for 512-bit lanes.
 #[cfg(target_arch = "x86_64")]
-const IV_BROADCAST_512_0: __m512i = unsafe {
-    core::mem::transmute::<[u32; 16], __m512i>([IV[0]; 16])
-};
+const IV_BROADCAST_512_0: __m512i =
+    unsafe { core::mem::transmute::<[u32; 16], __m512i>([IV[0]; 16]) };
 #[cfg(target_arch = "x86_64")]
-const IV_BROADCAST_512_1: __m512i = unsafe {
-    core::mem::transmute::<[u32; 16], __m512i>([IV[1]; 16])
-};
+const IV_BROADCAST_512_1: __m512i =
+    unsafe { core::mem::transmute::<[u32; 16], __m512i>([IV[1]; 16]) };
 #[cfg(target_arch = "x86_64")]
-const IV_BROADCAST_512_2: __m512i = unsafe {
-    core::mem::transmute::<[u32; 16], __m512i>([IV[2]; 16])
-};
+const IV_BROADCAST_512_2: __m512i =
+    unsafe { core::mem::transmute::<[u32; 16], __m512i>([IV[2]; 16]) };
 #[cfg(target_arch = "x86_64")]
-const IV_BROADCAST_512_3: __m512i = unsafe {
-    core::mem::transmute::<[u32; 16], __m512i>([IV[3]; 16])
-};
+const IV_BROADCAST_512_3: __m512i =
+    unsafe { core::mem::transmute::<[u32; 16], __m512i>([IV[3]; 16]) };
 
 /// Transpose 16 x __m512i vectors (16x16 matrix of 32-bit words).
 #[cfg(target_arch = "x86_64")]
@@ -1136,24 +1128,40 @@ pub unsafe fn hash_16_chunks_monolithic(
 
     // Counter vectors
     let counter_lo = _mm512_setr_epi32(
-        chunk_counters[0] as i32, chunk_counters[1] as i32,
-        chunk_counters[2] as i32, chunk_counters[3] as i32,
-        chunk_counters[4] as i32, chunk_counters[5] as i32,
-        chunk_counters[6] as i32, chunk_counters[7] as i32,
-        chunk_counters[8] as i32, chunk_counters[9] as i32,
-        chunk_counters[10] as i32, chunk_counters[11] as i32,
-        chunk_counters[12] as i32, chunk_counters[13] as i32,
-        chunk_counters[14] as i32, chunk_counters[15] as i32,
+        chunk_counters[0] as i32,
+        chunk_counters[1] as i32,
+        chunk_counters[2] as i32,
+        chunk_counters[3] as i32,
+        chunk_counters[4] as i32,
+        chunk_counters[5] as i32,
+        chunk_counters[6] as i32,
+        chunk_counters[7] as i32,
+        chunk_counters[8] as i32,
+        chunk_counters[9] as i32,
+        chunk_counters[10] as i32,
+        chunk_counters[11] as i32,
+        chunk_counters[12] as i32,
+        chunk_counters[13] as i32,
+        chunk_counters[14] as i32,
+        chunk_counters[15] as i32,
     );
     let counter_hi = _mm512_setr_epi32(
-        (chunk_counters[0] >> 32) as i32, (chunk_counters[1] >> 32) as i32,
-        (chunk_counters[2] >> 32) as i32, (chunk_counters[3] >> 32) as i32,
-        (chunk_counters[4] >> 32) as i32, (chunk_counters[5] >> 32) as i32,
-        (chunk_counters[6] >> 32) as i32, (chunk_counters[7] >> 32) as i32,
-        (chunk_counters[8] >> 32) as i32, (chunk_counters[9] >> 32) as i32,
-        (chunk_counters[10] >> 32) as i32, (chunk_counters[11] >> 32) as i32,
-        (chunk_counters[12] >> 32) as i32, (chunk_counters[13] >> 32) as i32,
-        (chunk_counters[14] >> 32) as i32, (chunk_counters[15] >> 32) as i32,
+        (chunk_counters[0] >> 32) as i32,
+        (chunk_counters[1] >> 32) as i32,
+        (chunk_counters[2] >> 32) as i32,
+        (chunk_counters[3] >> 32) as i32,
+        (chunk_counters[4] >> 32) as i32,
+        (chunk_counters[5] >> 32) as i32,
+        (chunk_counters[6] >> 32) as i32,
+        (chunk_counters[7] >> 32) as i32,
+        (chunk_counters[8] >> 32) as i32,
+        (chunk_counters[9] >> 32) as i32,
+        (chunk_counters[10] >> 32) as i32,
+        (chunk_counters[11] >> 32) as i32,
+        (chunk_counters[12] >> 32) as i32,
+        (chunk_counters[13] >> 32) as i32,
+        (chunk_counters[14] >> 32) as i32,
+        (chunk_counters[15] >> 32) as i32,
     );
     let block_len = _mm512_set1_epi32(64);
 
@@ -1177,10 +1185,22 @@ pub unsafe fn hash_16_chunks_monolithic(
 
         // Initialize compression state
         let mut state: [__m512i; 16] = [
-            cv0, cv1, cv2, cv3, cv4, cv5, cv6, cv7,
-            IV_BROADCAST_512_0, IV_BROADCAST_512_1,
-            IV_BROADCAST_512_2, IV_BROADCAST_512_3,
-            counter_lo, counter_hi, block_len, flags,
+            cv0,
+            cv1,
+            cv2,
+            cv3,
+            cv4,
+            cv5,
+            cv6,
+            cv7,
+            IV_BROADCAST_512_0,
+            IV_BROADCAST_512_1,
+            IV_BROADCAST_512_2,
+            IV_BROADCAST_512_3,
+            counter_lo,
+            counter_hi,
+            block_len,
+            flags,
         ];
 
         // All 7 rounds in one monolithic assembly call
@@ -1349,13 +1369,16 @@ mod tests {
             return;
         }
 
-        use std::time::Instant;
         use crate::blake3_ultra::hash_apex;
+        use std::time::Instant;
 
         let sizes_mb = [64, 128, 256, 512];
 
         eprintln!("\n=== Apex Performance Scaling ===");
-        eprintln!("{:>8} {:>14} {:>10} {:>12}", "Size", "Throughput", "Time", "vs blake3");
+        eprintln!(
+            "{:>8} {:>14} {:>10} {:>12}",
+            "Size", "Throughput", "Time", "vs blake3"
+        );
 
         for size_mb in sizes_mb {
             let size = size_mb * 1024 * 1024;
@@ -1382,12 +1405,19 @@ mod tests {
             }
             let blake3_elapsed = start.elapsed();
 
-            let apex_gib_s = (iterations as f64 * size as f64) / (apex_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
-            let blake3_gib_s = (iterations as f64 * size as f64) / (blake3_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let apex_gib_s = (iterations as f64 * size as f64)
+                / (apex_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let blake3_gib_s = (iterations as f64 * size as f64)
+                / (blake3_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
             let time_ms = apex_elapsed.as_millis() as f64 / iterations as f64;
 
-            eprintln!("{:>6}MB {:>12.2} GiB/s {:>8.1} ms {:>10.2}x",
-                size_mb, apex_gib_s, time_ms, apex_gib_s / blake3_gib_s);
+            eprintln!(
+                "{:>6}MB {:>12.2} GiB/s {:>8.1} ms {:>10.2}x",
+                size_mb,
+                apex_gib_s,
+                time_ms,
+                apex_gib_s / blake3_gib_s
+            );
         }
     }
 
@@ -1399,13 +1429,16 @@ mod tests {
             return;
         }
 
-        use std::time::Instant;
         use crate::blake3_ultra::{hash_apex, hash_apex_monolithic};
+        use std::time::Instant;
 
         let sizes_mb = [64, 128, 256, 512];
 
         eprintln!("\n=== Apex Monolithic vs Regular Apex ===");
-        eprintln!("{:>8} {:>14} {:>14} {:>10}", "Size", "Apex Mono", "Apex Ptr", "Speedup");
+        eprintln!(
+            "{:>8} {:>14} {:>14} {:>10}",
+            "Size", "Apex Mono", "Apex Ptr", "Speedup"
+        );
 
         for size_mb in sizes_mb {
             let size = size_mb * 1024 * 1024;
@@ -1432,11 +1465,18 @@ mod tests {
             }
             let apex_elapsed = start.elapsed();
 
-            let mono_gib_s = (iterations as f64 * size as f64) / (mono_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
-            let apex_gib_s = (iterations as f64 * size as f64) / (apex_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let mono_gib_s = (iterations as f64 * size as f64)
+                / (mono_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let apex_gib_s = (iterations as f64 * size as f64)
+                / (apex_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
 
-            eprintln!("{:>6}MB {:>12.2} GiB/s {:>12.2} GiB/s {:>8.2}x",
-                size_mb, mono_gib_s, apex_gib_s, mono_gib_s / apex_gib_s);
+            eprintln!(
+                "{:>6}MB {:>12.2} GiB/s {:>12.2} GiB/s {:>8.2}x",
+                size_mb,
+                mono_gib_s,
+                apex_gib_s,
+                mono_gib_s / apex_gib_s
+            );
         }
     }
 
@@ -1457,7 +1497,9 @@ mod tests {
 
         // Warm up
         for _ in 0..1000 {
-            unsafe { hash_16_chunks_monolithic(&key, data.as_ptr(), &counters, 0); }
+            unsafe {
+                hash_16_chunks_monolithic(&key, data.as_ptr(), &counters, 0);
+            }
         }
         for _ in 0..1000 {
             let _ = blake3::hash(&data);
@@ -1479,12 +1521,22 @@ mod tests {
         }
         let blake3_elapsed = start.elapsed();
 
-        let mono_gib_s = (iterations as f64 * 16.0 * 1024.0) / (monolithic_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
-        let blake3_gib_s = (iterations as f64 * 16.0 * 1024.0) / (blake3_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+        let mono_gib_s = (iterations as f64 * 16.0 * 1024.0)
+            / (monolithic_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+        let blake3_gib_s = (iterations as f64 * 16.0 * 1024.0)
+            / (blake3_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
 
         eprintln!("\n=== 16KB Hash Performance ===");
-        eprintln!("Monolithic: {:.2} GiB/s ({:.2} µs/hash)", mono_gib_s, monolithic_elapsed.as_nanos() as f64 / iterations as f64 / 1000.0);
-        eprintln!("blake3 crate: {:.2} GiB/s ({:.2} µs/hash)", blake3_gib_s, blake3_elapsed.as_nanos() as f64 / iterations as f64 / 1000.0);
+        eprintln!(
+            "Monolithic: {:.2} GiB/s ({:.2} µs/hash)",
+            mono_gib_s,
+            monolithic_elapsed.as_nanos() as f64 / iterations as f64 / 1000.0
+        );
+        eprintln!(
+            "blake3 crate: {:.2} GiB/s ({:.2} µs/hash)",
+            blake3_gib_s,
+            blake3_elapsed.as_nanos() as f64 / iterations as f64 / 1000.0
+        );
         eprintln!("Ratio: {:.2}x", mono_gib_s / blake3_gib_s);
     }
 

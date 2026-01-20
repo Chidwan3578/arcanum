@@ -140,12 +140,24 @@ fn mul_reduce_scalar(h: &[u64; 5], r: &[u64; 5]) -> [u64; 5] {
 
     // Carry propagation
     let mut c: u128;
-    c = t0 >> 26; t0 &= 0x3ffffff; t1 += c;
-    c = t1 >> 26; t1 &= 0x3ffffff; t2 += c;
-    c = t2 >> 26; t2 &= 0x3ffffff; t3 += c;
-    c = t3 >> 26; t3 &= 0x3ffffff; t4 += c;
-    c = t4 >> 26; t4 &= 0x3ffffff; t0 += c * 5;
-    c = t0 >> 26; t0 &= 0x3ffffff; t1 += c;
+    c = t0 >> 26;
+    t0 &= 0x3ffffff;
+    t1 += c;
+    c = t1 >> 26;
+    t1 &= 0x3ffffff;
+    t2 += c;
+    c = t2 >> 26;
+    t2 &= 0x3ffffff;
+    t3 += c;
+    c = t3 >> 26;
+    t3 &= 0x3ffffff;
+    t4 += c;
+    c = t4 >> 26;
+    t4 &= 0x3ffffff;
+    t0 += c * 5;
+    c = t0 >> 26;
+    t0 &= 0x3ffffff;
+    t1 += c;
 
     [t0 as u64, t1 as u64, t2 as u64, t3 as u64, t4 as u64]
 }
@@ -197,12 +209,24 @@ pub mod avx2 {
 
         // Carry propagation
         let mut c: u64;
-        c = acc[0] >> 26; acc[0] &= 0x3ffffff; acc[1] += c;
-        c = acc[1] >> 26; acc[1] &= 0x3ffffff; acc[2] += c;
-        c = acc[2] >> 26; acc[2] &= 0x3ffffff; acc[3] += c;
-        c = acc[3] >> 26; acc[3] &= 0x3ffffff; acc[4] += c;
-        c = acc[4] >> 26; acc[4] &= 0x3ffffff; acc[0] += c * 5;
-        c = acc[0] >> 26; acc[0] &= 0x3ffffff; acc[1] += c;
+        c = acc[0] >> 26;
+        acc[0] &= 0x3ffffff;
+        acc[1] += c;
+        c = acc[1] >> 26;
+        acc[1] &= 0x3ffffff;
+        acc[2] += c;
+        c = acc[2] >> 26;
+        acc[2] &= 0x3ffffff;
+        acc[3] += c;
+        c = acc[3] >> 26;
+        acc[3] &= 0x3ffffff;
+        acc[4] += c;
+        c = acc[4] >> 26;
+        acc[4] &= 0x3ffffff;
+        acc[0] += c * 5;
+        c = acc[0] >> 26;
+        acc[0] &= 0x3ffffff;
+        acc[1] += c;
     }
 
     /// Vectorized multiply h * r using AVX2.
@@ -266,14 +290,32 @@ pub mod avx2 {
         let mut t = [t0, t1, t2, t3, t4];
         let mut c: u128;
 
-        c = t[0] >> 26; t[0] &= 0x3ffffff; t[1] += c;
-        c = t[1] >> 26; t[1] &= 0x3ffffff; t[2] += c;
-        c = t[2] >> 26; t[2] &= 0x3ffffff; t[3] += c;
-        c = t[3] >> 26; t[3] &= 0x3ffffff; t[4] += c;
-        c = t[4] >> 26; t[4] &= 0x3ffffff; t[0] += c * 5;
-        c = t[0] >> 26; t[0] &= 0x3ffffff; t[1] += c;
+        c = t[0] >> 26;
+        t[0] &= 0x3ffffff;
+        t[1] += c;
+        c = t[1] >> 26;
+        t[1] &= 0x3ffffff;
+        t[2] += c;
+        c = t[2] >> 26;
+        t[2] &= 0x3ffffff;
+        t[3] += c;
+        c = t[3] >> 26;
+        t[3] &= 0x3ffffff;
+        t[4] += c;
+        c = t[4] >> 26;
+        t[4] &= 0x3ffffff;
+        t[0] += c * 5;
+        c = t[0] >> 26;
+        t[0] &= 0x3ffffff;
+        t[1] += c;
 
-        [t[0] as u64, t[1] as u64, t[2] as u64, t[3] as u64, t[4] as u64]
+        [
+            t[0] as u64,
+            t[1] as u64,
+            t[2] as u64,
+            t[3] as u64,
+            t[4] as u64,
+        ]
     }
 
     /// Sum 4 64-bit values in a 256-bit register using AVX2.
@@ -344,12 +386,24 @@ pub mod avx2 {
 
         // Carry propagation
         let mut c: u64;
-        c = result[0] >> 26; result[0] &= 0x3ffffff; result[1] += c;
-        c = result[1] >> 26; result[1] &= 0x3ffffff; result[2] += c;
-        c = result[2] >> 26; result[2] &= 0x3ffffff; result[3] += c;
-        c = result[3] >> 26; result[3] &= 0x3ffffff; result[4] += c;
-        c = result[4] >> 26; result[4] &= 0x3ffffff; result[0] += c * 5;
-        c = result[0] >> 26; result[0] &= 0x3ffffff; result[1] += c;
+        c = result[0] >> 26;
+        result[0] &= 0x3ffffff;
+        result[1] += c;
+        c = result[1] >> 26;
+        result[1] &= 0x3ffffff;
+        result[2] += c;
+        c = result[2] >> 26;
+        result[2] &= 0x3ffffff;
+        result[3] += c;
+        c = result[3] >> 26;
+        result[3] &= 0x3ffffff;
+        result[4] += c;
+        c = result[4] >> 26;
+        result[4] &= 0x3ffffff;
+        result[0] += c * 5;
+        c = result[0] >> 26;
+        result[0] &= 0x3ffffff;
+        result[1] += c;
 
         *acc = result;
     }
@@ -396,84 +450,74 @@ pub mod avx2 {
         let r_l4 = _mm256_set_epi64x(r[4] as i64, r2[4] as i64, r3[4] as i64, r4[4] as i64);
 
         // Precompute s values (5*r[i])
-        let s_l1 = _mm256_set_epi64x((r[1] * 5) as i64, (r2[1] * 5) as i64, (r3[1] * 5) as i64, (r4[1] * 5) as i64);
-        let s_l2 = _mm256_set_epi64x((r[2] * 5) as i64, (r2[2] * 5) as i64, (r3[2] * 5) as i64, (r4[2] * 5) as i64);
-        let s_l3 = _mm256_set_epi64x((r[3] * 5) as i64, (r2[3] * 5) as i64, (r3[3] * 5) as i64, (r4[3] * 5) as i64);
-        let s_l4 = _mm256_set_epi64x((r[4] * 5) as i64, (r2[4] * 5) as i64, (r3[4] * 5) as i64, (r4[4] * 5) as i64);
+        let s_l1 = _mm256_set_epi64x(
+            (r[1] * 5) as i64,
+            (r2[1] * 5) as i64,
+            (r3[1] * 5) as i64,
+            (r4[1] * 5) as i64,
+        );
+        let s_l2 = _mm256_set_epi64x(
+            (r[2] * 5) as i64,
+            (r2[2] * 5) as i64,
+            (r3[2] * 5) as i64,
+            (r4[2] * 5) as i64,
+        );
+        let s_l3 = _mm256_set_epi64x(
+            (r[3] * 5) as i64,
+            (r2[3] * 5) as i64,
+            (r3[3] * 5) as i64,
+            (r4[3] * 5) as i64,
+        );
+        let s_l4 = _mm256_set_epi64x(
+            (r[4] * 5) as i64,
+            (r2[4] * 5) as i64,
+            (r3[4] * 5) as i64,
+            (r4[4] * 5) as i64,
+        );
 
         // Compute t0 = h0*r0 + h1*s4 + h2*s3 + h3*s2 + h4*s1 (vectorized for all 4 inputs)
         let t0_vec = _mm256_add_epi64(
+            _mm256_add_epi64(_mm256_mul_epu32(h_l0, r_l0), _mm256_mul_epu32(h_l1, s_l4)),
             _mm256_add_epi64(
-                _mm256_mul_epu32(h_l0, r_l0),
-                _mm256_mul_epu32(h_l1, s_l4)
+                _mm256_add_epi64(_mm256_mul_epu32(h_l2, s_l3), _mm256_mul_epu32(h_l3, s_l2)),
+                _mm256_mul_epu32(h_l4, s_l1),
             ),
-            _mm256_add_epi64(
-                _mm256_add_epi64(
-                    _mm256_mul_epu32(h_l2, s_l3),
-                    _mm256_mul_epu32(h_l3, s_l2)
-                ),
-                _mm256_mul_epu32(h_l4, s_l1)
-            )
         );
 
         // Compute t1 = h0*r1 + h1*r0 + h2*s4 + h3*s3 + h4*s2
         let t1_vec = _mm256_add_epi64(
+            _mm256_add_epi64(_mm256_mul_epu32(h_l0, r_l1), _mm256_mul_epu32(h_l1, r_l0)),
             _mm256_add_epi64(
-                _mm256_mul_epu32(h_l0, r_l1),
-                _mm256_mul_epu32(h_l1, r_l0)
+                _mm256_add_epi64(_mm256_mul_epu32(h_l2, s_l4), _mm256_mul_epu32(h_l3, s_l3)),
+                _mm256_mul_epu32(h_l4, s_l2),
             ),
-            _mm256_add_epi64(
-                _mm256_add_epi64(
-                    _mm256_mul_epu32(h_l2, s_l4),
-                    _mm256_mul_epu32(h_l3, s_l3)
-                ),
-                _mm256_mul_epu32(h_l4, s_l2)
-            )
         );
 
         // Compute t2 = h0*r2 + h1*r1 + h2*r0 + h3*s4 + h4*s3
         let t2_vec = _mm256_add_epi64(
+            _mm256_add_epi64(_mm256_mul_epu32(h_l0, r_l2), _mm256_mul_epu32(h_l1, r_l1)),
             _mm256_add_epi64(
-                _mm256_mul_epu32(h_l0, r_l2),
-                _mm256_mul_epu32(h_l1, r_l1)
+                _mm256_add_epi64(_mm256_mul_epu32(h_l2, r_l0), _mm256_mul_epu32(h_l3, s_l4)),
+                _mm256_mul_epu32(h_l4, s_l3),
             ),
-            _mm256_add_epi64(
-                _mm256_add_epi64(
-                    _mm256_mul_epu32(h_l2, r_l0),
-                    _mm256_mul_epu32(h_l3, s_l4)
-                ),
-                _mm256_mul_epu32(h_l4, s_l3)
-            )
         );
 
         // Compute t3 = h0*r3 + h1*r2 + h2*r1 + h3*r0 + h4*s4
         let t3_vec = _mm256_add_epi64(
+            _mm256_add_epi64(_mm256_mul_epu32(h_l0, r_l3), _mm256_mul_epu32(h_l1, r_l2)),
             _mm256_add_epi64(
-                _mm256_mul_epu32(h_l0, r_l3),
-                _mm256_mul_epu32(h_l1, r_l2)
+                _mm256_add_epi64(_mm256_mul_epu32(h_l2, r_l1), _mm256_mul_epu32(h_l3, r_l0)),
+                _mm256_mul_epu32(h_l4, s_l4),
             ),
-            _mm256_add_epi64(
-                _mm256_add_epi64(
-                    _mm256_mul_epu32(h_l2, r_l1),
-                    _mm256_mul_epu32(h_l3, r_l0)
-                ),
-                _mm256_mul_epu32(h_l4, s_l4)
-            )
         );
 
         // Compute t4 = h0*r4 + h1*r3 + h2*r2 + h3*r1 + h4*r0
         let t4_vec = _mm256_add_epi64(
+            _mm256_add_epi64(_mm256_mul_epu32(h_l0, r_l4), _mm256_mul_epu32(h_l1, r_l3)),
             _mm256_add_epi64(
-                _mm256_mul_epu32(h_l0, r_l4),
-                _mm256_mul_epu32(h_l1, r_l3)
+                _mm256_add_epi64(_mm256_mul_epu32(h_l2, r_l2), _mm256_mul_epu32(h_l3, r_l1)),
+                _mm256_mul_epu32(h_l4, r_l0),
             ),
-            _mm256_add_epi64(
-                _mm256_add_epi64(
-                    _mm256_mul_epu32(h_l2, r_l2),
-                    _mm256_mul_epu32(h_l3, r_l1)
-                ),
-                _mm256_mul_epu32(h_l4, r_l0)
-            )
         );
 
         // Sum across all 4 lanes (h*r4 + m1*r3 + m2*r2 + m3*r)
@@ -487,12 +531,24 @@ pub mod avx2 {
         let mut t = [t0, t1, t2, t3, t4];
         let mut c: u128;
 
-        c = t[0] >> 26; t[0] &= 0x3ffffff; t[1] += c;
-        c = t[1] >> 26; t[1] &= 0x3ffffff; t[2] += c;
-        c = t[2] >> 26; t[2] &= 0x3ffffff; t[3] += c;
-        c = t[3] >> 26; t[3] &= 0x3ffffff; t[4] += c;
-        c = t[4] >> 26; t[4] &= 0x3ffffff; t[0] += c * 5;
-        c = t[0] >> 26; t[0] &= 0x3ffffff; t[1] += c;
+        c = t[0] >> 26;
+        t[0] &= 0x3ffffff;
+        t[1] += c;
+        c = t[1] >> 26;
+        t[1] &= 0x3ffffff;
+        t[2] += c;
+        c = t[2] >> 26;
+        t[2] &= 0x3ffffff;
+        t[3] += c;
+        c = t[3] >> 26;
+        t[3] &= 0x3ffffff;
+        t[4] += c;
+        c = t[4] >> 26;
+        t[4] &= 0x3ffffff;
+        t[0] += c * 5;
+        c = t[0] >> 26;
+        t[0] &= 0x3ffffff;
+        t[1] += c;
 
         acc[0] = t[0] as u64;
         acc[1] = t[1] as u64;
@@ -572,12 +628,24 @@ pub mod avx2 {
 
         // Carry propagation
         let mut c: u64;
-        c = result[0] >> 26; result[0] &= 0x3ffffff; result[1] += c;
-        c = result[1] >> 26; result[1] &= 0x3ffffff; result[2] += c;
-        c = result[2] >> 26; result[2] &= 0x3ffffff; result[3] += c;
-        c = result[3] >> 26; result[3] &= 0x3ffffff; result[4] += c;
-        c = result[4] >> 26; result[4] &= 0x3ffffff; result[0] += c * 5;
-        c = result[0] >> 26; result[0] &= 0x3ffffff; result[1] += c;
+        c = result[0] >> 26;
+        result[0] &= 0x3ffffff;
+        result[1] += c;
+        c = result[1] >> 26;
+        result[1] &= 0x3ffffff;
+        result[2] += c;
+        c = result[2] >> 26;
+        result[2] &= 0x3ffffff;
+        result[3] += c;
+        c = result[3] >> 26;
+        result[3] &= 0x3ffffff;
+        result[4] += c;
+        c = result[4] >> 26;
+        result[4] &= 0x3ffffff;
+        result[0] += c * 5;
+        c = result[0] >> 26;
+        result[0] &= 0x3ffffff;
+        result[1] += c;
 
         *acc = result;
     }
@@ -647,7 +715,16 @@ impl Poly1305Powers8 {
         let r7 = mul_reduce_scalar(&r6, &r);
         let r8 = mul_reduce_scalar(&r7, &r);
 
-        Self { r, r2, r3, r4, r5, r6, r7, r8 }
+        Self {
+            r,
+            r2,
+            r3,
+            r4,
+            r5,
+            r6,
+            r7,
+            r8,
+        }
     }
 
     /// Convert to Poly1305Powers4 for fallback processing.
@@ -706,7 +783,24 @@ impl Poly1305Powers16 {
         let r15 = mul_reduce_scalar(&r14, &r);
         let r16 = mul_reduce_scalar(&r15, &r);
 
-        Self { r, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15, r16 }
+        Self {
+            r,
+            r2,
+            r3,
+            r4,
+            r5,
+            r6,
+            r7,
+            r8,
+            r9,
+            r10,
+            r11,
+            r12,
+            r13,
+            r14,
+            r15,
+            r16,
+        }
     }
 
     /// Convert to Poly1305Powers8 for fallback processing.
@@ -775,10 +869,22 @@ pub mod avx512 {
 
         // All r powers in order: r16, r15, r14, ..., r1 (for h, m1, m2, ..., m15)
         let r_powers: [&[u64; 5]; 16] = [
-            &powers.r16, &powers.r15, &powers.r14, &powers.r13,
-            &powers.r12, &powers.r11, &powers.r10, &powers.r9,
-            &powers.r8, &powers.r7, &powers.r6, &powers.r5,
-            &powers.r4, &powers.r3, &powers.r2, &powers.r,
+            &powers.r16,
+            &powers.r15,
+            &powers.r14,
+            &powers.r13,
+            &powers.r12,
+            &powers.r11,
+            &powers.r10,
+            &powers.r9,
+            &powers.r8,
+            &powers.r7,
+            &powers.r6,
+            &powers.r5,
+            &powers.r4,
+            &powers.r3,
+            &powers.r2,
+            &powers.r,
         ];
 
         // Compute all 16 products using AVX-512 vectorized multiply
@@ -787,34 +893,56 @@ pub mod avx512 {
 
         // First group: h*r16, m1*r15, m2*r14, m3*r13, m4*r12, m5*r11, m6*r10, m7*r9
         let inputs_a: [&[u64; 5]; 8] = [
-            &h, &msgs[1], &msgs[2], &msgs[3],
-            &msgs[4], &msgs[5], &msgs[6], &msgs[7],
+            &h, &msgs[1], &msgs[2], &msgs[3], &msgs[4], &msgs[5], &msgs[6], &msgs[7],
         ];
         let powers_a: [&[u64; 5]; 8] = [
-            r_powers[0], r_powers[1], r_powers[2], r_powers[3],
-            r_powers[4], r_powers[5], r_powers[6], r_powers[7],
+            r_powers[0],
+            r_powers[1],
+            r_powers[2],
+            r_powers[3],
+            r_powers[4],
+            r_powers[5],
+            r_powers[6],
+            r_powers[7],
         ];
         mul_8x_avx512(&inputs_a, &powers_a, &mut t);
 
         // Second group: m8*r8, m9*r7, m10*r6, m11*r5, m12*r4, m13*r3, m14*r2, m15*r
         let inputs_b: [&[u64; 5]; 8] = [
-            &msgs[8], &msgs[9], &msgs[10], &msgs[11],
-            &msgs[12], &msgs[13], &msgs[14], &msgs[15],
+            &msgs[8], &msgs[9], &msgs[10], &msgs[11], &msgs[12], &msgs[13], &msgs[14], &msgs[15],
         ];
         let powers_b: [&[u64; 5]; 8] = [
-            r_powers[8], r_powers[9], r_powers[10], r_powers[11],
-            r_powers[12], r_powers[13], r_powers[14], r_powers[15],
+            r_powers[8],
+            r_powers[9],
+            r_powers[10],
+            r_powers[11],
+            r_powers[12],
+            r_powers[13],
+            r_powers[14],
+            r_powers[15],
         ];
         mul_8x_avx512(&inputs_b, &powers_b, &mut t);
 
         // Carry propagation
         let mut c: u128;
-        c = t[0] >> 26; t[0] &= 0x3ffffff; t[1] += c;
-        c = t[1] >> 26; t[1] &= 0x3ffffff; t[2] += c;
-        c = t[2] >> 26; t[2] &= 0x3ffffff; t[3] += c;
-        c = t[3] >> 26; t[3] &= 0x3ffffff; t[4] += c;
-        c = t[4] >> 26; t[4] &= 0x3ffffff; t[0] += c * 5;
-        c = t[0] >> 26; t[0] &= 0x3ffffff; t[1] += c;
+        c = t[0] >> 26;
+        t[0] &= 0x3ffffff;
+        t[1] += c;
+        c = t[1] >> 26;
+        t[1] &= 0x3ffffff;
+        t[2] += c;
+        c = t[2] >> 26;
+        t[2] &= 0x3ffffff;
+        t[3] += c;
+        c = t[3] >> 26;
+        t[3] &= 0x3ffffff;
+        t[4] += c;
+        c = t[4] >> 26;
+        t[4] &= 0x3ffffff;
+        t[0] += c * 5;
+        c = t[0] >> 26;
+        t[0] &= 0x3ffffff;
+        t[1] += c;
 
         acc[0] = t[0] as u64;
         acc[1] = t[1] as u64;
@@ -826,147 +954,197 @@ pub mod avx512 {
     /// Multiply 8 (h, r) pairs and accumulate into t using AVX-512.
     #[target_feature(enable = "avx512f")]
     #[inline]
-    unsafe fn mul_8x_avx512(
-        h: &[&[u64; 5]; 8],
-        r: &[&[u64; 5]; 8],
-        t: &mut [u128; 5],
-    ) {
+    unsafe fn mul_8x_avx512(h: &[&[u64; 5]; 8], r: &[&[u64; 5]; 8], t: &mut [u128; 5]) {
         // For each limb output t[i], we compute the 5x5 product matrix sum.
         // Using AVX-512, we can compute 8 products simultaneously.
 
         // Pack h limbs: h[0..8] for each limb index
         let h0 = _mm512_set_epi64(
-            h[7][0] as i64, h[6][0] as i64, h[5][0] as i64, h[4][0] as i64,
-            h[3][0] as i64, h[2][0] as i64, h[1][0] as i64, h[0][0] as i64,
+            h[7][0] as i64,
+            h[6][0] as i64,
+            h[5][0] as i64,
+            h[4][0] as i64,
+            h[3][0] as i64,
+            h[2][0] as i64,
+            h[1][0] as i64,
+            h[0][0] as i64,
         );
         let h1 = _mm512_set_epi64(
-            h[7][1] as i64, h[6][1] as i64, h[5][1] as i64, h[4][1] as i64,
-            h[3][1] as i64, h[2][1] as i64, h[1][1] as i64, h[0][1] as i64,
+            h[7][1] as i64,
+            h[6][1] as i64,
+            h[5][1] as i64,
+            h[4][1] as i64,
+            h[3][1] as i64,
+            h[2][1] as i64,
+            h[1][1] as i64,
+            h[0][1] as i64,
         );
         let h2 = _mm512_set_epi64(
-            h[7][2] as i64, h[6][2] as i64, h[5][2] as i64, h[4][2] as i64,
-            h[3][2] as i64, h[2][2] as i64, h[1][2] as i64, h[0][2] as i64,
+            h[7][2] as i64,
+            h[6][2] as i64,
+            h[5][2] as i64,
+            h[4][2] as i64,
+            h[3][2] as i64,
+            h[2][2] as i64,
+            h[1][2] as i64,
+            h[0][2] as i64,
         );
         let h3 = _mm512_set_epi64(
-            h[7][3] as i64, h[6][3] as i64, h[5][3] as i64, h[4][3] as i64,
-            h[3][3] as i64, h[2][3] as i64, h[1][3] as i64, h[0][3] as i64,
+            h[7][3] as i64,
+            h[6][3] as i64,
+            h[5][3] as i64,
+            h[4][3] as i64,
+            h[3][3] as i64,
+            h[2][3] as i64,
+            h[1][3] as i64,
+            h[0][3] as i64,
         );
         let h4 = _mm512_set_epi64(
-            h[7][4] as i64, h[6][4] as i64, h[5][4] as i64, h[4][4] as i64,
-            h[3][4] as i64, h[2][4] as i64, h[1][4] as i64, h[0][4] as i64,
+            h[7][4] as i64,
+            h[6][4] as i64,
+            h[5][4] as i64,
+            h[4][4] as i64,
+            h[3][4] as i64,
+            h[2][4] as i64,
+            h[1][4] as i64,
+            h[0][4] as i64,
         );
 
         // Pack r limbs and s = 5*r[i]
         let r0 = _mm512_set_epi64(
-            r[7][0] as i64, r[6][0] as i64, r[5][0] as i64, r[4][0] as i64,
-            r[3][0] as i64, r[2][0] as i64, r[1][0] as i64, r[0][0] as i64,
+            r[7][0] as i64,
+            r[6][0] as i64,
+            r[5][0] as i64,
+            r[4][0] as i64,
+            r[3][0] as i64,
+            r[2][0] as i64,
+            r[1][0] as i64,
+            r[0][0] as i64,
         );
         let r1 = _mm512_set_epi64(
-            r[7][1] as i64, r[6][1] as i64, r[5][1] as i64, r[4][1] as i64,
-            r[3][1] as i64, r[2][1] as i64, r[1][1] as i64, r[0][1] as i64,
+            r[7][1] as i64,
+            r[6][1] as i64,
+            r[5][1] as i64,
+            r[4][1] as i64,
+            r[3][1] as i64,
+            r[2][1] as i64,
+            r[1][1] as i64,
+            r[0][1] as i64,
         );
         let r2 = _mm512_set_epi64(
-            r[7][2] as i64, r[6][2] as i64, r[5][2] as i64, r[4][2] as i64,
-            r[3][2] as i64, r[2][2] as i64, r[1][2] as i64, r[0][2] as i64,
+            r[7][2] as i64,
+            r[6][2] as i64,
+            r[5][2] as i64,
+            r[4][2] as i64,
+            r[3][2] as i64,
+            r[2][2] as i64,
+            r[1][2] as i64,
+            r[0][2] as i64,
         );
         let r3 = _mm512_set_epi64(
-            r[7][3] as i64, r[6][3] as i64, r[5][3] as i64, r[4][3] as i64,
-            r[3][3] as i64, r[2][3] as i64, r[1][3] as i64, r[0][3] as i64,
+            r[7][3] as i64,
+            r[6][3] as i64,
+            r[5][3] as i64,
+            r[4][3] as i64,
+            r[3][3] as i64,
+            r[2][3] as i64,
+            r[1][3] as i64,
+            r[0][3] as i64,
         );
         let r4 = _mm512_set_epi64(
-            r[7][4] as i64, r[6][4] as i64, r[5][4] as i64, r[4][4] as i64,
-            r[3][4] as i64, r[2][4] as i64, r[1][4] as i64, r[0][4] as i64,
+            r[7][4] as i64,
+            r[6][4] as i64,
+            r[5][4] as i64,
+            r[4][4] as i64,
+            r[3][4] as i64,
+            r[2][4] as i64,
+            r[1][4] as i64,
+            r[0][4] as i64,
         );
 
         // s = 5 * r[i] for reduction
         let s1 = _mm512_set_epi64(
-            (r[7][1] * 5) as i64, (r[6][1] * 5) as i64, (r[5][1] * 5) as i64, (r[4][1] * 5) as i64,
-            (r[3][1] * 5) as i64, (r[2][1] * 5) as i64, (r[1][1] * 5) as i64, (r[0][1] * 5) as i64,
+            (r[7][1] * 5) as i64,
+            (r[6][1] * 5) as i64,
+            (r[5][1] * 5) as i64,
+            (r[4][1] * 5) as i64,
+            (r[3][1] * 5) as i64,
+            (r[2][1] * 5) as i64,
+            (r[1][1] * 5) as i64,
+            (r[0][1] * 5) as i64,
         );
         let s2 = _mm512_set_epi64(
-            (r[7][2] * 5) as i64, (r[6][2] * 5) as i64, (r[5][2] * 5) as i64, (r[4][2] * 5) as i64,
-            (r[3][2] * 5) as i64, (r[2][2] * 5) as i64, (r[1][2] * 5) as i64, (r[0][2] * 5) as i64,
+            (r[7][2] * 5) as i64,
+            (r[6][2] * 5) as i64,
+            (r[5][2] * 5) as i64,
+            (r[4][2] * 5) as i64,
+            (r[3][2] * 5) as i64,
+            (r[2][2] * 5) as i64,
+            (r[1][2] * 5) as i64,
+            (r[0][2] * 5) as i64,
         );
         let s3 = _mm512_set_epi64(
-            (r[7][3] * 5) as i64, (r[6][3] * 5) as i64, (r[5][3] * 5) as i64, (r[4][3] * 5) as i64,
-            (r[3][3] * 5) as i64, (r[2][3] * 5) as i64, (r[1][3] * 5) as i64, (r[0][3] * 5) as i64,
+            (r[7][3] * 5) as i64,
+            (r[6][3] * 5) as i64,
+            (r[5][3] * 5) as i64,
+            (r[4][3] * 5) as i64,
+            (r[3][3] * 5) as i64,
+            (r[2][3] * 5) as i64,
+            (r[1][3] * 5) as i64,
+            (r[0][3] * 5) as i64,
         );
         let s4 = _mm512_set_epi64(
-            (r[7][4] * 5) as i64, (r[6][4] * 5) as i64, (r[5][4] * 5) as i64, (r[4][4] * 5) as i64,
-            (r[3][4] * 5) as i64, (r[2][4] * 5) as i64, (r[1][4] * 5) as i64, (r[0][4] * 5) as i64,
+            (r[7][4] * 5) as i64,
+            (r[6][4] * 5) as i64,
+            (r[5][4] * 5) as i64,
+            (r[4][4] * 5) as i64,
+            (r[3][4] * 5) as i64,
+            (r[2][4] * 5) as i64,
+            (r[1][4] * 5) as i64,
+            (r[0][4] * 5) as i64,
         );
 
         // Compute t0 = h0*r0 + h1*s4 + h2*s3 + h3*s2 + h4*s1 for all 8 pairs
         let t0_vec = _mm512_add_epi64(
+            _mm512_add_epi64(_mm512_mul_epu32(h0, r0), _mm512_mul_epu32(h1, s4)),
             _mm512_add_epi64(
-                _mm512_mul_epu32(h0, r0),
-                _mm512_mul_epu32(h1, s4),
-            ),
-            _mm512_add_epi64(
-                _mm512_add_epi64(
-                    _mm512_mul_epu32(h2, s3),
-                    _mm512_mul_epu32(h3, s2),
-                ),
+                _mm512_add_epi64(_mm512_mul_epu32(h2, s3), _mm512_mul_epu32(h3, s2)),
                 _mm512_mul_epu32(h4, s1),
             ),
         );
 
         // Compute t1 = h0*r1 + h1*r0 + h2*s4 + h3*s3 + h4*s2
         let t1_vec = _mm512_add_epi64(
+            _mm512_add_epi64(_mm512_mul_epu32(h0, r1), _mm512_mul_epu32(h1, r0)),
             _mm512_add_epi64(
-                _mm512_mul_epu32(h0, r1),
-                _mm512_mul_epu32(h1, r0),
-            ),
-            _mm512_add_epi64(
-                _mm512_add_epi64(
-                    _mm512_mul_epu32(h2, s4),
-                    _mm512_mul_epu32(h3, s3),
-                ),
+                _mm512_add_epi64(_mm512_mul_epu32(h2, s4), _mm512_mul_epu32(h3, s3)),
                 _mm512_mul_epu32(h4, s2),
             ),
         );
 
         // Compute t2 = h0*r2 + h1*r1 + h2*r0 + h3*s4 + h4*s3
         let t2_vec = _mm512_add_epi64(
+            _mm512_add_epi64(_mm512_mul_epu32(h0, r2), _mm512_mul_epu32(h1, r1)),
             _mm512_add_epi64(
-                _mm512_mul_epu32(h0, r2),
-                _mm512_mul_epu32(h1, r1),
-            ),
-            _mm512_add_epi64(
-                _mm512_add_epi64(
-                    _mm512_mul_epu32(h2, r0),
-                    _mm512_mul_epu32(h3, s4),
-                ),
+                _mm512_add_epi64(_mm512_mul_epu32(h2, r0), _mm512_mul_epu32(h3, s4)),
                 _mm512_mul_epu32(h4, s3),
             ),
         );
 
         // Compute t3 = h0*r3 + h1*r2 + h2*r1 + h3*r0 + h4*s4
         let t3_vec = _mm512_add_epi64(
+            _mm512_add_epi64(_mm512_mul_epu32(h0, r3), _mm512_mul_epu32(h1, r2)),
             _mm512_add_epi64(
-                _mm512_mul_epu32(h0, r3),
-                _mm512_mul_epu32(h1, r2),
-            ),
-            _mm512_add_epi64(
-                _mm512_add_epi64(
-                    _mm512_mul_epu32(h2, r1),
-                    _mm512_mul_epu32(h3, r0),
-                ),
+                _mm512_add_epi64(_mm512_mul_epu32(h2, r1), _mm512_mul_epu32(h3, r0)),
                 _mm512_mul_epu32(h4, s4),
             ),
         );
 
         // Compute t4 = h0*r4 + h1*r3 + h2*r2 + h3*r1 + h4*r0
         let t4_vec = _mm512_add_epi64(
+            _mm512_add_epi64(_mm512_mul_epu32(h0, r4), _mm512_mul_epu32(h1, r3)),
             _mm512_add_epi64(
-                _mm512_mul_epu32(h0, r4),
-                _mm512_mul_epu32(h1, r3),
-            ),
-            _mm512_add_epi64(
-                _mm512_add_epi64(
-                    _mm512_mul_epu32(h2, r2),
-                    _mm512_mul_epu32(h3, r1),
-                ),
+                _mm512_add_epi64(_mm512_mul_epu32(h2, r2), _mm512_mul_epu32(h3, r1)),
                 _mm512_mul_epu32(h4, r0),
             ),
         );
@@ -1006,11 +1184,7 @@ pub mod avx512 {
 /// Process multiple blocks with automatic SIMD selection (4-way).
 ///
 /// Uses AVX2 4-way vectorization when available and beneficial.
-pub fn process_blocks_auto(
-    acc: &mut [u64; 5],
-    powers: &Poly1305Powers4,
-    data: &[u8],
-) -> usize {
+pub fn process_blocks_auto(acc: &mut [u64; 5], powers: &Poly1305Powers4, data: &[u8]) -> usize {
     let mut pos = 0;
 
     #[cfg(all(feature = "std", target_arch = "x86_64"))]
@@ -1028,12 +1202,7 @@ pub fn process_blocks_auto(
                 unsafe {
                     // Use fully parallel AVX2 implementation
                     avx2::process_blocks_4x_parallel(
-                        acc,
-                        &powers.r,
-                        &powers.r2,
-                        &powers.r3,
-                        &powers.r4,
-                        &blocks,
+                        acc, &powers.r, &powers.r2, &powers.r3, &powers.r4, &blocks,
                     );
                 }
 
@@ -1065,11 +1234,7 @@ pub fn process_blocks_auto(
 ///
 /// Uses AVX2 8-way vectorization for maximum throughput on large messages.
 /// Processes 128 bytes (8 blocks) at a time, then falls back to 4-way.
-pub fn process_blocks_8way(
-    acc: &mut [u64; 5],
-    powers: &Poly1305Powers8,
-    data: &[u8],
-) -> usize {
+pub fn process_blocks_8way(acc: &mut [u64; 5], powers: &Poly1305Powers8, data: &[u8]) -> usize {
     let mut pos = 0;
 
     #[cfg(all(feature = "std", target_arch = "x86_64"))]
@@ -1106,12 +1271,7 @@ pub fn process_blocks_8way(
 
                 unsafe {
                     avx2::process_blocks_4x_parallel(
-                        acc,
-                        &powers.r,
-                        &powers.r2,
-                        &powers.r3,
-                        &powers.r4,
-                        &blocks,
+                        acc, &powers.r, &powers.r2, &powers.r3, &powers.r4, &blocks,
                     );
                 }
 
@@ -1142,11 +1302,7 @@ pub fn process_blocks_8way(
 ///
 /// Uses AVX-512 16-way vectorization for maximum throughput on large messages.
 /// Processes 256 bytes (16 blocks) at a time, then falls back to 8-way.
-pub fn process_blocks_16way(
-    acc: &mut [u64; 5],
-    powers: &Poly1305Powers16,
-    data: &[u8],
-) -> usize {
+pub fn process_blocks_16way(acc: &mut [u64; 5], powers: &Poly1305Powers16, data: &[u8]) -> usize {
     let mut pos = 0;
 
     #[cfg(all(feature = "std", target_arch = "x86_64"))]
@@ -1216,12 +1372,7 @@ pub fn process_blocks_16way(
 
                 unsafe {
                     avx2::process_blocks_4x_parallel(
-                        acc,
-                        &powers.r,
-                        &powers.r2,
-                        &powers.r3,
-                        &powers.r4,
-                        &blocks,
+                        acc, &powers.r, &powers.r2, &powers.r3, &powers.r4, &blocks,
                     );
                 }
 
@@ -1253,26 +1404,42 @@ pub fn finalize_acc(acc: &[u64; 5], s: &[u8; 16]) -> [u8; 16] {
     let mut h = *acc;
 
     // Full carry propagation
-    let mut c = h[0] >> 26; h[0] &= 0x3ffffff; h[1] += c;
-    c = h[1] >> 26; h[1] &= 0x3ffffff; h[2] += c;
-    c = h[2] >> 26; h[2] &= 0x3ffffff; h[3] += c;
-    c = h[3] >> 26; h[3] &= 0x3ffffff; h[4] += c;
-    c = h[4] >> 26; h[4] &= 0x3ffffff; h[0] += c * 5;
-    c = h[0] >> 26; h[0] &= 0x3ffffff; h[1] += c;
+    let mut c = h[0] >> 26;
+    h[0] &= 0x3ffffff;
+    h[1] += c;
+    c = h[1] >> 26;
+    h[1] &= 0x3ffffff;
+    h[2] += c;
+    c = h[2] >> 26;
+    h[2] &= 0x3ffffff;
+    h[3] += c;
+    c = h[3] >> 26;
+    h[3] &= 0x3ffffff;
+    h[4] += c;
+    c = h[4] >> 26;
+    h[4] &= 0x3ffffff;
+    h[0] += c * 5;
+    c = h[0] >> 26;
+    h[0] &= 0x3ffffff;
+    h[1] += c;
 
     // Compute h - p = h - (2^130 - 5) = h + 5 - 2^130
     let mut g = [0u64; 5];
     g[0] = h[0].wrapping_add(5);
-    c = g[0] >> 26; g[0] &= 0x3ffffff;
+    c = g[0] >> 26;
+    g[0] &= 0x3ffffff;
 
     g[1] = h[1].wrapping_add(c);
-    c = g[1] >> 26; g[1] &= 0x3ffffff;
+    c = g[1] >> 26;
+    g[1] &= 0x3ffffff;
 
     g[2] = h[2].wrapping_add(c);
-    c = g[2] >> 26; g[2] &= 0x3ffffff;
+    c = g[2] >> 26;
+    g[2] &= 0x3ffffff;
 
     g[3] = h[3].wrapping_add(c);
-    c = g[3] >> 26; g[3] &= 0x3ffffff;
+    c = g[3] >> 26;
+    g[3] &= 0x3ffffff;
 
     g[4] = h[4].wrapping_add(c).wrapping_sub(1 << 26);
 
@@ -1522,12 +1689,9 @@ impl Poly1305Ultra {
         // d1 = 2*r0*r1 + 20*r2^2        (from r2^2 at 2^176 = 20*2^44)
         // d2 = 2*r0*r2 + r1^2
 
-        let d0 = (r[0] as u128) * (r[0] as u128)
-            + 40 * (r[1] as u128) * (r[2] as u128);
-        let d1 = 2 * (r[0] as u128) * (r[1] as u128)
-            + 20 * (r[2] as u128) * (r[2] as u128);
-        let d2 = 2 * (r[0] as u128) * (r[2] as u128)
-            + (r[1] as u128) * (r[1] as u128);
+        let d0 = (r[0] as u128) * (r[0] as u128) + 40 * (r[1] as u128) * (r[2] as u128);
+        let d1 = 2 * (r[0] as u128) * (r[1] as u128) + 20 * (r[2] as u128) * (r[2] as u128);
+        let d2 = 2 * (r[0] as u128) * (r[2] as u128) + (r[1] as u128) * (r[1] as u128);
 
         // Carry propagation
         let mut c: u128;
@@ -1535,13 +1699,17 @@ impl Poly1305Ultra {
         let mut h1 = d1;
         let mut h2 = d2;
 
-        c = h0 >> 44; h0 &= 0xfffffffffff;
+        c = h0 >> 44;
+        h0 &= 0xfffffffffff;
         h1 += c;
-        c = h1 >> 44; h1 &= 0xfffffffffff;
+        c = h1 >> 44;
+        h1 &= 0xfffffffffff;
         h2 += c;
-        c = h2 >> 42; h2 &= 0x3ffffffffff;
+        c = h2 >> 42;
+        h2 &= 0x3ffffffffff;
         h0 += c * 5;
-        c = h0 >> 44; h0 &= 0xfffffffffff;
+        c = h0 >> 44;
+        h0 &= 0xfffffffffff;
         h1 += c;
 
         [h0 as u64, h1 as u64, h2 as u64]
@@ -1583,13 +1751,17 @@ impl Poly1305Ultra {
         let mut t1 = d1;
         let mut t2 = d2;
 
-        c = t0 >> 44; t0 &= 0xfffffffffff;
+        c = t0 >> 44;
+        t0 &= 0xfffffffffff;
         t1 += c;
-        c = t1 >> 44; t1 &= 0xfffffffffff;
+        c = t1 >> 44;
+        t1 &= 0xfffffffffff;
         t2 += c;
-        c = t2 >> 42; t2 &= 0x3ffffffffff;
+        c = t2 >> 42;
+        t2 &= 0x3ffffffffff;
         t0 += c * 5;
-        c = t0 >> 44; t0 &= 0xfffffffffff;
+        c = t0 >> 44;
+        t0 &= 0xfffffffffff;
         t1 += c;
 
         self.h = [t0 as u64, t1 as u64, t2 as u64];
@@ -1652,13 +1824,17 @@ impl Poly1305Ultra {
         let mut t1 = e1;
         let mut t2 = e2;
 
-        c = t0 >> 44; t0 &= 0xfffffffffff;
+        c = t0 >> 44;
+        t0 &= 0xfffffffffff;
         t1 += c;
-        c = t1 >> 44; t1 &= 0xfffffffffff;
+        c = t1 >> 44;
+        t1 &= 0xfffffffffff;
         t2 += c;
-        c = t2 >> 42; t2 &= 0x3ffffffffff;
+        c = t2 >> 42;
+        t2 &= 0x3ffffffffff;
         t0 += c * 5;
-        c = t0 >> 44; t0 &= 0xfffffffffff;
+        c = t0 >> 44;
+        t0 &= 0xfffffffffff;
         t1 += c;
 
         self.h = [t0 as u64, t1 as u64, t2 as u64];
@@ -1722,21 +1898,27 @@ impl Poly1305Ultra {
 
         // Full carry
         let mut c: u64;
-        c = h0 >> 44; h0 &= 0xfffffffffff;
+        c = h0 >> 44;
+        h0 &= 0xfffffffffff;
         h1 += c;
-        c = h1 >> 44; h1 &= 0xfffffffffff;
+        c = h1 >> 44;
+        h1 &= 0xfffffffffff;
         h2 += c;
-        c = h2 >> 42; h2 &= 0x3ffffffffff;
+        c = h2 >> 42;
+        h2 &= 0x3ffffffffff;
         h0 += c * 5;
-        c = h0 >> 44; h0 &= 0xfffffffffff;
+        c = h0 >> 44;
+        h0 &= 0xfffffffffff;
         h1 += c;
 
         // Check if h >= p and subtract p if needed
         // g = h - p = h - (2^130 - 5) = h + 5 - 2^130
         let mut g0 = h0 + 5;
-        c = g0 >> 44; g0 &= 0xfffffffffff;
+        c = g0 >> 44;
+        g0 &= 0xfffffffffff;
         let mut g1 = h1 + c;
-        c = g1 >> 44; g1 &= 0xfffffffffff;
+        c = g1 >> 44;
+        g1 &= 0xfffffffffff;
         let mut g2 = h2 + c;
 
         // If g2 >= 2^42, then h >= p, so we use g
@@ -1920,14 +2102,17 @@ mod tests {
         let key = [0x42u8; 32];
 
         // Test various message lengths
-        for len in [0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 100, 256, 1000, 4096] {
+        for len in [
+            0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 100, 256, 1000, 4096,
+        ] {
             let message = vec![0xAB; len];
 
             let tag_scalar = Poly1305::mac(&key, &message);
             let tag_simd = Poly1305Simd::mac(&key, &message);
 
             assert_eq!(
-                tag_scalar, tag_simd,
+                tag_scalar,
+                tag_simd,
                 "Mismatch at length {} - scalar: {:?}, simd: {:?}",
                 len,
                 bytes_to_hex(&tag_scalar),
@@ -1943,14 +2128,17 @@ mod tests {
         let key = [0x42u8; 32];
 
         // Test various message lengths
-        for len in [0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 100, 256, 1000, 4096] {
+        for len in [
+            0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 100, 256, 1000, 4096,
+        ] {
             let message = vec![0xAB; len];
 
             let tag_scalar = Poly1305::mac(&key, &message);
             let tag_ultra = Poly1305Ultra::mac(&key, &message);
 
             assert_eq!(
-                tag_scalar, tag_ultra,
+                tag_scalar,
+                tag_ultra,
                 "Ultra mismatch at length {} - scalar: {:?}, ultra: {:?}",
                 len,
                 bytes_to_hex(&tag_scalar),
@@ -2033,10 +2221,7 @@ mod tests {
         let tag_scalar = crate::poly1305::Poly1305::mac(&key, &message);
         let tag_simd = Poly1305Simd::mac(&key, &message);
 
-        assert_eq!(
-            tag_scalar, tag_simd,
-            "4x processing mismatch"
-        );
+        assert_eq!(tag_scalar, tag_simd, "4x processing mismatch");
     }
 
     #[cfg(all(feature = "std", target_arch = "x86_64"))]
@@ -2058,7 +2243,8 @@ mod tests {
 
             assert_eq!(
                 tag_scalar, tag_simd,
-                "8x processing mismatch at length {}", len
+                "8x processing mismatch at length {}",
+                len
             );
         }
     }
@@ -2095,14 +2281,17 @@ mod tests {
 
     #[test]
     fn bench_poly1305_throughput() {
-        use std::time::Instant;
         use crate::poly1305::Poly1305;
+        use std::time::Instant;
 
         let key = [0x42u8; 32];
         let sizes_kb = [1, 4, 16, 64, 256, 1024];
 
         eprintln!("\n=== Poly1305 Throughput ===");
-        eprintln!("{:>8} {:>10} {:>10} {:>10} {:>10} {:>10}", "Size", "Scalar", "AVX2", "Ultra", "Reference", "Ultra/Ref");
+        eprintln!(
+            "{:>8} {:>10} {:>10} {:>10} {:>10} {:>10}",
+            "Size", "Scalar", "AVX2", "Ultra", "Reference", "Ultra/Ref"
+        );
 
         for size_kb in sizes_kb {
             let size = size_kb * 1024;
@@ -2138,8 +2327,8 @@ mod tests {
             let ultra_elapsed = start.elapsed();
 
             // Reference (poly1305 crate)
-            use poly1305::Poly1305 as RefPoly1305;
             use poly1305::universal_hash::{KeyInit, UniversalHash};
+            use poly1305::Poly1305 as RefPoly1305;
             let start = Instant::now();
             for _ in 0..iterations {
                 let mut mac = RefPoly1305::new(&key.into());
@@ -2148,13 +2337,24 @@ mod tests {
             }
             let ref_elapsed = start.elapsed();
 
-            let scalar_gib_s = (iterations as f64 * size as f64) / (scalar_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
-            let simd_gib_s = (iterations as f64 * size as f64) / (simd_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
-            let ultra_gib_s = (iterations as f64 * size as f64) / (ultra_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
-            let ref_gib_s = (iterations as f64 * size as f64) / (ref_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let scalar_gib_s = (iterations as f64 * size as f64)
+                / (scalar_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let simd_gib_s = (iterations as f64 * size as f64)
+                / (simd_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let ultra_gib_s = (iterations as f64 * size as f64)
+                / (ultra_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let ref_gib_s = (iterations as f64 * size as f64)
+                / (ref_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
 
-            eprintln!("{:>6}KB {:>8.2} GiB/s {:>8.2} GiB/s {:>8.2} GiB/s {:>8.2} GiB/s {:>8.2}x",
-                size_kb, scalar_gib_s, simd_gib_s, ultra_gib_s, ref_gib_s, ultra_gib_s / ref_gib_s);
+            eprintln!(
+                "{:>6}KB {:>8.2} GiB/s {:>8.2} GiB/s {:>8.2} GiB/s {:>8.2} GiB/s {:>8.2}x",
+                size_kb,
+                scalar_gib_s,
+                simd_gib_s,
+                ultra_gib_s,
+                ref_gib_s,
+                ultra_gib_s / ref_gib_s
+            );
         }
     }
 }

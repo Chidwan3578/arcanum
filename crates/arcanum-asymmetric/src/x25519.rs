@@ -159,8 +159,7 @@ impl X25519PublicKey {
 
     /// Decode from hex.
     pub fn from_hex(hex_str: &str) -> Result<Self> {
-        let bytes = hex::decode(hex_str)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let bytes = hex::decode(hex_str).map_err(|_| Error::InvalidKeyFormat)?;
         if bytes.len() != 32 {
             return Err(Error::InvalidKeyLength {
                 expected: 32,
@@ -174,7 +173,11 @@ impl X25519PublicKey {
 
 impl std::fmt::Debug for X25519PublicKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "X25519PublicKey({}...)", &hex::encode(&self.to_bytes()[..8]))
+        write!(
+            f,
+            "X25519PublicKey({}...)",
+            &hex::encode(&self.to_bytes()[..8])
+        )
     }
 }
 

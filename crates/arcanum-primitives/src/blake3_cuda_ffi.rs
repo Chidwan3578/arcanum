@@ -43,7 +43,11 @@ impl Default for Blake3CudaContext {
 // FFI declarations
 #[cfg(feature = "cuda")]
 extern "C" {
-    fn blake3_cuda_init(ctx: *mut Blake3CudaContext, max_buffer_size: usize, max_messages: u32) -> i32;
+    fn blake3_cuda_init(
+        ctx: *mut Blake3CudaContext,
+        max_buffer_size: usize,
+        max_messages: u32,
+    ) -> i32;
 
     fn blake3_cuda_hash_batch(
         ctx: *mut Blake3CudaContext,
@@ -280,11 +284,7 @@ mod tests {
             }
         };
 
-        let messages: Vec<&[u8]> = vec![
-            b"hello world",
-            b"foo bar baz",
-            b"test message 123",
-        ];
+        let messages: Vec<&[u8]> = vec![b"hello world", b"foo bar baz", b"test message 123"];
 
         let hashes = hasher.hash_batch(&messages).expect("hash failed");
         assert_eq!(hashes.len(), 3);

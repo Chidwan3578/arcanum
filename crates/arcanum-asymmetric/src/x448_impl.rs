@@ -61,8 +61,8 @@ impl X448SecretKey {
 
     /// Perform Diffie-Hellman key exchange.
     pub fn diffie_hellman(&self, peer_public: &X448PublicKey) -> X448SharedSecret {
-        let shared = x448::x448(peer_public.bytes, self.bytes)
-            .expect("DH should not fail with valid keys");
+        let shared =
+            x448::x448(peer_public.bytes, self.bytes).expect("DH should not fail with valid keys");
         X448SharedSecret { bytes: shared }
     }
 }
@@ -110,8 +110,7 @@ impl X448PublicKey {
 
     /// Decode from hex.
     pub fn from_hex(hex_str: &str) -> Result<Self> {
-        let bytes = hex::decode(hex_str)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let bytes = hex::decode(hex_str).map_err(|_| Error::InvalidKeyFormat)?;
         if bytes.len() != 56 {
             return Err(Error::InvalidKeyLength {
                 expected: 56,

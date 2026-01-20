@@ -100,32 +100,32 @@
 #![warn(missing_docs, rust_2018_idioms)]
 
 pub mod container;
+pub mod errors;
 pub mod properties;
 pub mod selective;
-pub mod errors;
 
 #[cfg(feature = "pqc")]
 pub mod pqc;
 
+pub use container::{HoloCrypt, OpeningKey, SealingKey};
 pub use errors::HoloCryptError;
-pub use container::{HoloCrypt, SealingKey, OpeningKey};
 
 #[cfg(feature = "threshold")]
-pub use container::threshold::{ThresholdContainer, KeyShare};
+pub use container::threshold::{KeyShare, ThresholdContainer};
 
 #[cfg(feature = "selective-disclosure")]
-pub use selective::{ChunkProof, SelectiveDisclosure, MerkleTreeBuilder, verify_chunk};
+pub use selective::{ChunkProof, MerkleTreeBuilder, SelectiveDisclosure, verify_chunk};
 
 #[cfg(feature = "property-proofs")]
 pub use properties::{Property, PropertyProof};
 
 /// Prelude for convenient imports.
 pub mod prelude {
+    pub use crate::container::{HoloCrypt, OpeningKey, SealingKey};
     pub use crate::errors::HoloCryptError;
-    pub use crate::container::{HoloCrypt, SealingKey, OpeningKey};
 
     #[cfg(feature = "threshold")]
-    pub use crate::container::threshold::{ThresholdContainer, KeyShare};
+    pub use crate::container::threshold::{KeyShare, ThresholdContainer};
 
     #[cfg(feature = "selective-disclosure")]
     pub use crate::selective::{ChunkProof, SelectiveDisclosure};
@@ -134,5 +134,5 @@ pub mod prelude {
     pub use crate::properties::{Property, PropertyProof};
 
     #[cfg(feature = "pqc")]
-    pub use crate::pqc::{PqcKeyPair, PqcEnvelope, PqcContainer, WrappedKey};
+    pub use crate::pqc::{PqcContainer, PqcEnvelope, PqcKeyPair, WrappedKey};
 }

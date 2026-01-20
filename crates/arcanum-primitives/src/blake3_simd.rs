@@ -224,8 +224,7 @@ pub fn has_avx512f() -> bool {
 
 /// BLAKE3 initialization vector
 pub const IV: [u32; 8] = [
-    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-    0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
 ];
 
 /// Message word permutation for each round
@@ -307,8 +306,18 @@ pub mod sse41 {
 
             // mx = m[8], m[10], m[12], m[14] for diagonals
             // my = m[9], m[11], m[13], m[15] for diagonals
-            let mx_diag = _mm_set_epi32(msg[14] as i32, msg[12] as i32, msg[10] as i32, msg[8] as i32);
-            let my_diag = _mm_set_epi32(msg[15] as i32, msg[13] as i32, msg[11] as i32, msg[9] as i32);
+            let mx_diag = _mm_set_epi32(
+                msg[14] as i32,
+                msg[12] as i32,
+                msg[10] as i32,
+                msg[8] as i32,
+            );
+            let my_diag = _mm_set_epi32(
+                msg[15] as i32,
+                msg[13] as i32,
+                msg[11] as i32,
+                msg[9] as i32,
+            );
 
             // Diagonal step
             g_sse41(&mut row0, &mut row1, &mut row2, &mut row3, mx_diag, my_diag);
@@ -420,22 +429,44 @@ pub mod avx2 {
 
         // Load states - interleave cv0 and cv1
         let row0 = _mm256_set_epi32(
-            cv1[3] as i32, cv0[3] as i32, cv1[2] as i32, cv0[2] as i32,
-            cv1[1] as i32, cv0[1] as i32, cv1[0] as i32, cv0[0] as i32,
+            cv1[3] as i32,
+            cv0[3] as i32,
+            cv1[2] as i32,
+            cv0[2] as i32,
+            cv1[1] as i32,
+            cv0[1] as i32,
+            cv1[0] as i32,
+            cv0[0] as i32,
         );
         let row1 = _mm256_set_epi32(
-            cv1[7] as i32, cv0[7] as i32, cv1[6] as i32, cv0[6] as i32,
-            cv1[5] as i32, cv0[5] as i32, cv1[4] as i32, cv0[4] as i32,
+            cv1[7] as i32,
+            cv0[7] as i32,
+            cv1[6] as i32,
+            cv0[6] as i32,
+            cv1[5] as i32,
+            cv0[5] as i32,
+            cv1[4] as i32,
+            cv0[4] as i32,
         );
         let row2 = _mm256_set_epi32(
-            IV[3] as i32, IV[3] as i32, IV[2] as i32, IV[2] as i32,
-            IV[1] as i32, IV[1] as i32, IV[0] as i32, IV[0] as i32,
+            IV[3] as i32,
+            IV[3] as i32,
+            IV[2] as i32,
+            IV[2] as i32,
+            IV[1] as i32,
+            IV[1] as i32,
+            IV[0] as i32,
+            IV[0] as i32,
         );
         let mut row3 = _mm256_set_epi32(
-            flags as i32, flags as i32,
-            block_len as i32, block_len as i32,
-            (counter1 >> 32) as i32, (counter0 >> 32) as i32,
-            counter1 as i32, counter0 as i32,
+            flags as i32,
+            flags as i32,
+            block_len as i32,
+            block_len as i32,
+            (counter1 >> 32) as i32,
+            (counter0 >> 32) as i32,
+            counter1 as i32,
+            counter0 as i32,
         );
 
         let mut row0 = row0;
@@ -454,12 +485,24 @@ pub mod avx2 {
         for _ in 0..7 {
             // Column step message words (interleaved)
             let mx_col = _mm256_set_epi32(
-                msg1[6] as i32, msg0[6] as i32, msg1[4] as i32, msg0[4] as i32,
-                msg1[2] as i32, msg0[2] as i32, msg1[0] as i32, msg0[0] as i32,
+                msg1[6] as i32,
+                msg0[6] as i32,
+                msg1[4] as i32,
+                msg0[4] as i32,
+                msg1[2] as i32,
+                msg0[2] as i32,
+                msg1[0] as i32,
+                msg0[0] as i32,
             );
             let my_col = _mm256_set_epi32(
-                msg1[7] as i32, msg0[7] as i32, msg1[5] as i32, msg0[5] as i32,
-                msg1[3] as i32, msg0[3] as i32, msg1[1] as i32, msg0[1] as i32,
+                msg1[7] as i32,
+                msg0[7] as i32,
+                msg1[5] as i32,
+                msg0[5] as i32,
+                msg1[3] as i32,
+                msg0[3] as i32,
+                msg1[1] as i32,
+                msg0[1] as i32,
             );
 
             // Column step
@@ -472,12 +515,24 @@ pub mod avx2 {
 
             // Diagonal step message words
             let mx_diag = _mm256_set_epi32(
-                msg1[14] as i32, msg0[14] as i32, msg1[12] as i32, msg0[12] as i32,
-                msg1[10] as i32, msg0[10] as i32, msg1[8] as i32, msg0[8] as i32,
+                msg1[14] as i32,
+                msg0[14] as i32,
+                msg1[12] as i32,
+                msg0[12] as i32,
+                msg1[10] as i32,
+                msg0[10] as i32,
+                msg1[8] as i32,
+                msg0[8] as i32,
             );
             let my_diag = _mm256_set_epi32(
-                msg1[15] as i32, msg0[15] as i32, msg1[13] as i32, msg0[13] as i32,
-                msg1[11] as i32, msg0[11] as i32, msg1[9] as i32, msg0[9] as i32,
+                msg1[15] as i32,
+                msg0[15] as i32,
+                msg1[13] as i32,
+                msg0[13] as i32,
+                msg1[11] as i32,
+                msg0[11] as i32,
+                msg1[9] as i32,
+                msg0[9] as i32,
             );
 
             // Diagonal step
@@ -501,12 +556,24 @@ pub mod avx2 {
 
         // Finalize - XOR the halves
         let cv0_row0 = _mm256_set_epi32(
-            cv1[3] as i32, cv0[3] as i32, cv1[2] as i32, cv0[2] as i32,
-            cv1[1] as i32, cv0[1] as i32, cv1[0] as i32, cv0[0] as i32,
+            cv1[3] as i32,
+            cv0[3] as i32,
+            cv1[2] as i32,
+            cv0[2] as i32,
+            cv1[1] as i32,
+            cv0[1] as i32,
+            cv1[0] as i32,
+            cv0[0] as i32,
         );
         let cv0_row1 = _mm256_set_epi32(
-            cv1[7] as i32, cv0[7] as i32, cv1[6] as i32, cv0[6] as i32,
-            cv1[5] as i32, cv0[5] as i32, cv1[4] as i32, cv0[4] as i32,
+            cv1[7] as i32,
+            cv0[7] as i32,
+            cv1[6] as i32,
+            cv0[6] as i32,
+            cv1[5] as i32,
+            cv0[5] as i32,
+            cv1[4] as i32,
+            cv0[4] as i32,
         );
 
         let out_low0 = _mm256_xor_si256(row0, row2);
@@ -623,9 +690,7 @@ pub fn compress_auto(
     #[cfg(all(feature = "std", target_arch = "x86_64"))]
     {
         if has_sse41() {
-            return unsafe {
-                sse41::compress_block_sse41(cv, block, counter, block_len, flags)
-            };
+            return unsafe { sse41::compress_block_sse41(cv, block, counter, block_len, flags) };
         }
     }
 
@@ -649,10 +714,22 @@ fn compress_portable(
 
     // Initialize state
     let mut state = [
-        cv[0], cv[1], cv[2], cv[3],
-        cv[4], cv[5], cv[6], cv[7],
-        IV[0], IV[1], IV[2], IV[3],
-        counter as u32, (counter >> 32) as u32, block_len, flags as u32,
+        cv[0],
+        cv[1],
+        cv[2],
+        cv[3],
+        cv[4],
+        cv[5],
+        cv[6],
+        cv[7],
+        IV[0],
+        IV[1],
+        IV[2],
+        IV[3],
+        counter as u32,
+        (counter >> 32) as u32,
+        block_len,
+        flags as u32,
     ];
 
     // 7 rounds
@@ -700,10 +777,22 @@ fn g_portable(state: &mut [u32; 16], a: usize, b: usize, c: usize, d: usize, mx:
 #[inline(always)]
 fn permute(m: [u32; 16]) -> [u32; 16] {
     [
-        m[MSG_PERMUTATION[0]], m[MSG_PERMUTATION[1]], m[MSG_PERMUTATION[2]], m[MSG_PERMUTATION[3]],
-        m[MSG_PERMUTATION[4]], m[MSG_PERMUTATION[5]], m[MSG_PERMUTATION[6]], m[MSG_PERMUTATION[7]],
-        m[MSG_PERMUTATION[8]], m[MSG_PERMUTATION[9]], m[MSG_PERMUTATION[10]], m[MSG_PERMUTATION[11]],
-        m[MSG_PERMUTATION[12]], m[MSG_PERMUTATION[13]], m[MSG_PERMUTATION[14]], m[MSG_PERMUTATION[15]],
+        m[MSG_PERMUTATION[0]],
+        m[MSG_PERMUTATION[1]],
+        m[MSG_PERMUTATION[2]],
+        m[MSG_PERMUTATION[3]],
+        m[MSG_PERMUTATION[4]],
+        m[MSG_PERMUTATION[5]],
+        m[MSG_PERMUTATION[6]],
+        m[MSG_PERMUTATION[7]],
+        m[MSG_PERMUTATION[8]],
+        m[MSG_PERMUTATION[9]],
+        m[MSG_PERMUTATION[10]],
+        m[MSG_PERMUTATION[11]],
+        m[MSG_PERMUTATION[12]],
+        m[MSG_PERMUTATION[13]],
+        m[MSG_PERMUTATION[14]],
+        m[MSG_PERMUTATION[15]],
     ]
 }
 
@@ -713,21 +802,17 @@ fn permute(m: [u32; 16]) -> [u32; 16] {
 
 /// Pre-computed SSE IV broadcast vectors for 4-way parallel compression.
 #[cfg(target_arch = "x86_64")]
-const IV_BROADCAST_SSE_0: __m128i = unsafe {
-    core::mem::transmute::<[u32; 4], __m128i>([IV[0]; 4])
-};
+const IV_BROADCAST_SSE_0: __m128i =
+    unsafe { core::mem::transmute::<[u32; 4], __m128i>([IV[0]; 4]) };
 #[cfg(target_arch = "x86_64")]
-const IV_BROADCAST_SSE_1: __m128i = unsafe {
-    core::mem::transmute::<[u32; 4], __m128i>([IV[1]; 4])
-};
+const IV_BROADCAST_SSE_1: __m128i =
+    unsafe { core::mem::transmute::<[u32; 4], __m128i>([IV[1]; 4]) };
 #[cfg(target_arch = "x86_64")]
-const IV_BROADCAST_SSE_2: __m128i = unsafe {
-    core::mem::transmute::<[u32; 4], __m128i>([IV[2]; 4])
-};
+const IV_BROADCAST_SSE_2: __m128i =
+    unsafe { core::mem::transmute::<[u32; 4], __m128i>([IV[2]; 4]) };
 #[cfg(target_arch = "x86_64")]
-const IV_BROADCAST_SSE_3: __m128i = unsafe {
-    core::mem::transmute::<[u32; 4], __m128i>([IV[3]; 4])
-};
+const IV_BROADCAST_SSE_3: __m128i =
+    unsafe { core::mem::transmute::<[u32; 4], __m128i>([IV[3]; 4]) };
 
 /// Pre-computed message schedule for 4-way compression (7 rounds).
 /// Avoids runtime permutation computation in the hot loop.
@@ -775,33 +860,113 @@ pub mod parallel4 {
     ) -> [[u32; 8]; 4] {
         // Transposed state: state_i holds [block0.s[i], block1.s[i], block2.s[i], block3.s[i]]
         // Using setr (natural order) generates better code than set (reversed order)
-        let mut s0 = _mm_setr_epi32(cvs[0][0] as i32, cvs[1][0] as i32, cvs[2][0] as i32, cvs[3][0] as i32);
-        let mut s1 = _mm_setr_epi32(cvs[0][1] as i32, cvs[1][1] as i32, cvs[2][1] as i32, cvs[3][1] as i32);
-        let mut s2 = _mm_setr_epi32(cvs[0][2] as i32, cvs[1][2] as i32, cvs[2][2] as i32, cvs[3][2] as i32);
-        let mut s3 = _mm_setr_epi32(cvs[0][3] as i32, cvs[1][3] as i32, cvs[2][3] as i32, cvs[3][3] as i32);
-        let mut s4 = _mm_setr_epi32(cvs[0][4] as i32, cvs[1][4] as i32, cvs[2][4] as i32, cvs[3][4] as i32);
-        let mut s5 = _mm_setr_epi32(cvs[0][5] as i32, cvs[1][5] as i32, cvs[2][5] as i32, cvs[3][5] as i32);
-        let mut s6 = _mm_setr_epi32(cvs[0][6] as i32, cvs[1][6] as i32, cvs[2][6] as i32, cvs[3][6] as i32);
-        let mut s7 = _mm_setr_epi32(cvs[0][7] as i32, cvs[1][7] as i32, cvs[2][7] as i32, cvs[3][7] as i32);
+        let mut s0 = _mm_setr_epi32(
+            cvs[0][0] as i32,
+            cvs[1][0] as i32,
+            cvs[2][0] as i32,
+            cvs[3][0] as i32,
+        );
+        let mut s1 = _mm_setr_epi32(
+            cvs[0][1] as i32,
+            cvs[1][1] as i32,
+            cvs[2][1] as i32,
+            cvs[3][1] as i32,
+        );
+        let mut s2 = _mm_setr_epi32(
+            cvs[0][2] as i32,
+            cvs[1][2] as i32,
+            cvs[2][2] as i32,
+            cvs[3][2] as i32,
+        );
+        let mut s3 = _mm_setr_epi32(
+            cvs[0][3] as i32,
+            cvs[1][3] as i32,
+            cvs[2][3] as i32,
+            cvs[3][3] as i32,
+        );
+        let mut s4 = _mm_setr_epi32(
+            cvs[0][4] as i32,
+            cvs[1][4] as i32,
+            cvs[2][4] as i32,
+            cvs[3][4] as i32,
+        );
+        let mut s5 = _mm_setr_epi32(
+            cvs[0][5] as i32,
+            cvs[1][5] as i32,
+            cvs[2][5] as i32,
+            cvs[3][5] as i32,
+        );
+        let mut s6 = _mm_setr_epi32(
+            cvs[0][6] as i32,
+            cvs[1][6] as i32,
+            cvs[2][6] as i32,
+            cvs[3][6] as i32,
+        );
+        let mut s7 = _mm_setr_epi32(
+            cvs[0][7] as i32,
+            cvs[1][7] as i32,
+            cvs[2][7] as i32,
+            cvs[3][7] as i32,
+        );
 
         // Initialize lower state with pre-computed IV broadcast and counters
         let mut s8 = IV_BROADCAST_SSE_0;
         let mut s9 = IV_BROADCAST_SSE_1;
         let mut s10 = IV_BROADCAST_SSE_2;
         let mut s11 = IV_BROADCAST_SSE_3;
-        let mut s12 = _mm_setr_epi32(counters[0] as i32, counters[1] as i32, counters[2] as i32, counters[3] as i32);
-        let mut s13 = _mm_setr_epi32((counters[0] >> 32) as i32, (counters[1] >> 32) as i32, (counters[2] >> 32) as i32, (counters[3] >> 32) as i32);
-        let mut s14 = _mm_setr_epi32(block_lens[0] as i32, block_lens[1] as i32, block_lens[2] as i32, block_lens[3] as i32);
-        let mut s15 = _mm_setr_epi32(flags[0] as i32, flags[1] as i32, flags[2] as i32, flags[3] as i32);
+        let mut s12 = _mm_setr_epi32(
+            counters[0] as i32,
+            counters[1] as i32,
+            counters[2] as i32,
+            counters[3] as i32,
+        );
+        let mut s13 = _mm_setr_epi32(
+            (counters[0] >> 32) as i32,
+            (counters[1] >> 32) as i32,
+            (counters[2] >> 32) as i32,
+            (counters[3] >> 32) as i32,
+        );
+        let mut s14 = _mm_setr_epi32(
+            block_lens[0] as i32,
+            block_lens[1] as i32,
+            block_lens[2] as i32,
+            block_lens[3] as i32,
+        );
+        let mut s15 = _mm_setr_epi32(
+            flags[0] as i32,
+            flags[1] as i32,
+            flags[2] as i32,
+            flags[3] as i32,
+        );
 
         // Load message words (transposed) - use setr for natural order
         let mut m = [_mm_setzero_si128(); 16];
         for i in 0..16 {
             let offset = i * 4;
-            let w0 = u32::from_le_bytes([blocks[0][offset], blocks[0][offset+1], blocks[0][offset+2], blocks[0][offset+3]]);
-            let w1 = u32::from_le_bytes([blocks[1][offset], blocks[1][offset+1], blocks[1][offset+2], blocks[1][offset+3]]);
-            let w2 = u32::from_le_bytes([blocks[2][offset], blocks[2][offset+1], blocks[2][offset+2], blocks[2][offset+3]]);
-            let w3 = u32::from_le_bytes([blocks[3][offset], blocks[3][offset+1], blocks[3][offset+2], blocks[3][offset+3]]);
+            let w0 = u32::from_le_bytes([
+                blocks[0][offset],
+                blocks[0][offset + 1],
+                blocks[0][offset + 2],
+                blocks[0][offset + 3],
+            ]);
+            let w1 = u32::from_le_bytes([
+                blocks[1][offset],
+                blocks[1][offset + 1],
+                blocks[1][offset + 2],
+                blocks[1][offset + 3],
+            ]);
+            let w2 = u32::from_le_bytes([
+                blocks[2][offset],
+                blocks[2][offset + 1],
+                blocks[2][offset + 2],
+                blocks[2][offset + 3],
+            ]);
+            let w3 = u32::from_le_bytes([
+                blocks[3][offset],
+                blocks[3][offset + 1],
+                blocks[3][offset + 2],
+                blocks[3][offset + 3],
+            ]);
             m[i] = _mm_setr_epi32(w0 as i32, w1 as i32, w2 as i32, w3 as i32);
         }
 
@@ -810,16 +975,72 @@ pub mod parallel4 {
             let sched = &MSG_SCHEDULE_SSE[round];
 
             // Column step
-            g4(&mut s0, &mut s4, &mut s8, &mut s12, m[sched[0]], m[sched[1]]);
-            g4(&mut s1, &mut s5, &mut s9, &mut s13, m[sched[2]], m[sched[3]]);
-            g4(&mut s2, &mut s6, &mut s10, &mut s14, m[sched[4]], m[sched[5]]);
-            g4(&mut s3, &mut s7, &mut s11, &mut s15, m[sched[6]], m[sched[7]]);
+            g4(
+                &mut s0,
+                &mut s4,
+                &mut s8,
+                &mut s12,
+                m[sched[0]],
+                m[sched[1]],
+            );
+            g4(
+                &mut s1,
+                &mut s5,
+                &mut s9,
+                &mut s13,
+                m[sched[2]],
+                m[sched[3]],
+            );
+            g4(
+                &mut s2,
+                &mut s6,
+                &mut s10,
+                &mut s14,
+                m[sched[4]],
+                m[sched[5]],
+            );
+            g4(
+                &mut s3,
+                &mut s7,
+                &mut s11,
+                &mut s15,
+                m[sched[6]],
+                m[sched[7]],
+            );
 
             // Diagonal step
-            g4(&mut s0, &mut s5, &mut s10, &mut s15, m[sched[8]], m[sched[9]]);
-            g4(&mut s1, &mut s6, &mut s11, &mut s12, m[sched[10]], m[sched[11]]);
-            g4(&mut s2, &mut s7, &mut s8, &mut s13, m[sched[12]], m[sched[13]]);
-            g4(&mut s3, &mut s4, &mut s9, &mut s14, m[sched[14]], m[sched[15]]);
+            g4(
+                &mut s0,
+                &mut s5,
+                &mut s10,
+                &mut s15,
+                m[sched[8]],
+                m[sched[9]],
+            );
+            g4(
+                &mut s1,
+                &mut s6,
+                &mut s11,
+                &mut s12,
+                m[sched[10]],
+                m[sched[11]],
+            );
+            g4(
+                &mut s2,
+                &mut s7,
+                &mut s8,
+                &mut s13,
+                m[sched[12]],
+                m[sched[13]],
+            );
+            g4(
+                &mut s3,
+                &mut s4,
+                &mut s9,
+                &mut s14,
+                m[sched[14]],
+                m[sched[15]],
+            );
         }
 
         // XOR with input cv
@@ -837,24 +1058,24 @@ pub mod parallel4 {
         // We want 4 output arrays each with 8 elements
 
         // Step 1: Interleave pairs of 32-bit values
-        let t0 = _mm_unpacklo_epi32(s0, s1);  // [s0[0],s1[0],s0[1],s1[1]]
-        let t1 = _mm_unpackhi_epi32(s0, s1);  // [s0[2],s1[2],s0[3],s1[3]]
-        let t2 = _mm_unpacklo_epi32(s2, s3);  // [s2[0],s3[0],s2[1],s3[1]]
-        let t3 = _mm_unpackhi_epi32(s2, s3);  // [s2[2],s3[2],s2[3],s3[3]]
-        let t4 = _mm_unpacklo_epi32(s4, s5);  // [s4[0],s5[0],s4[1],s5[1]]
-        let t5 = _mm_unpackhi_epi32(s4, s5);  // [s4[2],s5[2],s4[3],s5[3]]
-        let t6 = _mm_unpacklo_epi32(s6, s7);  // [s6[0],s7[0],s6[1],s7[1]]
-        let t7 = _mm_unpackhi_epi32(s6, s7);  // [s6[2],s7[2],s6[3],s7[3]]
+        let t0 = _mm_unpacklo_epi32(s0, s1); // [s0[0],s1[0],s0[1],s1[1]]
+        let t1 = _mm_unpackhi_epi32(s0, s1); // [s0[2],s1[2],s0[3],s1[3]]
+        let t2 = _mm_unpacklo_epi32(s2, s3); // [s2[0],s3[0],s2[1],s3[1]]
+        let t3 = _mm_unpackhi_epi32(s2, s3); // [s2[2],s3[2],s2[3],s3[3]]
+        let t4 = _mm_unpacklo_epi32(s4, s5); // [s4[0],s5[0],s4[1],s5[1]]
+        let t5 = _mm_unpackhi_epi32(s4, s5); // [s4[2],s5[2],s4[3],s5[3]]
+        let t6 = _mm_unpacklo_epi32(s6, s7); // [s6[0],s7[0],s6[1],s7[1]]
+        let t7 = _mm_unpackhi_epi32(s6, s7); // [s6[2],s7[2],s6[3],s7[3]]
 
         // Step 2: Interleave pairs of 64-bit values (combines 4 consecutive state words)
-        let u0 = _mm_unpacklo_epi64(t0, t2);  // [s0[0],s1[0],s2[0],s3[0]] = first 4 words of block 0
-        let u1 = _mm_unpackhi_epi64(t0, t2);  // [s0[1],s1[1],s2[1],s3[1]] = first 4 words of block 1
-        let u2 = _mm_unpacklo_epi64(t1, t3);  // [s0[2],s1[2],s2[2],s3[2]] = first 4 words of block 2
-        let u3 = _mm_unpackhi_epi64(t1, t3);  // [s0[3],s1[3],s2[3],s3[3]] = first 4 words of block 3
-        let u4 = _mm_unpacklo_epi64(t4, t6);  // [s4[0],s5[0],s6[0],s7[0]] = last 4 words of block 0
-        let u5 = _mm_unpackhi_epi64(t4, t6);  // [s4[1],s5[1],s6[1],s7[1]] = last 4 words of block 1
-        let u6 = _mm_unpacklo_epi64(t5, t7);  // [s4[2],s5[2],s6[2],s7[2]] = last 4 words of block 2
-        let u7 = _mm_unpackhi_epi64(t5, t7);  // [s4[3],s5[3],s6[3],s7[3]] = last 4 words of block 3
+        let u0 = _mm_unpacklo_epi64(t0, t2); // [s0[0],s1[0],s2[0],s3[0]] = first 4 words of block 0
+        let u1 = _mm_unpackhi_epi64(t0, t2); // [s0[1],s1[1],s2[1],s3[1]] = first 4 words of block 1
+        let u2 = _mm_unpacklo_epi64(t1, t3); // [s0[2],s1[2],s2[2],s3[2]] = first 4 words of block 2
+        let u3 = _mm_unpackhi_epi64(t1, t3); // [s0[3],s1[3],s2[3],s3[3]] = first 4 words of block 3
+        let u4 = _mm_unpacklo_epi64(t4, t6); // [s4[0],s5[0],s6[0],s7[0]] = last 4 words of block 0
+        let u5 = _mm_unpackhi_epi64(t4, t6); // [s4[1],s5[1],s6[1],s7[1]] = last 4 words of block 1
+        let u6 = _mm_unpacklo_epi64(t5, t7); // [s4[2],s5[2],s6[2],s7[2]] = last 4 words of block 2
+        let u7 = _mm_unpackhi_epi64(t5, t7); // [s4[3],s5[3],s6[3],s7[3]] = last 4 words of block 3
 
         // Store directly to results array
         let mut results = [[0u32; 8]; 4];
@@ -874,8 +1095,12 @@ pub mod parallel4 {
     #[target_feature(enable = "sse2")]
     #[inline]
     unsafe fn g4(
-        a: &mut __m128i, b: &mut __m128i, c: &mut __m128i, d: &mut __m128i,
-        mx: __m128i, my: __m128i,
+        a: &mut __m128i,
+        b: &mut __m128i,
+        c: &mut __m128i,
+        d: &mut __m128i,
+        mx: __m128i,
+        my: __m128i,
     ) {
         // a = a + b + mx
         *a = _mm_add_epi32(*a, _mm_add_epi32(*b, mx));
@@ -952,9 +1177,7 @@ pub fn compress_parents_parallel(
     right_cvs: &[[u32; 8]; 4],
     flags: u8,
 ) -> [[u32; 8]; 4] {
-    unsafe {
-        parallel4::compress_parents_4(key, left_cvs, right_cvs, flags)
-    }
+    unsafe { parallel4::compress_parents_4(key, left_cvs, right_cvs, flags) }
 }
 
 /// Compress 4 blocks in parallel (public interface).
@@ -966,9 +1189,7 @@ pub fn compress_4blocks_parallel(
     block_lens: &[u32; 4],
     flags: &[u8; 4],
 ) -> [[u32; 8]; 4] {
-    unsafe {
-        parallel4::compress_4blocks(cvs, blocks, counters, block_lens, flags)
-    }
+    unsafe { parallel4::compress_4blocks(cvs, blocks, counters, block_lens, flags) }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1005,25 +1226,21 @@ pub mod parallel8 {
 
     /// Pre-computed broadcast IV vectors for efficient state initialization.
     /// These avoid expensive _mm256_set1_epi32 calls in hot loops.
-    const IV_BROADCAST_0: __m256i = unsafe {
-        core::mem::transmute::<[u32; 8], __m256i>([IV[0]; 8])
-    };
-    const IV_BROADCAST_1: __m256i = unsafe {
-        core::mem::transmute::<[u32; 8], __m256i>([IV[1]; 8])
-    };
-    const IV_BROADCAST_2: __m256i = unsafe {
-        core::mem::transmute::<[u32; 8], __m256i>([IV[2]; 8])
-    };
-    const IV_BROADCAST_3: __m256i = unsafe {
-        core::mem::transmute::<[u32; 8], __m256i>([IV[3]; 8])
-    };
+    const IV_BROADCAST_0: __m256i =
+        unsafe { core::mem::transmute::<[u32; 8], __m256i>([IV[0]; 8]) };
+    const IV_BROADCAST_1: __m256i =
+        unsafe { core::mem::transmute::<[u32; 8], __m256i>([IV[1]; 8]) };
+    const IV_BROADCAST_2: __m256i =
+        unsafe { core::mem::transmute::<[u32; 8], __m256i>([IV[2]; 8]) };
+    const IV_BROADCAST_3: __m256i =
+        unsafe { core::mem::transmute::<[u32; 8], __m256i>([IV[3]; 8]) };
 
     /// Shuffle mask for ror 16: swap bytes within each 16-bit pair.
     /// Each 32-bit lane: bytes [0,1,2,3] -> [2,3,0,1]
     const ROT16_SHUFFLE: __m256i = unsafe {
         core::mem::transmute::<[u8; 32], __m256i>([
-            2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
-            2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
+            2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11,
+            8, 9, 14, 15, 12, 13,
         ])
     };
 
@@ -1031,8 +1248,8 @@ pub mod parallel8 {
     /// Each 32-bit lane: bytes [0,1,2,3] -> [1,2,3,0]
     const ROT8_SHUFFLE: __m256i = unsafe {
         core::mem::transmute::<[u8; 32], __m256i>([
-            1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12,
-            1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12,
+            1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12, 1, 2, 3, 0, 5, 6, 7, 4, 9, 10,
+            11, 8, 13, 14, 15, 12,
         ])
     };
 
@@ -1108,8 +1325,8 @@ pub mod parallel8 {
         block_idx: usize,
         word_idx: usize,
     ) -> __m256i {
-        const CHUNK_LEN_WORDS: i32 = 256;  // 1024 bytes / 4 bytes per word
-        const BLOCK_LEN_WORDS: i32 = 16;   // 64 bytes / 4 bytes per word
+        const CHUNK_LEN_WORDS: i32 = 256; // 1024 bytes / 4 bytes per word
+        const BLOCK_LEN_WORDS: i32 = 16; // 64 bytes / 4 bytes per word
 
         // Calculate base offset for this block and word
         let base_offset = (block_idx as i32) * BLOCK_LEN_WORDS + (word_idx as i32);
@@ -1163,17 +1380,91 @@ pub mod parallel8 {
         let m15 = load_msg_word(blocks, 15);
 
         // Store in array for indexed access
-        let m = [m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15];
+        let m = [
+            m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15,
+        ];
 
         // Initialize state (transposed) using setr for better codegen
-        let mut s0 = _mm256_setr_epi32(cvs[0][0] as i32, cvs[1][0] as i32, cvs[2][0] as i32, cvs[3][0] as i32, cvs[4][0] as i32, cvs[5][0] as i32, cvs[6][0] as i32, cvs[7][0] as i32);
-        let mut s1 = _mm256_setr_epi32(cvs[0][1] as i32, cvs[1][1] as i32, cvs[2][1] as i32, cvs[3][1] as i32, cvs[4][1] as i32, cvs[5][1] as i32, cvs[6][1] as i32, cvs[7][1] as i32);
-        let mut s2 = _mm256_setr_epi32(cvs[0][2] as i32, cvs[1][2] as i32, cvs[2][2] as i32, cvs[3][2] as i32, cvs[4][2] as i32, cvs[5][2] as i32, cvs[6][2] as i32, cvs[7][2] as i32);
-        let mut s3 = _mm256_setr_epi32(cvs[0][3] as i32, cvs[1][3] as i32, cvs[2][3] as i32, cvs[3][3] as i32, cvs[4][3] as i32, cvs[5][3] as i32, cvs[6][3] as i32, cvs[7][3] as i32);
-        let mut s4 = _mm256_setr_epi32(cvs[0][4] as i32, cvs[1][4] as i32, cvs[2][4] as i32, cvs[3][4] as i32, cvs[4][4] as i32, cvs[5][4] as i32, cvs[6][4] as i32, cvs[7][4] as i32);
-        let mut s5 = _mm256_setr_epi32(cvs[0][5] as i32, cvs[1][5] as i32, cvs[2][5] as i32, cvs[3][5] as i32, cvs[4][5] as i32, cvs[5][5] as i32, cvs[6][5] as i32, cvs[7][5] as i32);
-        let mut s6 = _mm256_setr_epi32(cvs[0][6] as i32, cvs[1][6] as i32, cvs[2][6] as i32, cvs[3][6] as i32, cvs[4][6] as i32, cvs[5][6] as i32, cvs[6][6] as i32, cvs[7][6] as i32);
-        let mut s7 = _mm256_setr_epi32(cvs[0][7] as i32, cvs[1][7] as i32, cvs[2][7] as i32, cvs[3][7] as i32, cvs[4][7] as i32, cvs[5][7] as i32, cvs[6][7] as i32, cvs[7][7] as i32);
+        let mut s0 = _mm256_setr_epi32(
+            cvs[0][0] as i32,
+            cvs[1][0] as i32,
+            cvs[2][0] as i32,
+            cvs[3][0] as i32,
+            cvs[4][0] as i32,
+            cvs[5][0] as i32,
+            cvs[6][0] as i32,
+            cvs[7][0] as i32,
+        );
+        let mut s1 = _mm256_setr_epi32(
+            cvs[0][1] as i32,
+            cvs[1][1] as i32,
+            cvs[2][1] as i32,
+            cvs[3][1] as i32,
+            cvs[4][1] as i32,
+            cvs[5][1] as i32,
+            cvs[6][1] as i32,
+            cvs[7][1] as i32,
+        );
+        let mut s2 = _mm256_setr_epi32(
+            cvs[0][2] as i32,
+            cvs[1][2] as i32,
+            cvs[2][2] as i32,
+            cvs[3][2] as i32,
+            cvs[4][2] as i32,
+            cvs[5][2] as i32,
+            cvs[6][2] as i32,
+            cvs[7][2] as i32,
+        );
+        let mut s3 = _mm256_setr_epi32(
+            cvs[0][3] as i32,
+            cvs[1][3] as i32,
+            cvs[2][3] as i32,
+            cvs[3][3] as i32,
+            cvs[4][3] as i32,
+            cvs[5][3] as i32,
+            cvs[6][3] as i32,
+            cvs[7][3] as i32,
+        );
+        let mut s4 = _mm256_setr_epi32(
+            cvs[0][4] as i32,
+            cvs[1][4] as i32,
+            cvs[2][4] as i32,
+            cvs[3][4] as i32,
+            cvs[4][4] as i32,
+            cvs[5][4] as i32,
+            cvs[6][4] as i32,
+            cvs[7][4] as i32,
+        );
+        let mut s5 = _mm256_setr_epi32(
+            cvs[0][5] as i32,
+            cvs[1][5] as i32,
+            cvs[2][5] as i32,
+            cvs[3][5] as i32,
+            cvs[4][5] as i32,
+            cvs[5][5] as i32,
+            cvs[6][5] as i32,
+            cvs[7][5] as i32,
+        );
+        let mut s6 = _mm256_setr_epi32(
+            cvs[0][6] as i32,
+            cvs[1][6] as i32,
+            cvs[2][6] as i32,
+            cvs[3][6] as i32,
+            cvs[4][6] as i32,
+            cvs[5][6] as i32,
+            cvs[6][6] as i32,
+            cvs[7][6] as i32,
+        );
+        let mut s7 = _mm256_setr_epi32(
+            cvs[0][7] as i32,
+            cvs[1][7] as i32,
+            cvs[2][7] as i32,
+            cvs[3][7] as i32,
+            cvs[4][7] as i32,
+            cvs[5][7] as i32,
+            cvs[6][7] as i32,
+            cvs[7][7] as i32,
+        );
 
         // Use pre-computed IV broadcast vectors
         let mut s8 = IV_BROADCAST_0;
@@ -1182,25 +1473,117 @@ pub mod parallel8 {
         let mut s11 = IV_BROADCAST_3;
 
         // Use setr for counters, block_lens, flags (natural order)
-        let mut s12 = _mm256_setr_epi32(counters[0] as i32, counters[1] as i32, counters[2] as i32, counters[3] as i32, counters[4] as i32, counters[5] as i32, counters[6] as i32, counters[7] as i32);
-        let mut s13 = _mm256_setr_epi32((counters[0] >> 32) as i32, (counters[1] >> 32) as i32, (counters[2] >> 32) as i32, (counters[3] >> 32) as i32, (counters[4] >> 32) as i32, (counters[5] >> 32) as i32, (counters[6] >> 32) as i32, (counters[7] >> 32) as i32);
-        let mut s14 = _mm256_setr_epi32(block_lens[0] as i32, block_lens[1] as i32, block_lens[2] as i32, block_lens[3] as i32, block_lens[4] as i32, block_lens[5] as i32, block_lens[6] as i32, block_lens[7] as i32);
-        let mut s15 = _mm256_setr_epi32(flags[0] as i32, flags[1] as i32, flags[2] as i32, flags[3] as i32, flags[4] as i32, flags[5] as i32, flags[6] as i32, flags[7] as i32);
+        let mut s12 = _mm256_setr_epi32(
+            counters[0] as i32,
+            counters[1] as i32,
+            counters[2] as i32,
+            counters[3] as i32,
+            counters[4] as i32,
+            counters[5] as i32,
+            counters[6] as i32,
+            counters[7] as i32,
+        );
+        let mut s13 = _mm256_setr_epi32(
+            (counters[0] >> 32) as i32,
+            (counters[1] >> 32) as i32,
+            (counters[2] >> 32) as i32,
+            (counters[3] >> 32) as i32,
+            (counters[4] >> 32) as i32,
+            (counters[5] >> 32) as i32,
+            (counters[6] >> 32) as i32,
+            (counters[7] >> 32) as i32,
+        );
+        let mut s14 = _mm256_setr_epi32(
+            block_lens[0] as i32,
+            block_lens[1] as i32,
+            block_lens[2] as i32,
+            block_lens[3] as i32,
+            block_lens[4] as i32,
+            block_lens[5] as i32,
+            block_lens[6] as i32,
+            block_lens[7] as i32,
+        );
+        let mut s15 = _mm256_setr_epi32(
+            flags[0] as i32,
+            flags[1] as i32,
+            flags[2] as i32,
+            flags[3] as i32,
+            flags[4] as i32,
+            flags[5] as i32,
+            flags[6] as i32,
+            flags[7] as i32,
+        );
 
         // Fully unrolled 7 rounds using precomputed message schedule
         macro_rules! round {
             ($r:expr) => {
                 // Column step
-                g8(&mut s0, &mut s4, &mut s8, &mut s12, m[MSG_SCHEDULE[$r][0]], m[MSG_SCHEDULE[$r][1]]);
-                g8(&mut s1, &mut s5, &mut s9, &mut s13, m[MSG_SCHEDULE[$r][2]], m[MSG_SCHEDULE[$r][3]]);
-                g8(&mut s2, &mut s6, &mut s10, &mut s14, m[MSG_SCHEDULE[$r][4]], m[MSG_SCHEDULE[$r][5]]);
-                g8(&mut s3, &mut s7, &mut s11, &mut s15, m[MSG_SCHEDULE[$r][6]], m[MSG_SCHEDULE[$r][7]]);
+                g8(
+                    &mut s0,
+                    &mut s4,
+                    &mut s8,
+                    &mut s12,
+                    m[MSG_SCHEDULE[$r][0]],
+                    m[MSG_SCHEDULE[$r][1]],
+                );
+                g8(
+                    &mut s1,
+                    &mut s5,
+                    &mut s9,
+                    &mut s13,
+                    m[MSG_SCHEDULE[$r][2]],
+                    m[MSG_SCHEDULE[$r][3]],
+                );
+                g8(
+                    &mut s2,
+                    &mut s6,
+                    &mut s10,
+                    &mut s14,
+                    m[MSG_SCHEDULE[$r][4]],
+                    m[MSG_SCHEDULE[$r][5]],
+                );
+                g8(
+                    &mut s3,
+                    &mut s7,
+                    &mut s11,
+                    &mut s15,
+                    m[MSG_SCHEDULE[$r][6]],
+                    m[MSG_SCHEDULE[$r][7]],
+                );
                 // Diagonal step
-                g8(&mut s0, &mut s5, &mut s10, &mut s15, m[MSG_SCHEDULE[$r][8]], m[MSG_SCHEDULE[$r][9]]);
-                g8(&mut s1, &mut s6, &mut s11, &mut s12, m[MSG_SCHEDULE[$r][10]], m[MSG_SCHEDULE[$r][11]]);
-                g8(&mut s2, &mut s7, &mut s8, &mut s13, m[MSG_SCHEDULE[$r][12]], m[MSG_SCHEDULE[$r][13]]);
-                g8(&mut s3, &mut s4, &mut s9, &mut s14, m[MSG_SCHEDULE[$r][14]], m[MSG_SCHEDULE[$r][15]]);
-            }
+                g8(
+                    &mut s0,
+                    &mut s5,
+                    &mut s10,
+                    &mut s15,
+                    m[MSG_SCHEDULE[$r][8]],
+                    m[MSG_SCHEDULE[$r][9]],
+                );
+                g8(
+                    &mut s1,
+                    &mut s6,
+                    &mut s11,
+                    &mut s12,
+                    m[MSG_SCHEDULE[$r][10]],
+                    m[MSG_SCHEDULE[$r][11]],
+                );
+                g8(
+                    &mut s2,
+                    &mut s7,
+                    &mut s8,
+                    &mut s13,
+                    m[MSG_SCHEDULE[$r][12]],
+                    m[MSG_SCHEDULE[$r][13]],
+                );
+                g8(
+                    &mut s3,
+                    &mut s4,
+                    &mut s9,
+                    &mut s14,
+                    m[MSG_SCHEDULE[$r][14]],
+                    m[MSG_SCHEDULE[$r][15]],
+                );
+            };
         }
 
         round!(0);
@@ -1306,17 +1689,91 @@ pub mod parallel8 {
         let m15 = load_msg_word_from_chunks(chunk_ptrs, block_idx, 15);
 
         // Store in array for indexed access
-        let m = [m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15];
+        let m = [
+            m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15,
+        ];
 
         // Initialize state (transposed) using setr for better codegen
-        let mut s0 = _mm256_setr_epi32(cvs[0][0] as i32, cvs[1][0] as i32, cvs[2][0] as i32, cvs[3][0] as i32, cvs[4][0] as i32, cvs[5][0] as i32, cvs[6][0] as i32, cvs[7][0] as i32);
-        let mut s1 = _mm256_setr_epi32(cvs[0][1] as i32, cvs[1][1] as i32, cvs[2][1] as i32, cvs[3][1] as i32, cvs[4][1] as i32, cvs[5][1] as i32, cvs[6][1] as i32, cvs[7][1] as i32);
-        let mut s2 = _mm256_setr_epi32(cvs[0][2] as i32, cvs[1][2] as i32, cvs[2][2] as i32, cvs[3][2] as i32, cvs[4][2] as i32, cvs[5][2] as i32, cvs[6][2] as i32, cvs[7][2] as i32);
-        let mut s3 = _mm256_setr_epi32(cvs[0][3] as i32, cvs[1][3] as i32, cvs[2][3] as i32, cvs[3][3] as i32, cvs[4][3] as i32, cvs[5][3] as i32, cvs[6][3] as i32, cvs[7][3] as i32);
-        let mut s4 = _mm256_setr_epi32(cvs[0][4] as i32, cvs[1][4] as i32, cvs[2][4] as i32, cvs[3][4] as i32, cvs[4][4] as i32, cvs[5][4] as i32, cvs[6][4] as i32, cvs[7][4] as i32);
-        let mut s5 = _mm256_setr_epi32(cvs[0][5] as i32, cvs[1][5] as i32, cvs[2][5] as i32, cvs[3][5] as i32, cvs[4][5] as i32, cvs[5][5] as i32, cvs[6][5] as i32, cvs[7][5] as i32);
-        let mut s6 = _mm256_setr_epi32(cvs[0][6] as i32, cvs[1][6] as i32, cvs[2][6] as i32, cvs[3][6] as i32, cvs[4][6] as i32, cvs[5][6] as i32, cvs[6][6] as i32, cvs[7][6] as i32);
-        let mut s7 = _mm256_setr_epi32(cvs[0][7] as i32, cvs[1][7] as i32, cvs[2][7] as i32, cvs[3][7] as i32, cvs[4][7] as i32, cvs[5][7] as i32, cvs[6][7] as i32, cvs[7][7] as i32);
+        let mut s0 = _mm256_setr_epi32(
+            cvs[0][0] as i32,
+            cvs[1][0] as i32,
+            cvs[2][0] as i32,
+            cvs[3][0] as i32,
+            cvs[4][0] as i32,
+            cvs[5][0] as i32,
+            cvs[6][0] as i32,
+            cvs[7][0] as i32,
+        );
+        let mut s1 = _mm256_setr_epi32(
+            cvs[0][1] as i32,
+            cvs[1][1] as i32,
+            cvs[2][1] as i32,
+            cvs[3][1] as i32,
+            cvs[4][1] as i32,
+            cvs[5][1] as i32,
+            cvs[6][1] as i32,
+            cvs[7][1] as i32,
+        );
+        let mut s2 = _mm256_setr_epi32(
+            cvs[0][2] as i32,
+            cvs[1][2] as i32,
+            cvs[2][2] as i32,
+            cvs[3][2] as i32,
+            cvs[4][2] as i32,
+            cvs[5][2] as i32,
+            cvs[6][2] as i32,
+            cvs[7][2] as i32,
+        );
+        let mut s3 = _mm256_setr_epi32(
+            cvs[0][3] as i32,
+            cvs[1][3] as i32,
+            cvs[2][3] as i32,
+            cvs[3][3] as i32,
+            cvs[4][3] as i32,
+            cvs[5][3] as i32,
+            cvs[6][3] as i32,
+            cvs[7][3] as i32,
+        );
+        let mut s4 = _mm256_setr_epi32(
+            cvs[0][4] as i32,
+            cvs[1][4] as i32,
+            cvs[2][4] as i32,
+            cvs[3][4] as i32,
+            cvs[4][4] as i32,
+            cvs[5][4] as i32,
+            cvs[6][4] as i32,
+            cvs[7][4] as i32,
+        );
+        let mut s5 = _mm256_setr_epi32(
+            cvs[0][5] as i32,
+            cvs[1][5] as i32,
+            cvs[2][5] as i32,
+            cvs[3][5] as i32,
+            cvs[4][5] as i32,
+            cvs[5][5] as i32,
+            cvs[6][5] as i32,
+            cvs[7][5] as i32,
+        );
+        let mut s6 = _mm256_setr_epi32(
+            cvs[0][6] as i32,
+            cvs[1][6] as i32,
+            cvs[2][6] as i32,
+            cvs[3][6] as i32,
+            cvs[4][6] as i32,
+            cvs[5][6] as i32,
+            cvs[6][6] as i32,
+            cvs[7][6] as i32,
+        );
+        let mut s7 = _mm256_setr_epi32(
+            cvs[0][7] as i32,
+            cvs[1][7] as i32,
+            cvs[2][7] as i32,
+            cvs[3][7] as i32,
+            cvs[4][7] as i32,
+            cvs[5][7] as i32,
+            cvs[6][7] as i32,
+            cvs[7][7] as i32,
+        );
 
         // Use pre-computed IV broadcast vectors
         let mut s8 = IV_BROADCAST_0;
@@ -1325,25 +1782,117 @@ pub mod parallel8 {
         let mut s11 = IV_BROADCAST_3;
 
         // Use setr for counters, block_lens, flags (natural order)
-        let mut s12 = _mm256_setr_epi32(counters[0] as i32, counters[1] as i32, counters[2] as i32, counters[3] as i32, counters[4] as i32, counters[5] as i32, counters[6] as i32, counters[7] as i32);
-        let mut s13 = _mm256_setr_epi32((counters[0] >> 32) as i32, (counters[1] >> 32) as i32, (counters[2] >> 32) as i32, (counters[3] >> 32) as i32, (counters[4] >> 32) as i32, (counters[5] >> 32) as i32, (counters[6] >> 32) as i32, (counters[7] >> 32) as i32);
-        let mut s14 = _mm256_setr_epi32(block_lens[0] as i32, block_lens[1] as i32, block_lens[2] as i32, block_lens[3] as i32, block_lens[4] as i32, block_lens[5] as i32, block_lens[6] as i32, block_lens[7] as i32);
-        let mut s15 = _mm256_setr_epi32(flags[0] as i32, flags[1] as i32, flags[2] as i32, flags[3] as i32, flags[4] as i32, flags[5] as i32, flags[6] as i32, flags[7] as i32);
+        let mut s12 = _mm256_setr_epi32(
+            counters[0] as i32,
+            counters[1] as i32,
+            counters[2] as i32,
+            counters[3] as i32,
+            counters[4] as i32,
+            counters[5] as i32,
+            counters[6] as i32,
+            counters[7] as i32,
+        );
+        let mut s13 = _mm256_setr_epi32(
+            (counters[0] >> 32) as i32,
+            (counters[1] >> 32) as i32,
+            (counters[2] >> 32) as i32,
+            (counters[3] >> 32) as i32,
+            (counters[4] >> 32) as i32,
+            (counters[5] >> 32) as i32,
+            (counters[6] >> 32) as i32,
+            (counters[7] >> 32) as i32,
+        );
+        let mut s14 = _mm256_setr_epi32(
+            block_lens[0] as i32,
+            block_lens[1] as i32,
+            block_lens[2] as i32,
+            block_lens[3] as i32,
+            block_lens[4] as i32,
+            block_lens[5] as i32,
+            block_lens[6] as i32,
+            block_lens[7] as i32,
+        );
+        let mut s15 = _mm256_setr_epi32(
+            flags[0] as i32,
+            flags[1] as i32,
+            flags[2] as i32,
+            flags[3] as i32,
+            flags[4] as i32,
+            flags[5] as i32,
+            flags[6] as i32,
+            flags[7] as i32,
+        );
 
         // Fully unrolled 7 rounds using precomputed message schedule
         macro_rules! round {
             ($r:expr) => {
                 // Column step
-                g8(&mut s0, &mut s4, &mut s8, &mut s12, m[MSG_SCHEDULE[$r][0]], m[MSG_SCHEDULE[$r][1]]);
-                g8(&mut s1, &mut s5, &mut s9, &mut s13, m[MSG_SCHEDULE[$r][2]], m[MSG_SCHEDULE[$r][3]]);
-                g8(&mut s2, &mut s6, &mut s10, &mut s14, m[MSG_SCHEDULE[$r][4]], m[MSG_SCHEDULE[$r][5]]);
-                g8(&mut s3, &mut s7, &mut s11, &mut s15, m[MSG_SCHEDULE[$r][6]], m[MSG_SCHEDULE[$r][7]]);
+                g8(
+                    &mut s0,
+                    &mut s4,
+                    &mut s8,
+                    &mut s12,
+                    m[MSG_SCHEDULE[$r][0]],
+                    m[MSG_SCHEDULE[$r][1]],
+                );
+                g8(
+                    &mut s1,
+                    &mut s5,
+                    &mut s9,
+                    &mut s13,
+                    m[MSG_SCHEDULE[$r][2]],
+                    m[MSG_SCHEDULE[$r][3]],
+                );
+                g8(
+                    &mut s2,
+                    &mut s6,
+                    &mut s10,
+                    &mut s14,
+                    m[MSG_SCHEDULE[$r][4]],
+                    m[MSG_SCHEDULE[$r][5]],
+                );
+                g8(
+                    &mut s3,
+                    &mut s7,
+                    &mut s11,
+                    &mut s15,
+                    m[MSG_SCHEDULE[$r][6]],
+                    m[MSG_SCHEDULE[$r][7]],
+                );
                 // Diagonal step
-                g8(&mut s0, &mut s5, &mut s10, &mut s15, m[MSG_SCHEDULE[$r][8]], m[MSG_SCHEDULE[$r][9]]);
-                g8(&mut s1, &mut s6, &mut s11, &mut s12, m[MSG_SCHEDULE[$r][10]], m[MSG_SCHEDULE[$r][11]]);
-                g8(&mut s2, &mut s7, &mut s8, &mut s13, m[MSG_SCHEDULE[$r][12]], m[MSG_SCHEDULE[$r][13]]);
-                g8(&mut s3, &mut s4, &mut s9, &mut s14, m[MSG_SCHEDULE[$r][14]], m[MSG_SCHEDULE[$r][15]]);
-            }
+                g8(
+                    &mut s0,
+                    &mut s5,
+                    &mut s10,
+                    &mut s15,
+                    m[MSG_SCHEDULE[$r][8]],
+                    m[MSG_SCHEDULE[$r][9]],
+                );
+                g8(
+                    &mut s1,
+                    &mut s6,
+                    &mut s11,
+                    &mut s12,
+                    m[MSG_SCHEDULE[$r][10]],
+                    m[MSG_SCHEDULE[$r][11]],
+                );
+                g8(
+                    &mut s2,
+                    &mut s7,
+                    &mut s8,
+                    &mut s13,
+                    m[MSG_SCHEDULE[$r][12]],
+                    m[MSG_SCHEDULE[$r][13]],
+                );
+                g8(
+                    &mut s3,
+                    &mut s4,
+                    &mut s9,
+                    &mut s14,
+                    m[MSG_SCHEDULE[$r][14]],
+                    m[MSG_SCHEDULE[$r][15]],
+                );
+            };
         }
 
         round!(0);
@@ -1449,43 +1998,215 @@ pub mod parallel8 {
         let m14 = load_msg_word_contiguous(base_ptr, block_idx, 14);
         let m15 = load_msg_word_contiguous(base_ptr, block_idx, 15);
 
-        let m = [m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15];
+        let m = [
+            m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15,
+        ];
 
         // Initialize state (same as compress_8blocks_zero_copy)
-        let mut s0 = _mm256_setr_epi32(cvs[0][0] as i32, cvs[1][0] as i32, cvs[2][0] as i32, cvs[3][0] as i32, cvs[4][0] as i32, cvs[5][0] as i32, cvs[6][0] as i32, cvs[7][0] as i32);
-        let mut s1 = _mm256_setr_epi32(cvs[0][1] as i32, cvs[1][1] as i32, cvs[2][1] as i32, cvs[3][1] as i32, cvs[4][1] as i32, cvs[5][1] as i32, cvs[6][1] as i32, cvs[7][1] as i32);
-        let mut s2 = _mm256_setr_epi32(cvs[0][2] as i32, cvs[1][2] as i32, cvs[2][2] as i32, cvs[3][2] as i32, cvs[4][2] as i32, cvs[5][2] as i32, cvs[6][2] as i32, cvs[7][2] as i32);
-        let mut s3 = _mm256_setr_epi32(cvs[0][3] as i32, cvs[1][3] as i32, cvs[2][3] as i32, cvs[3][3] as i32, cvs[4][3] as i32, cvs[5][3] as i32, cvs[6][3] as i32, cvs[7][3] as i32);
-        let mut s4 = _mm256_setr_epi32(cvs[0][4] as i32, cvs[1][4] as i32, cvs[2][4] as i32, cvs[3][4] as i32, cvs[4][4] as i32, cvs[5][4] as i32, cvs[6][4] as i32, cvs[7][4] as i32);
-        let mut s5 = _mm256_setr_epi32(cvs[0][5] as i32, cvs[1][5] as i32, cvs[2][5] as i32, cvs[3][5] as i32, cvs[4][5] as i32, cvs[5][5] as i32, cvs[6][5] as i32, cvs[7][5] as i32);
-        let mut s6 = _mm256_setr_epi32(cvs[0][6] as i32, cvs[1][6] as i32, cvs[2][6] as i32, cvs[3][6] as i32, cvs[4][6] as i32, cvs[5][6] as i32, cvs[6][6] as i32, cvs[7][6] as i32);
-        let mut s7 = _mm256_setr_epi32(cvs[0][7] as i32, cvs[1][7] as i32, cvs[2][7] as i32, cvs[3][7] as i32, cvs[4][7] as i32, cvs[5][7] as i32, cvs[6][7] as i32, cvs[7][7] as i32);
+        let mut s0 = _mm256_setr_epi32(
+            cvs[0][0] as i32,
+            cvs[1][0] as i32,
+            cvs[2][0] as i32,
+            cvs[3][0] as i32,
+            cvs[4][0] as i32,
+            cvs[5][0] as i32,
+            cvs[6][0] as i32,
+            cvs[7][0] as i32,
+        );
+        let mut s1 = _mm256_setr_epi32(
+            cvs[0][1] as i32,
+            cvs[1][1] as i32,
+            cvs[2][1] as i32,
+            cvs[3][1] as i32,
+            cvs[4][1] as i32,
+            cvs[5][1] as i32,
+            cvs[6][1] as i32,
+            cvs[7][1] as i32,
+        );
+        let mut s2 = _mm256_setr_epi32(
+            cvs[0][2] as i32,
+            cvs[1][2] as i32,
+            cvs[2][2] as i32,
+            cvs[3][2] as i32,
+            cvs[4][2] as i32,
+            cvs[5][2] as i32,
+            cvs[6][2] as i32,
+            cvs[7][2] as i32,
+        );
+        let mut s3 = _mm256_setr_epi32(
+            cvs[0][3] as i32,
+            cvs[1][3] as i32,
+            cvs[2][3] as i32,
+            cvs[3][3] as i32,
+            cvs[4][3] as i32,
+            cvs[5][3] as i32,
+            cvs[6][3] as i32,
+            cvs[7][3] as i32,
+        );
+        let mut s4 = _mm256_setr_epi32(
+            cvs[0][4] as i32,
+            cvs[1][4] as i32,
+            cvs[2][4] as i32,
+            cvs[3][4] as i32,
+            cvs[4][4] as i32,
+            cvs[5][4] as i32,
+            cvs[6][4] as i32,
+            cvs[7][4] as i32,
+        );
+        let mut s5 = _mm256_setr_epi32(
+            cvs[0][5] as i32,
+            cvs[1][5] as i32,
+            cvs[2][5] as i32,
+            cvs[3][5] as i32,
+            cvs[4][5] as i32,
+            cvs[5][5] as i32,
+            cvs[6][5] as i32,
+            cvs[7][5] as i32,
+        );
+        let mut s6 = _mm256_setr_epi32(
+            cvs[0][6] as i32,
+            cvs[1][6] as i32,
+            cvs[2][6] as i32,
+            cvs[3][6] as i32,
+            cvs[4][6] as i32,
+            cvs[5][6] as i32,
+            cvs[6][6] as i32,
+            cvs[7][6] as i32,
+        );
+        let mut s7 = _mm256_setr_epi32(
+            cvs[0][7] as i32,
+            cvs[1][7] as i32,
+            cvs[2][7] as i32,
+            cvs[3][7] as i32,
+            cvs[4][7] as i32,
+            cvs[5][7] as i32,
+            cvs[6][7] as i32,
+            cvs[7][7] as i32,
+        );
 
         let mut s8 = IV_BROADCAST_0;
         let mut s9 = IV_BROADCAST_1;
         let mut s10 = IV_BROADCAST_2;
         let mut s11 = IV_BROADCAST_3;
 
-        let mut s12 = _mm256_setr_epi32(counters[0] as i32, counters[1] as i32, counters[2] as i32, counters[3] as i32, counters[4] as i32, counters[5] as i32, counters[6] as i32, counters[7] as i32);
-        let mut s13 = _mm256_setr_epi32((counters[0] >> 32) as i32, (counters[1] >> 32) as i32, (counters[2] >> 32) as i32, (counters[3] >> 32) as i32, (counters[4] >> 32) as i32, (counters[5] >> 32) as i32, (counters[6] >> 32) as i32, (counters[7] >> 32) as i32);
-        let mut s14 = _mm256_setr_epi32(block_lens[0] as i32, block_lens[1] as i32, block_lens[2] as i32, block_lens[3] as i32, block_lens[4] as i32, block_lens[5] as i32, block_lens[6] as i32, block_lens[7] as i32);
-        let mut s15 = _mm256_setr_epi32(flags[0] as i32, flags[1] as i32, flags[2] as i32, flags[3] as i32, flags[4] as i32, flags[5] as i32, flags[6] as i32, flags[7] as i32);
+        let mut s12 = _mm256_setr_epi32(
+            counters[0] as i32,
+            counters[1] as i32,
+            counters[2] as i32,
+            counters[3] as i32,
+            counters[4] as i32,
+            counters[5] as i32,
+            counters[6] as i32,
+            counters[7] as i32,
+        );
+        let mut s13 = _mm256_setr_epi32(
+            (counters[0] >> 32) as i32,
+            (counters[1] >> 32) as i32,
+            (counters[2] >> 32) as i32,
+            (counters[3] >> 32) as i32,
+            (counters[4] >> 32) as i32,
+            (counters[5] >> 32) as i32,
+            (counters[6] >> 32) as i32,
+            (counters[7] >> 32) as i32,
+        );
+        let mut s14 = _mm256_setr_epi32(
+            block_lens[0] as i32,
+            block_lens[1] as i32,
+            block_lens[2] as i32,
+            block_lens[3] as i32,
+            block_lens[4] as i32,
+            block_lens[5] as i32,
+            block_lens[6] as i32,
+            block_lens[7] as i32,
+        );
+        let mut s15 = _mm256_setr_epi32(
+            flags[0] as i32,
+            flags[1] as i32,
+            flags[2] as i32,
+            flags[3] as i32,
+            flags[4] as i32,
+            flags[5] as i32,
+            flags[6] as i32,
+            flags[7] as i32,
+        );
 
         // Fully unrolled 7 rounds
         macro_rules! round {
             ($r:expr) => {
-                g8(&mut s0, &mut s4, &mut s8, &mut s12, m[MSG_SCHEDULE[$r][0]], m[MSG_SCHEDULE[$r][1]]);
-                g8(&mut s1, &mut s5, &mut s9, &mut s13, m[MSG_SCHEDULE[$r][2]], m[MSG_SCHEDULE[$r][3]]);
-                g8(&mut s2, &mut s6, &mut s10, &mut s14, m[MSG_SCHEDULE[$r][4]], m[MSG_SCHEDULE[$r][5]]);
-                g8(&mut s3, &mut s7, &mut s11, &mut s15, m[MSG_SCHEDULE[$r][6]], m[MSG_SCHEDULE[$r][7]]);
-                g8(&mut s0, &mut s5, &mut s10, &mut s15, m[MSG_SCHEDULE[$r][8]], m[MSG_SCHEDULE[$r][9]]);
-                g8(&mut s1, &mut s6, &mut s11, &mut s12, m[MSG_SCHEDULE[$r][10]], m[MSG_SCHEDULE[$r][11]]);
-                g8(&mut s2, &mut s7, &mut s8, &mut s13, m[MSG_SCHEDULE[$r][12]], m[MSG_SCHEDULE[$r][13]]);
-                g8(&mut s3, &mut s4, &mut s9, &mut s14, m[MSG_SCHEDULE[$r][14]], m[MSG_SCHEDULE[$r][15]]);
-            }
+                g8(
+                    &mut s0,
+                    &mut s4,
+                    &mut s8,
+                    &mut s12,
+                    m[MSG_SCHEDULE[$r][0]],
+                    m[MSG_SCHEDULE[$r][1]],
+                );
+                g8(
+                    &mut s1,
+                    &mut s5,
+                    &mut s9,
+                    &mut s13,
+                    m[MSG_SCHEDULE[$r][2]],
+                    m[MSG_SCHEDULE[$r][3]],
+                );
+                g8(
+                    &mut s2,
+                    &mut s6,
+                    &mut s10,
+                    &mut s14,
+                    m[MSG_SCHEDULE[$r][4]],
+                    m[MSG_SCHEDULE[$r][5]],
+                );
+                g8(
+                    &mut s3,
+                    &mut s7,
+                    &mut s11,
+                    &mut s15,
+                    m[MSG_SCHEDULE[$r][6]],
+                    m[MSG_SCHEDULE[$r][7]],
+                );
+                g8(
+                    &mut s0,
+                    &mut s5,
+                    &mut s10,
+                    &mut s15,
+                    m[MSG_SCHEDULE[$r][8]],
+                    m[MSG_SCHEDULE[$r][9]],
+                );
+                g8(
+                    &mut s1,
+                    &mut s6,
+                    &mut s11,
+                    &mut s12,
+                    m[MSG_SCHEDULE[$r][10]],
+                    m[MSG_SCHEDULE[$r][11]],
+                );
+                g8(
+                    &mut s2,
+                    &mut s7,
+                    &mut s8,
+                    &mut s13,
+                    m[MSG_SCHEDULE[$r][12]],
+                    m[MSG_SCHEDULE[$r][13]],
+                );
+                g8(
+                    &mut s3,
+                    &mut s4,
+                    &mut s9,
+                    &mut s14,
+                    m[MSG_SCHEDULE[$r][14]],
+                    m[MSG_SCHEDULE[$r][15]],
+                );
+            };
         }
 
-        round!(0); round!(1); round!(2); round!(3); round!(4); round!(5); round!(6);
+        round!(0);
+        round!(1);
+        round!(2);
+        round!(3);
+        round!(4);
+        round!(5);
+        round!(6);
 
         // XOR with input cv
         s0 = _mm256_xor_si256(s0, s8);
@@ -1571,16 +2292,24 @@ pub mod parallel8 {
 
         // Counter vectors (don't change between blocks)
         let counter_lo = _mm256_setr_epi32(
-            chunk_counters[0] as i32, chunk_counters[1] as i32,
-            chunk_counters[2] as i32, chunk_counters[3] as i32,
-            chunk_counters[4] as i32, chunk_counters[5] as i32,
-            chunk_counters[6] as i32, chunk_counters[7] as i32,
+            chunk_counters[0] as i32,
+            chunk_counters[1] as i32,
+            chunk_counters[2] as i32,
+            chunk_counters[3] as i32,
+            chunk_counters[4] as i32,
+            chunk_counters[5] as i32,
+            chunk_counters[6] as i32,
+            chunk_counters[7] as i32,
         );
         let counter_hi = _mm256_setr_epi32(
-            (chunk_counters[0] >> 32) as i32, (chunk_counters[1] >> 32) as i32,
-            (chunk_counters[2] >> 32) as i32, (chunk_counters[3] >> 32) as i32,
-            (chunk_counters[4] >> 32) as i32, (chunk_counters[5] >> 32) as i32,
-            (chunk_counters[6] >> 32) as i32, (chunk_counters[7] >> 32) as i32,
+            (chunk_counters[0] >> 32) as i32,
+            (chunk_counters[1] >> 32) as i32,
+            (chunk_counters[2] >> 32) as i32,
+            (chunk_counters[3] >> 32) as i32,
+            (chunk_counters[4] >> 32) as i32,
+            (chunk_counters[5] >> 32) as i32,
+            (chunk_counters[6] >> 32) as i32,
+            (chunk_counters[7] >> 32) as i32,
         );
         let block_len = _mm256_set1_epi32(64);
 
@@ -1591,8 +2320,12 @@ pub mod parallel8 {
 
             // Build flags
             let mut flags_val = base_flags;
-            if is_first { flags_val |= CHUNK_START; }
-            if is_last { flags_val |= CHUNK_END; }
+            if is_first {
+                flags_val |= CHUNK_START;
+            }
+            if is_last {
+                flags_val |= CHUNK_END;
+            }
             let flags = _mm256_set1_epi32(flags_val as i32);
 
             // Load 16 message words using gather
@@ -1613,7 +2346,9 @@ pub mod parallel8 {
             let m14 = load_msg_word_contiguous(base_ptr, block_idx, 14);
             let m15 = load_msg_word_contiguous(base_ptr, block_idx, 15);
 
-            let m = [m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15];
+            let m = [
+                m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15,
+            ];
 
             // Initialize compression state from current CV
             let mut s0 = cv0;
@@ -1636,18 +2371,80 @@ pub mod parallel8 {
             // 7 rounds of mixing
             macro_rules! round {
                 ($r:expr) => {
-                    g8(&mut s0, &mut s4, &mut s8, &mut s12, m[MSG_SCHEDULE[$r][0]], m[MSG_SCHEDULE[$r][1]]);
-                    g8(&mut s1, &mut s5, &mut s9, &mut s13, m[MSG_SCHEDULE[$r][2]], m[MSG_SCHEDULE[$r][3]]);
-                    g8(&mut s2, &mut s6, &mut s10, &mut s14, m[MSG_SCHEDULE[$r][4]], m[MSG_SCHEDULE[$r][5]]);
-                    g8(&mut s3, &mut s7, &mut s11, &mut s15, m[MSG_SCHEDULE[$r][6]], m[MSG_SCHEDULE[$r][7]]);
-                    g8(&mut s0, &mut s5, &mut s10, &mut s15, m[MSG_SCHEDULE[$r][8]], m[MSG_SCHEDULE[$r][9]]);
-                    g8(&mut s1, &mut s6, &mut s11, &mut s12, m[MSG_SCHEDULE[$r][10]], m[MSG_SCHEDULE[$r][11]]);
-                    g8(&mut s2, &mut s7, &mut s8, &mut s13, m[MSG_SCHEDULE[$r][12]], m[MSG_SCHEDULE[$r][13]]);
-                    g8(&mut s3, &mut s4, &mut s9, &mut s14, m[MSG_SCHEDULE[$r][14]], m[MSG_SCHEDULE[$r][15]]);
-                }
+                    g8(
+                        &mut s0,
+                        &mut s4,
+                        &mut s8,
+                        &mut s12,
+                        m[MSG_SCHEDULE[$r][0]],
+                        m[MSG_SCHEDULE[$r][1]],
+                    );
+                    g8(
+                        &mut s1,
+                        &mut s5,
+                        &mut s9,
+                        &mut s13,
+                        m[MSG_SCHEDULE[$r][2]],
+                        m[MSG_SCHEDULE[$r][3]],
+                    );
+                    g8(
+                        &mut s2,
+                        &mut s6,
+                        &mut s10,
+                        &mut s14,
+                        m[MSG_SCHEDULE[$r][4]],
+                        m[MSG_SCHEDULE[$r][5]],
+                    );
+                    g8(
+                        &mut s3,
+                        &mut s7,
+                        &mut s11,
+                        &mut s15,
+                        m[MSG_SCHEDULE[$r][6]],
+                        m[MSG_SCHEDULE[$r][7]],
+                    );
+                    g8(
+                        &mut s0,
+                        &mut s5,
+                        &mut s10,
+                        &mut s15,
+                        m[MSG_SCHEDULE[$r][8]],
+                        m[MSG_SCHEDULE[$r][9]],
+                    );
+                    g8(
+                        &mut s1,
+                        &mut s6,
+                        &mut s11,
+                        &mut s12,
+                        m[MSG_SCHEDULE[$r][10]],
+                        m[MSG_SCHEDULE[$r][11]],
+                    );
+                    g8(
+                        &mut s2,
+                        &mut s7,
+                        &mut s8,
+                        &mut s13,
+                        m[MSG_SCHEDULE[$r][12]],
+                        m[MSG_SCHEDULE[$r][13]],
+                    );
+                    g8(
+                        &mut s3,
+                        &mut s4,
+                        &mut s9,
+                        &mut s14,
+                        m[MSG_SCHEDULE[$r][14]],
+                        m[MSG_SCHEDULE[$r][15]],
+                    );
+                };
             }
 
-            round!(0); round!(1); round!(2); round!(3); round!(4); round!(5); round!(6);
+            round!(0);
+            round!(1);
+            round!(2);
+            round!(3);
+            round!(4);
+            round!(5);
+            round!(6);
 
             // XOR with input CV to get output CV (stays in registers for next block!)
             cv0 = _mm256_xor_si256(s0, s8);
@@ -1709,8 +2506,12 @@ pub mod parallel8 {
     #[target_feature(enable = "avx2")]
     #[inline]
     unsafe fn g8(
-        a: &mut __m256i, b: &mut __m256i, c: &mut __m256i, d: &mut __m256i,
-        mx: __m256i, my: __m256i,
+        a: &mut __m256i,
+        b: &mut __m256i,
+        c: &mut __m256i,
+        d: &mut __m256i,
+        mx: __m256i,
+        my: __m256i,
     ) {
         // a = a + b + mx
         *a = _mm256_add_epi32(*a, _mm256_add_epi32(*b, mx));
@@ -1822,33 +2623,27 @@ pub mod parallel16 {
 
     /// Shuffle mask for ror 16 in AVX-512.
     const ROT16_SHUFFLE_512: [u8; 64] = [
-        2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
-        2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
-        2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
-        2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
+        2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9,
+        14, 15, 12, 13, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13, 2, 3, 0, 1, 6, 7, 4,
+        5, 10, 11, 8, 9, 14, 15, 12, 13,
     ];
 
     /// Shuffle mask for ror 8 in AVX-512.
     const ROT8_SHUFFLE_512: [u8; 64] = [
-        1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12,
-        1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12,
-        1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12,
-        1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12,
+        1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12, 1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8,
+        13, 14, 15, 12, 1, 2, 3, 0, 5, 6, 7, 4, 9, 10, 11, 8, 13, 14, 15, 12, 1, 2, 3, 0, 5, 6, 7,
+        4, 9, 10, 11, 8, 13, 14, 15, 12,
     ];
 
     /// Pre-computed broadcast IV vectors for 512-bit lanes.
-    const IV_BROADCAST_512_0: __m512i = unsafe {
-        core::mem::transmute::<[u32; 16], __m512i>([IV[0]; 16])
-    };
-    const IV_BROADCAST_512_1: __m512i = unsafe {
-        core::mem::transmute::<[u32; 16], __m512i>([IV[1]; 16])
-    };
-    const IV_BROADCAST_512_2: __m512i = unsafe {
-        core::mem::transmute::<[u32; 16], __m512i>([IV[2]; 16])
-    };
-    const IV_BROADCAST_512_3: __m512i = unsafe {
-        core::mem::transmute::<[u32; 16], __m512i>([IV[3]; 16])
-    };
+    const IV_BROADCAST_512_0: __m512i =
+        unsafe { core::mem::transmute::<[u32; 16], __m512i>([IV[0]; 16]) };
+    const IV_BROADCAST_512_1: __m512i =
+        unsafe { core::mem::transmute::<[u32; 16], __m512i>([IV[1]; 16]) };
+    const IV_BROADCAST_512_2: __m512i =
+        unsafe { core::mem::transmute::<[u32; 16], __m512i>([IV[2]; 16]) };
+    const IV_BROADCAST_512_3: __m512i =
+        unsafe { core::mem::transmute::<[u32; 16], __m512i>([IV[3]; 16]) };
 
     /// Load a transposed u32 from 16 blocks at the same word position.
     /// Uses AVX-512 gather for efficient strided access.
@@ -1861,10 +2656,22 @@ pub mod parallel16 {
 
         // Gather indices: block N word M, each block is 64 bytes = 16 i32s apart
         let indices = _mm512_setr_epi32(
-            word_offset + 0 * 16, word_offset + 1 * 16, word_offset + 2 * 16, word_offset + 3 * 16,
-            word_offset + 4 * 16, word_offset + 5 * 16, word_offset + 6 * 16, word_offset + 7 * 16,
-            word_offset + 8 * 16, word_offset + 9 * 16, word_offset + 10 * 16, word_offset + 11 * 16,
-            word_offset + 12 * 16, word_offset + 13 * 16, word_offset + 14 * 16, word_offset + 15 * 16,
+            word_offset + 0 * 16,
+            word_offset + 1 * 16,
+            word_offset + 2 * 16,
+            word_offset + 3 * 16,
+            word_offset + 4 * 16,
+            word_offset + 5 * 16,
+            word_offset + 6 * 16,
+            word_offset + 7 * 16,
+            word_offset + 8 * 16,
+            word_offset + 9 * 16,
+            word_offset + 10 * 16,
+            word_offset + 11 * 16,
+            word_offset + 12 * 16,
+            word_offset + 13 * 16,
+            word_offset + 14 * 16,
+            word_offset + 15 * 16,
         );
 
         _mm512_i32gather_epi32::<4>(indices, base)
@@ -1907,56 +2714,154 @@ pub mod parallel16 {
         let m14 = load_msg_word_16(blocks, 14);
         let m15 = load_msg_word_16(blocks, 15);
 
-        let m = [m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15];
+        let m = [
+            m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15,
+        ];
 
         // Initialize state (transposed across 16 blocks) using setr for better codegen
         let mut s0 = _mm512_setr_epi32(
-            cvs[0][0] as i32, cvs[1][0] as i32, cvs[2][0] as i32, cvs[3][0] as i32,
-            cvs[4][0] as i32, cvs[5][0] as i32, cvs[6][0] as i32, cvs[7][0] as i32,
-            cvs[8][0] as i32, cvs[9][0] as i32, cvs[10][0] as i32, cvs[11][0] as i32,
-            cvs[12][0] as i32, cvs[13][0] as i32, cvs[14][0] as i32, cvs[15][0] as i32,
+            cvs[0][0] as i32,
+            cvs[1][0] as i32,
+            cvs[2][0] as i32,
+            cvs[3][0] as i32,
+            cvs[4][0] as i32,
+            cvs[5][0] as i32,
+            cvs[6][0] as i32,
+            cvs[7][0] as i32,
+            cvs[8][0] as i32,
+            cvs[9][0] as i32,
+            cvs[10][0] as i32,
+            cvs[11][0] as i32,
+            cvs[12][0] as i32,
+            cvs[13][0] as i32,
+            cvs[14][0] as i32,
+            cvs[15][0] as i32,
         );
         let mut s1 = _mm512_setr_epi32(
-            cvs[0][1] as i32, cvs[1][1] as i32, cvs[2][1] as i32, cvs[3][1] as i32,
-            cvs[4][1] as i32, cvs[5][1] as i32, cvs[6][1] as i32, cvs[7][1] as i32,
-            cvs[8][1] as i32, cvs[9][1] as i32, cvs[10][1] as i32, cvs[11][1] as i32,
-            cvs[12][1] as i32, cvs[13][1] as i32, cvs[14][1] as i32, cvs[15][1] as i32,
+            cvs[0][1] as i32,
+            cvs[1][1] as i32,
+            cvs[2][1] as i32,
+            cvs[3][1] as i32,
+            cvs[4][1] as i32,
+            cvs[5][1] as i32,
+            cvs[6][1] as i32,
+            cvs[7][1] as i32,
+            cvs[8][1] as i32,
+            cvs[9][1] as i32,
+            cvs[10][1] as i32,
+            cvs[11][1] as i32,
+            cvs[12][1] as i32,
+            cvs[13][1] as i32,
+            cvs[14][1] as i32,
+            cvs[15][1] as i32,
         );
         let mut s2 = _mm512_setr_epi32(
-            cvs[0][2] as i32, cvs[1][2] as i32, cvs[2][2] as i32, cvs[3][2] as i32,
-            cvs[4][2] as i32, cvs[5][2] as i32, cvs[6][2] as i32, cvs[7][2] as i32,
-            cvs[8][2] as i32, cvs[9][2] as i32, cvs[10][2] as i32, cvs[11][2] as i32,
-            cvs[12][2] as i32, cvs[13][2] as i32, cvs[14][2] as i32, cvs[15][2] as i32,
+            cvs[0][2] as i32,
+            cvs[1][2] as i32,
+            cvs[2][2] as i32,
+            cvs[3][2] as i32,
+            cvs[4][2] as i32,
+            cvs[5][2] as i32,
+            cvs[6][2] as i32,
+            cvs[7][2] as i32,
+            cvs[8][2] as i32,
+            cvs[9][2] as i32,
+            cvs[10][2] as i32,
+            cvs[11][2] as i32,
+            cvs[12][2] as i32,
+            cvs[13][2] as i32,
+            cvs[14][2] as i32,
+            cvs[15][2] as i32,
         );
         let mut s3 = _mm512_setr_epi32(
-            cvs[0][3] as i32, cvs[1][3] as i32, cvs[2][3] as i32, cvs[3][3] as i32,
-            cvs[4][3] as i32, cvs[5][3] as i32, cvs[6][3] as i32, cvs[7][3] as i32,
-            cvs[8][3] as i32, cvs[9][3] as i32, cvs[10][3] as i32, cvs[11][3] as i32,
-            cvs[12][3] as i32, cvs[13][3] as i32, cvs[14][3] as i32, cvs[15][3] as i32,
+            cvs[0][3] as i32,
+            cvs[1][3] as i32,
+            cvs[2][3] as i32,
+            cvs[3][3] as i32,
+            cvs[4][3] as i32,
+            cvs[5][3] as i32,
+            cvs[6][3] as i32,
+            cvs[7][3] as i32,
+            cvs[8][3] as i32,
+            cvs[9][3] as i32,
+            cvs[10][3] as i32,
+            cvs[11][3] as i32,
+            cvs[12][3] as i32,
+            cvs[13][3] as i32,
+            cvs[14][3] as i32,
+            cvs[15][3] as i32,
         );
         let mut s4 = _mm512_setr_epi32(
-            cvs[0][4] as i32, cvs[1][4] as i32, cvs[2][4] as i32, cvs[3][4] as i32,
-            cvs[4][4] as i32, cvs[5][4] as i32, cvs[6][4] as i32, cvs[7][4] as i32,
-            cvs[8][4] as i32, cvs[9][4] as i32, cvs[10][4] as i32, cvs[11][4] as i32,
-            cvs[12][4] as i32, cvs[13][4] as i32, cvs[14][4] as i32, cvs[15][4] as i32,
+            cvs[0][4] as i32,
+            cvs[1][4] as i32,
+            cvs[2][4] as i32,
+            cvs[3][4] as i32,
+            cvs[4][4] as i32,
+            cvs[5][4] as i32,
+            cvs[6][4] as i32,
+            cvs[7][4] as i32,
+            cvs[8][4] as i32,
+            cvs[9][4] as i32,
+            cvs[10][4] as i32,
+            cvs[11][4] as i32,
+            cvs[12][4] as i32,
+            cvs[13][4] as i32,
+            cvs[14][4] as i32,
+            cvs[15][4] as i32,
         );
         let mut s5 = _mm512_setr_epi32(
-            cvs[0][5] as i32, cvs[1][5] as i32, cvs[2][5] as i32, cvs[3][5] as i32,
-            cvs[4][5] as i32, cvs[5][5] as i32, cvs[6][5] as i32, cvs[7][5] as i32,
-            cvs[8][5] as i32, cvs[9][5] as i32, cvs[10][5] as i32, cvs[11][5] as i32,
-            cvs[12][5] as i32, cvs[13][5] as i32, cvs[14][5] as i32, cvs[15][5] as i32,
+            cvs[0][5] as i32,
+            cvs[1][5] as i32,
+            cvs[2][5] as i32,
+            cvs[3][5] as i32,
+            cvs[4][5] as i32,
+            cvs[5][5] as i32,
+            cvs[6][5] as i32,
+            cvs[7][5] as i32,
+            cvs[8][5] as i32,
+            cvs[9][5] as i32,
+            cvs[10][5] as i32,
+            cvs[11][5] as i32,
+            cvs[12][5] as i32,
+            cvs[13][5] as i32,
+            cvs[14][5] as i32,
+            cvs[15][5] as i32,
         );
         let mut s6 = _mm512_setr_epi32(
-            cvs[0][6] as i32, cvs[1][6] as i32, cvs[2][6] as i32, cvs[3][6] as i32,
-            cvs[4][6] as i32, cvs[5][6] as i32, cvs[6][6] as i32, cvs[7][6] as i32,
-            cvs[8][6] as i32, cvs[9][6] as i32, cvs[10][6] as i32, cvs[11][6] as i32,
-            cvs[12][6] as i32, cvs[13][6] as i32, cvs[14][6] as i32, cvs[15][6] as i32,
+            cvs[0][6] as i32,
+            cvs[1][6] as i32,
+            cvs[2][6] as i32,
+            cvs[3][6] as i32,
+            cvs[4][6] as i32,
+            cvs[5][6] as i32,
+            cvs[6][6] as i32,
+            cvs[7][6] as i32,
+            cvs[8][6] as i32,
+            cvs[9][6] as i32,
+            cvs[10][6] as i32,
+            cvs[11][6] as i32,
+            cvs[12][6] as i32,
+            cvs[13][6] as i32,
+            cvs[14][6] as i32,
+            cvs[15][6] as i32,
         );
         let mut s7 = _mm512_setr_epi32(
-            cvs[0][7] as i32, cvs[1][7] as i32, cvs[2][7] as i32, cvs[3][7] as i32,
-            cvs[4][7] as i32, cvs[5][7] as i32, cvs[6][7] as i32, cvs[7][7] as i32,
-            cvs[8][7] as i32, cvs[9][7] as i32, cvs[10][7] as i32, cvs[11][7] as i32,
-            cvs[12][7] as i32, cvs[13][7] as i32, cvs[14][7] as i32, cvs[15][7] as i32,
+            cvs[0][7] as i32,
+            cvs[1][7] as i32,
+            cvs[2][7] as i32,
+            cvs[3][7] as i32,
+            cvs[4][7] as i32,
+            cvs[5][7] as i32,
+            cvs[6][7] as i32,
+            cvs[7][7] as i32,
+            cvs[8][7] as i32,
+            cvs[9][7] as i32,
+            cvs[10][7] as i32,
+            cvs[11][7] as i32,
+            cvs[12][7] as i32,
+            cvs[13][7] as i32,
+            cvs[14][7] as i32,
+            cvs[15][7] as i32,
         );
 
         // Use pre-computed IV broadcast vectors
@@ -1967,28 +2872,76 @@ pub mod parallel16 {
 
         // Use setr for counters, block_lens, flags (natural order)
         let mut s12 = _mm512_setr_epi32(
-            counters[0] as i32, counters[1] as i32, counters[2] as i32, counters[3] as i32,
-            counters[4] as i32, counters[5] as i32, counters[6] as i32, counters[7] as i32,
-            counters[8] as i32, counters[9] as i32, counters[10] as i32, counters[11] as i32,
-            counters[12] as i32, counters[13] as i32, counters[14] as i32, counters[15] as i32,
+            counters[0] as i32,
+            counters[1] as i32,
+            counters[2] as i32,
+            counters[3] as i32,
+            counters[4] as i32,
+            counters[5] as i32,
+            counters[6] as i32,
+            counters[7] as i32,
+            counters[8] as i32,
+            counters[9] as i32,
+            counters[10] as i32,
+            counters[11] as i32,
+            counters[12] as i32,
+            counters[13] as i32,
+            counters[14] as i32,
+            counters[15] as i32,
         );
         let mut s13 = _mm512_setr_epi32(
-            (counters[0] >> 32) as i32, (counters[1] >> 32) as i32, (counters[2] >> 32) as i32, (counters[3] >> 32) as i32,
-            (counters[4] >> 32) as i32, (counters[5] >> 32) as i32, (counters[6] >> 32) as i32, (counters[7] >> 32) as i32,
-            (counters[8] >> 32) as i32, (counters[9] >> 32) as i32, (counters[10] >> 32) as i32, (counters[11] >> 32) as i32,
-            (counters[12] >> 32) as i32, (counters[13] >> 32) as i32, (counters[14] >> 32) as i32, (counters[15] >> 32) as i32,
+            (counters[0] >> 32) as i32,
+            (counters[1] >> 32) as i32,
+            (counters[2] >> 32) as i32,
+            (counters[3] >> 32) as i32,
+            (counters[4] >> 32) as i32,
+            (counters[5] >> 32) as i32,
+            (counters[6] >> 32) as i32,
+            (counters[7] >> 32) as i32,
+            (counters[8] >> 32) as i32,
+            (counters[9] >> 32) as i32,
+            (counters[10] >> 32) as i32,
+            (counters[11] >> 32) as i32,
+            (counters[12] >> 32) as i32,
+            (counters[13] >> 32) as i32,
+            (counters[14] >> 32) as i32,
+            (counters[15] >> 32) as i32,
         );
         let mut s14 = _mm512_setr_epi32(
-            block_lens[0] as i32, block_lens[1] as i32, block_lens[2] as i32, block_lens[3] as i32,
-            block_lens[4] as i32, block_lens[5] as i32, block_lens[6] as i32, block_lens[7] as i32,
-            block_lens[8] as i32, block_lens[9] as i32, block_lens[10] as i32, block_lens[11] as i32,
-            block_lens[12] as i32, block_lens[13] as i32, block_lens[14] as i32, block_lens[15] as i32,
+            block_lens[0] as i32,
+            block_lens[1] as i32,
+            block_lens[2] as i32,
+            block_lens[3] as i32,
+            block_lens[4] as i32,
+            block_lens[5] as i32,
+            block_lens[6] as i32,
+            block_lens[7] as i32,
+            block_lens[8] as i32,
+            block_lens[9] as i32,
+            block_lens[10] as i32,
+            block_lens[11] as i32,
+            block_lens[12] as i32,
+            block_lens[13] as i32,
+            block_lens[14] as i32,
+            block_lens[15] as i32,
         );
         let mut s15 = _mm512_setr_epi32(
-            flags[0] as i32, flags[1] as i32, flags[2] as i32, flags[3] as i32,
-            flags[4] as i32, flags[5] as i32, flags[6] as i32, flags[7] as i32,
-            flags[8] as i32, flags[9] as i32, flags[10] as i32, flags[11] as i32,
-            flags[12] as i32, flags[13] as i32, flags[14] as i32, flags[15] as i32,
+            flags[0] as i32,
+            flags[1] as i32,
+            flags[2] as i32,
+            flags[3] as i32,
+            flags[4] as i32,
+            flags[5] as i32,
+            flags[6] as i32,
+            flags[7] as i32,
+            flags[8] as i32,
+            flags[9] as i32,
+            flags[10] as i32,
+            flags[11] as i32,
+            flags[12] as i32,
+            flags[13] as i32,
+            flags[14] as i32,
+            flags[15] as i32,
         );
 
         // 16-way parallel G function using AVX-512
@@ -2014,21 +2967,77 @@ pub mod parallel16 {
                 // b = (b ^ c) >>> 7
                 $b = _mm512_xor_si512($b, $c);
                 $b = _mm512_or_si512(_mm512_srli_epi32($b, 7), _mm512_slli_epi32($b, 25));
-            }
+            };
         }
 
         // Round macro
         macro_rules! round {
             ($r:expr) => {
-                g16!(s0, s4, s8, s12, m[MSG_SCHEDULE[$r][0]], m[MSG_SCHEDULE[$r][1]]);
-                g16!(s1, s5, s9, s13, m[MSG_SCHEDULE[$r][2]], m[MSG_SCHEDULE[$r][3]]);
-                g16!(s2, s6, s10, s14, m[MSG_SCHEDULE[$r][4]], m[MSG_SCHEDULE[$r][5]]);
-                g16!(s3, s7, s11, s15, m[MSG_SCHEDULE[$r][6]], m[MSG_SCHEDULE[$r][7]]);
-                g16!(s0, s5, s10, s15, m[MSG_SCHEDULE[$r][8]], m[MSG_SCHEDULE[$r][9]]);
-                g16!(s1, s6, s11, s12, m[MSG_SCHEDULE[$r][10]], m[MSG_SCHEDULE[$r][11]]);
-                g16!(s2, s7, s8, s13, m[MSG_SCHEDULE[$r][12]], m[MSG_SCHEDULE[$r][13]]);
-                g16!(s3, s4, s9, s14, m[MSG_SCHEDULE[$r][14]], m[MSG_SCHEDULE[$r][15]]);
-            }
+                g16!(
+                    s0,
+                    s4,
+                    s8,
+                    s12,
+                    m[MSG_SCHEDULE[$r][0]],
+                    m[MSG_SCHEDULE[$r][1]]
+                );
+                g16!(
+                    s1,
+                    s5,
+                    s9,
+                    s13,
+                    m[MSG_SCHEDULE[$r][2]],
+                    m[MSG_SCHEDULE[$r][3]]
+                );
+                g16!(
+                    s2,
+                    s6,
+                    s10,
+                    s14,
+                    m[MSG_SCHEDULE[$r][4]],
+                    m[MSG_SCHEDULE[$r][5]]
+                );
+                g16!(
+                    s3,
+                    s7,
+                    s11,
+                    s15,
+                    m[MSG_SCHEDULE[$r][6]],
+                    m[MSG_SCHEDULE[$r][7]]
+                );
+                g16!(
+                    s0,
+                    s5,
+                    s10,
+                    s15,
+                    m[MSG_SCHEDULE[$r][8]],
+                    m[MSG_SCHEDULE[$r][9]]
+                );
+                g16!(
+                    s1,
+                    s6,
+                    s11,
+                    s12,
+                    m[MSG_SCHEDULE[$r][10]],
+                    m[MSG_SCHEDULE[$r][11]]
+                );
+                g16!(
+                    s2,
+                    s7,
+                    s8,
+                    s13,
+                    m[MSG_SCHEDULE[$r][12]],
+                    m[MSG_SCHEDULE[$r][13]]
+                );
+                g16!(
+                    s3,
+                    s4,
+                    s9,
+                    s14,
+                    m[MSG_SCHEDULE[$r][14]],
+                    m[MSG_SCHEDULE[$r][15]]
+                );
+            };
         }
 
         round!(0);
@@ -2174,7 +3183,9 @@ pub mod parallel16 {
         let w13 = *(chunk_ptrs[13].add(offset) as *const i32);
         let w14 = *(chunk_ptrs[14].add(offset) as *const i32);
         let w15 = *(chunk_ptrs[15].add(offset) as *const i32);
-        _mm512_setr_epi32(w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15)
+        _mm512_setr_epi32(
+            w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15,
+        )
     }
 
     /// Transpose a 16x16 matrix of 32-bit words in AVX-512 registers.
@@ -2283,32 +3294,45 @@ pub mod parallel16 {
     /// shuffle operations have lower latency than gather instructions.
     #[target_feature(enable = "avx512f")]
     #[inline]
-    unsafe fn load_transpose_msg_16(
-        base_ptr: *const u8,
-        block_idx: usize,
-    ) -> [__m512i; 16] {
+    unsafe fn load_transpose_msg_16(base_ptr: *const u8, block_idx: usize) -> [__m512i; 16] {
         const CHUNK_LEN: usize = 1024;
         const BLOCK_LEN: usize = 64;
         let block_offset = block_idx * BLOCK_LEN;
 
         // Load complete 64-byte block from each of 16 chunks
         let mut vecs: [__m512i; 16] = [_mm512_setzero_si512(); 16];
-        vecs[0] = _mm512_loadu_si512((base_ptr.add(0 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[1] = _mm512_loadu_si512((base_ptr.add(1 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[2] = _mm512_loadu_si512((base_ptr.add(2 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[3] = _mm512_loadu_si512((base_ptr.add(3 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[4] = _mm512_loadu_si512((base_ptr.add(4 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[5] = _mm512_loadu_si512((base_ptr.add(5 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[6] = _mm512_loadu_si512((base_ptr.add(6 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[7] = _mm512_loadu_si512((base_ptr.add(7 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[8] = _mm512_loadu_si512((base_ptr.add(8 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[9] = _mm512_loadu_si512((base_ptr.add(9 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[10] = _mm512_loadu_si512((base_ptr.add(10 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[11] = _mm512_loadu_si512((base_ptr.add(11 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[12] = _mm512_loadu_si512((base_ptr.add(12 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[13] = _mm512_loadu_si512((base_ptr.add(13 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[14] = _mm512_loadu_si512((base_ptr.add(14 * CHUNK_LEN + block_offset)) as *const __m512i);
-        vecs[15] = _mm512_loadu_si512((base_ptr.add(15 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[0] =
+            _mm512_loadu_si512((base_ptr.add(0 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[1] =
+            _mm512_loadu_si512((base_ptr.add(1 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[2] =
+            _mm512_loadu_si512((base_ptr.add(2 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[3] =
+            _mm512_loadu_si512((base_ptr.add(3 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[4] =
+            _mm512_loadu_si512((base_ptr.add(4 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[5] =
+            _mm512_loadu_si512((base_ptr.add(5 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[6] =
+            _mm512_loadu_si512((base_ptr.add(6 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[7] =
+            _mm512_loadu_si512((base_ptr.add(7 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[8] =
+            _mm512_loadu_si512((base_ptr.add(8 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[9] =
+            _mm512_loadu_si512((base_ptr.add(9 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[10] =
+            _mm512_loadu_si512((base_ptr.add(10 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[11] =
+            _mm512_loadu_si512((base_ptr.add(11 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[12] =
+            _mm512_loadu_si512((base_ptr.add(12 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[13] =
+            _mm512_loadu_si512((base_ptr.add(13 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[14] =
+            _mm512_loadu_si512((base_ptr.add(14 * CHUNK_LEN + block_offset)) as *const __m512i);
+        vecs[15] =
+            _mm512_loadu_si512((base_ptr.add(15 * CHUNK_LEN + block_offset)) as *const __m512i);
 
         // Transpose: vecs[i] had word 0-15 from chunk i
         // After transpose: vecs[i] has word i from chunks 0-15
@@ -2326,8 +3350,8 @@ pub mod parallel16 {
         block_idx: usize,
         word_idx: usize,
     ) -> __m512i {
-        const CHUNK_LEN_WORDS: i32 = 256;  // 1024 bytes / 4 bytes per word
-        const BLOCK_LEN_WORDS: i32 = 16;   // 64 bytes / 4 bytes per word
+        const CHUNK_LEN_WORDS: i32 = 256; // 1024 bytes / 4 bytes per word
+        const BLOCK_LEN_WORDS: i32 = 16; // 64 bytes / 4 bytes per word
 
         let base_offset = (block_idx as i32) * BLOCK_LEN_WORDS + (word_idx as i32);
 
@@ -2357,10 +3381,7 @@ pub mod parallel16 {
     /// Load message words using gather (16 gathers per block).
     #[target_feature(enable = "avx512f")]
     #[inline]
-    unsafe fn load_msg_gather_16(
-        base_ptr: *const u8,
-        block_idx: usize,
-    ) -> [__m512i; 16] {
+    unsafe fn load_msg_gather_16(base_ptr: *const u8, block_idx: usize) -> [__m512i; 16] {
         [
             load_msg_word_gather_16(base_ptr, block_idx, 0),
             load_msg_word_gather_16(base_ptr, block_idx, 1),
@@ -2420,24 +3441,40 @@ pub mod parallel16 {
 
         // Counter vectors (constant across blocks)
         let counter_lo = _mm512_setr_epi32(
-            chunk_counters[0] as i32, chunk_counters[1] as i32,
-            chunk_counters[2] as i32, chunk_counters[3] as i32,
-            chunk_counters[4] as i32, chunk_counters[5] as i32,
-            chunk_counters[6] as i32, chunk_counters[7] as i32,
-            chunk_counters[8] as i32, chunk_counters[9] as i32,
-            chunk_counters[10] as i32, chunk_counters[11] as i32,
-            chunk_counters[12] as i32, chunk_counters[13] as i32,
-            chunk_counters[14] as i32, chunk_counters[15] as i32,
+            chunk_counters[0] as i32,
+            chunk_counters[1] as i32,
+            chunk_counters[2] as i32,
+            chunk_counters[3] as i32,
+            chunk_counters[4] as i32,
+            chunk_counters[5] as i32,
+            chunk_counters[6] as i32,
+            chunk_counters[7] as i32,
+            chunk_counters[8] as i32,
+            chunk_counters[9] as i32,
+            chunk_counters[10] as i32,
+            chunk_counters[11] as i32,
+            chunk_counters[12] as i32,
+            chunk_counters[13] as i32,
+            chunk_counters[14] as i32,
+            chunk_counters[15] as i32,
         );
         let counter_hi = _mm512_setr_epi32(
-            (chunk_counters[0] >> 32) as i32, (chunk_counters[1] >> 32) as i32,
-            (chunk_counters[2] >> 32) as i32, (chunk_counters[3] >> 32) as i32,
-            (chunk_counters[4] >> 32) as i32, (chunk_counters[5] >> 32) as i32,
-            (chunk_counters[6] >> 32) as i32, (chunk_counters[7] >> 32) as i32,
-            (chunk_counters[8] >> 32) as i32, (chunk_counters[9] >> 32) as i32,
-            (chunk_counters[10] >> 32) as i32, (chunk_counters[11] >> 32) as i32,
-            (chunk_counters[12] >> 32) as i32, (chunk_counters[13] >> 32) as i32,
-            (chunk_counters[14] >> 32) as i32, (chunk_counters[15] >> 32) as i32,
+            (chunk_counters[0] >> 32) as i32,
+            (chunk_counters[1] >> 32) as i32,
+            (chunk_counters[2] >> 32) as i32,
+            (chunk_counters[3] >> 32) as i32,
+            (chunk_counters[4] >> 32) as i32,
+            (chunk_counters[5] >> 32) as i32,
+            (chunk_counters[6] >> 32) as i32,
+            (chunk_counters[7] >> 32) as i32,
+            (chunk_counters[8] >> 32) as i32,
+            (chunk_counters[9] >> 32) as i32,
+            (chunk_counters[10] >> 32) as i32,
+            (chunk_counters[11] >> 32) as i32,
+            (chunk_counters[12] >> 32) as i32,
+            (chunk_counters[13] >> 32) as i32,
+            (chunk_counters[14] >> 32) as i32,
+            (chunk_counters[15] >> 32) as i32,
         );
         let block_len = _mm512_set1_epi32(64);
 
@@ -2459,7 +3496,7 @@ pub mod parallel16 {
                 $c = _mm512_add_epi32($c, $d);
                 $b = _mm512_xor_si512($b, $c);
                 $b = _mm512_ror_epi32($b, 7);
-            }}
+            }};
         }
 
         // 16-way G function macro - uses native AVX-512 rotate for ALL rotations
@@ -2468,17 +3505,17 @@ pub mod parallel16 {
             ($a:expr, $b:expr, $c:expr, $d:expr, $mx:expr, $my:expr) => {
                 $a = _mm512_add_epi32($a, _mm512_add_epi32($b, $mx));
                 $d = _mm512_xor_si512($d, $a);
-                $d = _mm512_ror_epi32($d, 16);  // Native rotate instead of shuffle
+                $d = _mm512_ror_epi32($d, 16); // Native rotate instead of shuffle
                 $c = _mm512_add_epi32($c, $d);
                 $b = _mm512_xor_si512($b, $c);
                 $b = _mm512_ror_epi32($b, 12);
                 $a = _mm512_add_epi32($a, _mm512_add_epi32($b, $my));
                 $d = _mm512_xor_si512($d, $a);
-                $d = _mm512_ror_epi32($d, 8);   // Native rotate instead of shuffle
+                $d = _mm512_ror_epi32($d, 8); // Native rotate instead of shuffle
                 $c = _mm512_add_epi32($c, $d);
                 $b = _mm512_xor_si512($b, $c);
                 $b = _mm512_ror_epi32($b, 7);
-            }
+            };
         }
 
         // Process all 16 blocks, keeping CVs in registers
@@ -2487,8 +3524,12 @@ pub mod parallel16 {
             let is_last = block_idx == 15;
 
             let mut flags_val = base_flags;
-            if is_first { flags_val |= CHUNK_START; }
-            if is_last { flags_val |= CHUNK_END; }
+            if is_first {
+                flags_val |= CHUNK_START;
+            }
+            if is_last {
+                flags_val |= CHUNK_END;
+            }
             let flags = _mm512_set1_epi32(flags_val as i32);
 
             // Initialize compression state from current CV
@@ -2522,33 +3563,172 @@ pub mod parallel16 {
 
                 macro_rules! round {
                     ($r:expr) => {{
-                        g16!(s0, s4, s8, s12, m[MSG_SCHEDULE[$r][0]], m[MSG_SCHEDULE[$r][1]]);
-                        g16!(s1, s5, s9, s13, m[MSG_SCHEDULE[$r][2]], m[MSG_SCHEDULE[$r][3]]);
-                        g16!(s2, s6, s10, s14, m[MSG_SCHEDULE[$r][4]], m[MSG_SCHEDULE[$r][5]]);
-                        g16!(s3, s7, s11, s15, m[MSG_SCHEDULE[$r][6]], m[MSG_SCHEDULE[$r][7]]);
-                        g16!(s0, s5, s10, s15, m[MSG_SCHEDULE[$r][8]], m[MSG_SCHEDULE[$r][9]]);
-                        g16!(s1, s6, s11, s12, m[MSG_SCHEDULE[$r][10]], m[MSG_SCHEDULE[$r][11]]);
-                        g16!(s2, s7, s8, s13, m[MSG_SCHEDULE[$r][12]], m[MSG_SCHEDULE[$r][13]]);
-                        g16!(s3, s4, s9, s14, m[MSG_SCHEDULE[$r][14]], m[MSG_SCHEDULE[$r][15]]);
-                    }}
+                        g16!(
+                            s0,
+                            s4,
+                            s8,
+                            s12,
+                            m[MSG_SCHEDULE[$r][0]],
+                            m[MSG_SCHEDULE[$r][1]]
+                        );
+                        g16!(
+                            s1,
+                            s5,
+                            s9,
+                            s13,
+                            m[MSG_SCHEDULE[$r][2]],
+                            m[MSG_SCHEDULE[$r][3]]
+                        );
+                        g16!(
+                            s2,
+                            s6,
+                            s10,
+                            s14,
+                            m[MSG_SCHEDULE[$r][4]],
+                            m[MSG_SCHEDULE[$r][5]]
+                        );
+                        g16!(
+                            s3,
+                            s7,
+                            s11,
+                            s15,
+                            m[MSG_SCHEDULE[$r][6]],
+                            m[MSG_SCHEDULE[$r][7]]
+                        );
+                        g16!(
+                            s0,
+                            s5,
+                            s10,
+                            s15,
+                            m[MSG_SCHEDULE[$r][8]],
+                            m[MSG_SCHEDULE[$r][9]]
+                        );
+                        g16!(
+                            s1,
+                            s6,
+                            s11,
+                            s12,
+                            m[MSG_SCHEDULE[$r][10]],
+                            m[MSG_SCHEDULE[$r][11]]
+                        );
+                        g16!(
+                            s2,
+                            s7,
+                            s8,
+                            s13,
+                            m[MSG_SCHEDULE[$r][12]],
+                            m[MSG_SCHEDULE[$r][13]]
+                        );
+                        g16!(
+                            s3,
+                            s4,
+                            s9,
+                            s14,
+                            m[MSG_SCHEDULE[$r][14]],
+                            m[MSG_SCHEDULE[$r][15]]
+                        );
+                    }};
                 }
-                round!(0); round!(1); round!(2); round!(3); round!(4); round!(5); round!(6);
+                round!(0);
+                round!(1);
+                round!(2);
+                round!(3);
+                round!(4);
+                round!(5);
+                round!(6);
             } else {
                 // Inline gather - load message words on-demand
                 macro_rules! round_inline {
                     ($r:expr) => {{
-                        g16_inline!(s0, s4, s8, s12, MSG_SCHEDULE[$r][0], MSG_SCHEDULE[$r][1], base_ptr, block_idx);
-                        g16_inline!(s1, s5, s9, s13, MSG_SCHEDULE[$r][2], MSG_SCHEDULE[$r][3], base_ptr, block_idx);
-                        g16_inline!(s2, s6, s10, s14, MSG_SCHEDULE[$r][4], MSG_SCHEDULE[$r][5], base_ptr, block_idx);
-                        g16_inline!(s3, s7, s11, s15, MSG_SCHEDULE[$r][6], MSG_SCHEDULE[$r][7], base_ptr, block_idx);
-                        g16_inline!(s0, s5, s10, s15, MSG_SCHEDULE[$r][8], MSG_SCHEDULE[$r][9], base_ptr, block_idx);
-                        g16_inline!(s1, s6, s11, s12, MSG_SCHEDULE[$r][10], MSG_SCHEDULE[$r][11], base_ptr, block_idx);
-                        g16_inline!(s2, s7, s8, s13, MSG_SCHEDULE[$r][12], MSG_SCHEDULE[$r][13], base_ptr, block_idx);
-                        g16_inline!(s3, s4, s9, s14, MSG_SCHEDULE[$r][14], MSG_SCHEDULE[$r][15], base_ptr, block_idx);
-                    }}
+                        g16_inline!(
+                            s0,
+                            s4,
+                            s8,
+                            s12,
+                            MSG_SCHEDULE[$r][0],
+                            MSG_SCHEDULE[$r][1],
+                            base_ptr,
+                            block_idx
+                        );
+                        g16_inline!(
+                            s1,
+                            s5,
+                            s9,
+                            s13,
+                            MSG_SCHEDULE[$r][2],
+                            MSG_SCHEDULE[$r][3],
+                            base_ptr,
+                            block_idx
+                        );
+                        g16_inline!(
+                            s2,
+                            s6,
+                            s10,
+                            s14,
+                            MSG_SCHEDULE[$r][4],
+                            MSG_SCHEDULE[$r][5],
+                            base_ptr,
+                            block_idx
+                        );
+                        g16_inline!(
+                            s3,
+                            s7,
+                            s11,
+                            s15,
+                            MSG_SCHEDULE[$r][6],
+                            MSG_SCHEDULE[$r][7],
+                            base_ptr,
+                            block_idx
+                        );
+                        g16_inline!(
+                            s0,
+                            s5,
+                            s10,
+                            s15,
+                            MSG_SCHEDULE[$r][8],
+                            MSG_SCHEDULE[$r][9],
+                            base_ptr,
+                            block_idx
+                        );
+                        g16_inline!(
+                            s1,
+                            s6,
+                            s11,
+                            s12,
+                            MSG_SCHEDULE[$r][10],
+                            MSG_SCHEDULE[$r][11],
+                            base_ptr,
+                            block_idx
+                        );
+                        g16_inline!(
+                            s2,
+                            s7,
+                            s8,
+                            s13,
+                            MSG_SCHEDULE[$r][12],
+                            MSG_SCHEDULE[$r][13],
+                            base_ptr,
+                            block_idx
+                        );
+                        g16_inline!(
+                            s3,
+                            s4,
+                            s9,
+                            s14,
+                            MSG_SCHEDULE[$r][14],
+                            MSG_SCHEDULE[$r][15],
+                            base_ptr,
+                            block_idx
+                        );
+                    }};
                 }
-                round_inline!(0); round_inline!(1); round_inline!(2); round_inline!(3);
-                round_inline!(4); round_inline!(5); round_inline!(6);
+                round_inline!(0);
+                round_inline!(1);
+                round_inline!(2);
+                round_inline!(3);
+                round_inline!(4);
+                round_inline!(5);
+                round_inline!(6);
             }
 
             // XOR with input CV to get output CV (stays in registers for next block!)
@@ -2697,14 +3877,150 @@ pub mod parallel16 {
 
         // Initialize state from CVs (transposed across 16 lanes)
         // Use setr (natural order) - better codegen than set (reversed order)
-        let mut s0 = _mm512_setr_epi32(cvs[0][0] as i32, cvs[1][0] as i32, cvs[2][0] as i32, cvs[3][0] as i32, cvs[4][0] as i32, cvs[5][0] as i32, cvs[6][0] as i32, cvs[7][0] as i32, cvs[8][0] as i32, cvs[9][0] as i32, cvs[10][0] as i32, cvs[11][0] as i32, cvs[12][0] as i32, cvs[13][0] as i32, cvs[14][0] as i32, cvs[15][0] as i32);
-        let mut s1 = _mm512_setr_epi32(cvs[0][1] as i32, cvs[1][1] as i32, cvs[2][1] as i32, cvs[3][1] as i32, cvs[4][1] as i32, cvs[5][1] as i32, cvs[6][1] as i32, cvs[7][1] as i32, cvs[8][1] as i32, cvs[9][1] as i32, cvs[10][1] as i32, cvs[11][1] as i32, cvs[12][1] as i32, cvs[13][1] as i32, cvs[14][1] as i32, cvs[15][1] as i32);
-        let mut s2 = _mm512_setr_epi32(cvs[0][2] as i32, cvs[1][2] as i32, cvs[2][2] as i32, cvs[3][2] as i32, cvs[4][2] as i32, cvs[5][2] as i32, cvs[6][2] as i32, cvs[7][2] as i32, cvs[8][2] as i32, cvs[9][2] as i32, cvs[10][2] as i32, cvs[11][2] as i32, cvs[12][2] as i32, cvs[13][2] as i32, cvs[14][2] as i32, cvs[15][2] as i32);
-        let mut s3 = _mm512_setr_epi32(cvs[0][3] as i32, cvs[1][3] as i32, cvs[2][3] as i32, cvs[3][3] as i32, cvs[4][3] as i32, cvs[5][3] as i32, cvs[6][3] as i32, cvs[7][3] as i32, cvs[8][3] as i32, cvs[9][3] as i32, cvs[10][3] as i32, cvs[11][3] as i32, cvs[12][3] as i32, cvs[13][3] as i32, cvs[14][3] as i32, cvs[15][3] as i32);
-        let mut s4 = _mm512_setr_epi32(cvs[0][4] as i32, cvs[1][4] as i32, cvs[2][4] as i32, cvs[3][4] as i32, cvs[4][4] as i32, cvs[5][4] as i32, cvs[6][4] as i32, cvs[7][4] as i32, cvs[8][4] as i32, cvs[9][4] as i32, cvs[10][4] as i32, cvs[11][4] as i32, cvs[12][4] as i32, cvs[13][4] as i32, cvs[14][4] as i32, cvs[15][4] as i32);
-        let mut s5 = _mm512_setr_epi32(cvs[0][5] as i32, cvs[1][5] as i32, cvs[2][5] as i32, cvs[3][5] as i32, cvs[4][5] as i32, cvs[5][5] as i32, cvs[6][5] as i32, cvs[7][5] as i32, cvs[8][5] as i32, cvs[9][5] as i32, cvs[10][5] as i32, cvs[11][5] as i32, cvs[12][5] as i32, cvs[13][5] as i32, cvs[14][5] as i32, cvs[15][5] as i32);
-        let mut s6 = _mm512_setr_epi32(cvs[0][6] as i32, cvs[1][6] as i32, cvs[2][6] as i32, cvs[3][6] as i32, cvs[4][6] as i32, cvs[5][6] as i32, cvs[6][6] as i32, cvs[7][6] as i32, cvs[8][6] as i32, cvs[9][6] as i32, cvs[10][6] as i32, cvs[11][6] as i32, cvs[12][6] as i32, cvs[13][6] as i32, cvs[14][6] as i32, cvs[15][6] as i32);
-        let mut s7 = _mm512_setr_epi32(cvs[0][7] as i32, cvs[1][7] as i32, cvs[2][7] as i32, cvs[3][7] as i32, cvs[4][7] as i32, cvs[5][7] as i32, cvs[6][7] as i32, cvs[7][7] as i32, cvs[8][7] as i32, cvs[9][7] as i32, cvs[10][7] as i32, cvs[11][7] as i32, cvs[12][7] as i32, cvs[13][7] as i32, cvs[14][7] as i32, cvs[15][7] as i32);
+        let mut s0 = _mm512_setr_epi32(
+            cvs[0][0] as i32,
+            cvs[1][0] as i32,
+            cvs[2][0] as i32,
+            cvs[3][0] as i32,
+            cvs[4][0] as i32,
+            cvs[5][0] as i32,
+            cvs[6][0] as i32,
+            cvs[7][0] as i32,
+            cvs[8][0] as i32,
+            cvs[9][0] as i32,
+            cvs[10][0] as i32,
+            cvs[11][0] as i32,
+            cvs[12][0] as i32,
+            cvs[13][0] as i32,
+            cvs[14][0] as i32,
+            cvs[15][0] as i32,
+        );
+        let mut s1 = _mm512_setr_epi32(
+            cvs[0][1] as i32,
+            cvs[1][1] as i32,
+            cvs[2][1] as i32,
+            cvs[3][1] as i32,
+            cvs[4][1] as i32,
+            cvs[5][1] as i32,
+            cvs[6][1] as i32,
+            cvs[7][1] as i32,
+            cvs[8][1] as i32,
+            cvs[9][1] as i32,
+            cvs[10][1] as i32,
+            cvs[11][1] as i32,
+            cvs[12][1] as i32,
+            cvs[13][1] as i32,
+            cvs[14][1] as i32,
+            cvs[15][1] as i32,
+        );
+        let mut s2 = _mm512_setr_epi32(
+            cvs[0][2] as i32,
+            cvs[1][2] as i32,
+            cvs[2][2] as i32,
+            cvs[3][2] as i32,
+            cvs[4][2] as i32,
+            cvs[5][2] as i32,
+            cvs[6][2] as i32,
+            cvs[7][2] as i32,
+            cvs[8][2] as i32,
+            cvs[9][2] as i32,
+            cvs[10][2] as i32,
+            cvs[11][2] as i32,
+            cvs[12][2] as i32,
+            cvs[13][2] as i32,
+            cvs[14][2] as i32,
+            cvs[15][2] as i32,
+        );
+        let mut s3 = _mm512_setr_epi32(
+            cvs[0][3] as i32,
+            cvs[1][3] as i32,
+            cvs[2][3] as i32,
+            cvs[3][3] as i32,
+            cvs[4][3] as i32,
+            cvs[5][3] as i32,
+            cvs[6][3] as i32,
+            cvs[7][3] as i32,
+            cvs[8][3] as i32,
+            cvs[9][3] as i32,
+            cvs[10][3] as i32,
+            cvs[11][3] as i32,
+            cvs[12][3] as i32,
+            cvs[13][3] as i32,
+            cvs[14][3] as i32,
+            cvs[15][3] as i32,
+        );
+        let mut s4 = _mm512_setr_epi32(
+            cvs[0][4] as i32,
+            cvs[1][4] as i32,
+            cvs[2][4] as i32,
+            cvs[3][4] as i32,
+            cvs[4][4] as i32,
+            cvs[5][4] as i32,
+            cvs[6][4] as i32,
+            cvs[7][4] as i32,
+            cvs[8][4] as i32,
+            cvs[9][4] as i32,
+            cvs[10][4] as i32,
+            cvs[11][4] as i32,
+            cvs[12][4] as i32,
+            cvs[13][4] as i32,
+            cvs[14][4] as i32,
+            cvs[15][4] as i32,
+        );
+        let mut s5 = _mm512_setr_epi32(
+            cvs[0][5] as i32,
+            cvs[1][5] as i32,
+            cvs[2][5] as i32,
+            cvs[3][5] as i32,
+            cvs[4][5] as i32,
+            cvs[5][5] as i32,
+            cvs[6][5] as i32,
+            cvs[7][5] as i32,
+            cvs[8][5] as i32,
+            cvs[9][5] as i32,
+            cvs[10][5] as i32,
+            cvs[11][5] as i32,
+            cvs[12][5] as i32,
+            cvs[13][5] as i32,
+            cvs[14][5] as i32,
+            cvs[15][5] as i32,
+        );
+        let mut s6 = _mm512_setr_epi32(
+            cvs[0][6] as i32,
+            cvs[1][6] as i32,
+            cvs[2][6] as i32,
+            cvs[3][6] as i32,
+            cvs[4][6] as i32,
+            cvs[5][6] as i32,
+            cvs[6][6] as i32,
+            cvs[7][6] as i32,
+            cvs[8][6] as i32,
+            cvs[9][6] as i32,
+            cvs[10][6] as i32,
+            cvs[11][6] as i32,
+            cvs[12][6] as i32,
+            cvs[13][6] as i32,
+            cvs[14][6] as i32,
+            cvs[15][6] as i32,
+        );
+        let mut s7 = _mm512_setr_epi32(
+            cvs[0][7] as i32,
+            cvs[1][7] as i32,
+            cvs[2][7] as i32,
+            cvs[3][7] as i32,
+            cvs[4][7] as i32,
+            cvs[5][7] as i32,
+            cvs[6][7] as i32,
+            cvs[7][7] as i32,
+            cvs[8][7] as i32,
+            cvs[9][7] as i32,
+            cvs[10][7] as i32,
+            cvs[11][7] as i32,
+            cvs[12][7] as i32,
+            cvs[13][7] as i32,
+            cvs[14][7] as i32,
+            cvs[15][7] as i32,
+        );
 
         // IV constants for remaining state (use pre-computed broadcast vectors)
         let mut s8 = IV_BROADCAST_512_0;
@@ -2714,28 +4030,76 @@ pub mod parallel16 {
 
         // Counter low/high, block_lens, flags (use setr for natural order)
         let mut s12 = _mm512_setr_epi32(
-            counters[0] as i32, counters[1] as i32, counters[2] as i32, counters[3] as i32,
-            counters[4] as i32, counters[5] as i32, counters[6] as i32, counters[7] as i32,
-            counters[8] as i32, counters[9] as i32, counters[10] as i32, counters[11] as i32,
-            counters[12] as i32, counters[13] as i32, counters[14] as i32, counters[15] as i32,
+            counters[0] as i32,
+            counters[1] as i32,
+            counters[2] as i32,
+            counters[3] as i32,
+            counters[4] as i32,
+            counters[5] as i32,
+            counters[6] as i32,
+            counters[7] as i32,
+            counters[8] as i32,
+            counters[9] as i32,
+            counters[10] as i32,
+            counters[11] as i32,
+            counters[12] as i32,
+            counters[13] as i32,
+            counters[14] as i32,
+            counters[15] as i32,
         );
         let mut s13 = _mm512_setr_epi32(
-            (counters[0] >> 32) as i32, (counters[1] >> 32) as i32, (counters[2] >> 32) as i32, (counters[3] >> 32) as i32,
-            (counters[4] >> 32) as i32, (counters[5] >> 32) as i32, (counters[6] >> 32) as i32, (counters[7] >> 32) as i32,
-            (counters[8] >> 32) as i32, (counters[9] >> 32) as i32, (counters[10] >> 32) as i32, (counters[11] >> 32) as i32,
-            (counters[12] >> 32) as i32, (counters[13] >> 32) as i32, (counters[14] >> 32) as i32, (counters[15] >> 32) as i32,
+            (counters[0] >> 32) as i32,
+            (counters[1] >> 32) as i32,
+            (counters[2] >> 32) as i32,
+            (counters[3] >> 32) as i32,
+            (counters[4] >> 32) as i32,
+            (counters[5] >> 32) as i32,
+            (counters[6] >> 32) as i32,
+            (counters[7] >> 32) as i32,
+            (counters[8] >> 32) as i32,
+            (counters[9] >> 32) as i32,
+            (counters[10] >> 32) as i32,
+            (counters[11] >> 32) as i32,
+            (counters[12] >> 32) as i32,
+            (counters[13] >> 32) as i32,
+            (counters[14] >> 32) as i32,
+            (counters[15] >> 32) as i32,
         );
         let mut s14 = _mm512_setr_epi32(
-            block_lens[0] as i32, block_lens[1] as i32, block_lens[2] as i32, block_lens[3] as i32,
-            block_lens[4] as i32, block_lens[5] as i32, block_lens[6] as i32, block_lens[7] as i32,
-            block_lens[8] as i32, block_lens[9] as i32, block_lens[10] as i32, block_lens[11] as i32,
-            block_lens[12] as i32, block_lens[13] as i32, block_lens[14] as i32, block_lens[15] as i32,
+            block_lens[0] as i32,
+            block_lens[1] as i32,
+            block_lens[2] as i32,
+            block_lens[3] as i32,
+            block_lens[4] as i32,
+            block_lens[5] as i32,
+            block_lens[6] as i32,
+            block_lens[7] as i32,
+            block_lens[8] as i32,
+            block_lens[9] as i32,
+            block_lens[10] as i32,
+            block_lens[11] as i32,
+            block_lens[12] as i32,
+            block_lens[13] as i32,
+            block_lens[14] as i32,
+            block_lens[15] as i32,
         );
         let mut s15 = _mm512_setr_epi32(
-            flags[0] as i32, flags[1] as i32, flags[2] as i32, flags[3] as i32,
-            flags[4] as i32, flags[5] as i32, flags[6] as i32, flags[7] as i32,
-            flags[8] as i32, flags[9] as i32, flags[10] as i32, flags[11] as i32,
-            flags[12] as i32, flags[13] as i32, flags[14] as i32, flags[15] as i32,
+            flags[0] as i32,
+            flags[1] as i32,
+            flags[2] as i32,
+            flags[3] as i32,
+            flags[4] as i32,
+            flags[5] as i32,
+            flags[6] as i32,
+            flags[7] as i32,
+            flags[8] as i32,
+            flags[9] as i32,
+            flags[10] as i32,
+            flags[11] as i32,
+            flags[12] as i32,
+            flags[13] as i32,
+            flags[14] as i32,
+            flags[15] as i32,
         );
 
         // G function for 16-way
@@ -2752,21 +4116,77 @@ pub mod parallel16 {
                 $c = _mm512_add_epi32($c, $d);
                 $b = _mm512_xor_si512($b, $c);
                 $b = _mm512_or_si512(_mm512_srli_epi32($b, 7), _mm512_slli_epi32($b, 25));
-            }
+            };
         }
 
         // Round macro
         macro_rules! round16 {
             ($r:expr) => {
-                g16!(s0, s4, s8, s12, m[MSG_SCHEDULE[$r][0]], m[MSG_SCHEDULE[$r][1]]);
-                g16!(s1, s5, s9, s13, m[MSG_SCHEDULE[$r][2]], m[MSG_SCHEDULE[$r][3]]);
-                g16!(s2, s6, s10, s14, m[MSG_SCHEDULE[$r][4]], m[MSG_SCHEDULE[$r][5]]);
-                g16!(s3, s7, s11, s15, m[MSG_SCHEDULE[$r][6]], m[MSG_SCHEDULE[$r][7]]);
-                g16!(s0, s5, s10, s15, m[MSG_SCHEDULE[$r][8]], m[MSG_SCHEDULE[$r][9]]);
-                g16!(s1, s6, s11, s12, m[MSG_SCHEDULE[$r][10]], m[MSG_SCHEDULE[$r][11]]);
-                g16!(s2, s7, s8, s13, m[MSG_SCHEDULE[$r][12]], m[MSG_SCHEDULE[$r][13]]);
-                g16!(s3, s4, s9, s14, m[MSG_SCHEDULE[$r][14]], m[MSG_SCHEDULE[$r][15]]);
-            }
+                g16!(
+                    s0,
+                    s4,
+                    s8,
+                    s12,
+                    m[MSG_SCHEDULE[$r][0]],
+                    m[MSG_SCHEDULE[$r][1]]
+                );
+                g16!(
+                    s1,
+                    s5,
+                    s9,
+                    s13,
+                    m[MSG_SCHEDULE[$r][2]],
+                    m[MSG_SCHEDULE[$r][3]]
+                );
+                g16!(
+                    s2,
+                    s6,
+                    s10,
+                    s14,
+                    m[MSG_SCHEDULE[$r][4]],
+                    m[MSG_SCHEDULE[$r][5]]
+                );
+                g16!(
+                    s3,
+                    s7,
+                    s11,
+                    s15,
+                    m[MSG_SCHEDULE[$r][6]],
+                    m[MSG_SCHEDULE[$r][7]]
+                );
+                g16!(
+                    s0,
+                    s5,
+                    s10,
+                    s15,
+                    m[MSG_SCHEDULE[$r][8]],
+                    m[MSG_SCHEDULE[$r][9]]
+                );
+                g16!(
+                    s1,
+                    s6,
+                    s11,
+                    s12,
+                    m[MSG_SCHEDULE[$r][10]],
+                    m[MSG_SCHEDULE[$r][11]]
+                );
+                g16!(
+                    s2,
+                    s7,
+                    s8,
+                    s13,
+                    m[MSG_SCHEDULE[$r][12]],
+                    m[MSG_SCHEDULE[$r][13]]
+                );
+                g16!(
+                    s3,
+                    s4,
+                    s9,
+                    s14,
+                    m[MSG_SCHEDULE[$r][14]],
+                    m[MSG_SCHEDULE[$r][15]]
+                );
+            };
         }
 
         // All 7 rounds
@@ -2897,11 +4317,7 @@ pub mod parallel16 {
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx512f")]
     #[inline]
-    pub unsafe fn compress_round_asm(
-        state: &mut [__m512i; 16],
-        msg: &[__m512i; 16],
-        round: usize,
-    ) {
+    pub unsafe fn compress_round_asm(state: &mut [__m512i; 16], msg: &[__m512i; 16], round: usize) {
         use core::arch::asm;
 
         // Get message words for this round according to BLAKE3 schedule
@@ -3118,24 +4534,40 @@ pub mod parallel16 {
         let mut cv7 = _mm512_set1_epi32(key[7] as i32);
 
         let counter_lo = _mm512_setr_epi32(
-            chunk_counters[0] as i32, chunk_counters[1] as i32,
-            chunk_counters[2] as i32, chunk_counters[3] as i32,
-            chunk_counters[4] as i32, chunk_counters[5] as i32,
-            chunk_counters[6] as i32, chunk_counters[7] as i32,
-            chunk_counters[8] as i32, chunk_counters[9] as i32,
-            chunk_counters[10] as i32, chunk_counters[11] as i32,
-            chunk_counters[12] as i32, chunk_counters[13] as i32,
-            chunk_counters[14] as i32, chunk_counters[15] as i32,
+            chunk_counters[0] as i32,
+            chunk_counters[1] as i32,
+            chunk_counters[2] as i32,
+            chunk_counters[3] as i32,
+            chunk_counters[4] as i32,
+            chunk_counters[5] as i32,
+            chunk_counters[6] as i32,
+            chunk_counters[7] as i32,
+            chunk_counters[8] as i32,
+            chunk_counters[9] as i32,
+            chunk_counters[10] as i32,
+            chunk_counters[11] as i32,
+            chunk_counters[12] as i32,
+            chunk_counters[13] as i32,
+            chunk_counters[14] as i32,
+            chunk_counters[15] as i32,
         );
         let counter_hi = _mm512_setr_epi32(
-            (chunk_counters[0] >> 32) as i32, (chunk_counters[1] >> 32) as i32,
-            (chunk_counters[2] >> 32) as i32, (chunk_counters[3] >> 32) as i32,
-            (chunk_counters[4] >> 32) as i32, (chunk_counters[5] >> 32) as i32,
-            (chunk_counters[6] >> 32) as i32, (chunk_counters[7] >> 32) as i32,
-            (chunk_counters[8] >> 32) as i32, (chunk_counters[9] >> 32) as i32,
-            (chunk_counters[10] >> 32) as i32, (chunk_counters[11] >> 32) as i32,
-            (chunk_counters[12] >> 32) as i32, (chunk_counters[13] >> 32) as i32,
-            (chunk_counters[14] >> 32) as i32, (chunk_counters[15] >> 32) as i32,
+            (chunk_counters[0] >> 32) as i32,
+            (chunk_counters[1] >> 32) as i32,
+            (chunk_counters[2] >> 32) as i32,
+            (chunk_counters[3] >> 32) as i32,
+            (chunk_counters[4] >> 32) as i32,
+            (chunk_counters[5] >> 32) as i32,
+            (chunk_counters[6] >> 32) as i32,
+            (chunk_counters[7] >> 32) as i32,
+            (chunk_counters[8] >> 32) as i32,
+            (chunk_counters[9] >> 32) as i32,
+            (chunk_counters[10] >> 32) as i32,
+            (chunk_counters[11] >> 32) as i32,
+            (chunk_counters[12] >> 32) as i32,
+            (chunk_counters[13] >> 32) as i32,
+            (chunk_counters[14] >> 32) as i32,
+            (chunk_counters[15] >> 32) as i32,
         );
         let block_len = _mm512_set1_epi32(64);
 
@@ -3145,8 +4577,12 @@ pub mod parallel16 {
             let is_last = block_idx == 15;
 
             let mut flags_val = base_flags;
-            if is_first { flags_val |= CHUNK_START; }
-            if is_last { flags_val |= CHUNK_END; }
+            if is_first {
+                flags_val |= CHUNK_START;
+            }
+            if is_last {
+                flags_val |= CHUNK_END;
+            }
             let flags = _mm512_set1_epi32(flags_val as i32);
 
             // Load message with transpose
@@ -3154,10 +4590,22 @@ pub mod parallel16 {
 
             // Initialize state
             let mut state: [__m512i; 16] = [
-                cv0, cv1, cv2, cv3, cv4, cv5, cv6, cv7,
-                IV_BROADCAST_512_0, IV_BROADCAST_512_1,
-                IV_BROADCAST_512_2, IV_BROADCAST_512_3,
-                counter_lo, counter_hi, block_len, flags,
+                cv0,
+                cv1,
+                cv2,
+                cv3,
+                cv4,
+                cv5,
+                cv6,
+                cv7,
+                IV_BROADCAST_512_0,
+                IV_BROADCAST_512_1,
+                IV_BROADCAST_512_2,
+                IV_BROADCAST_512_3,
+                counter_lo,
+                counter_hi,
+                block_len,
+                flags,
             ];
 
             // 7 rounds using assembly
@@ -3284,28 +4732,78 @@ pub fn compress_16blocks_parallel(
     flags: &[u8; 16],
 ) -> [[u32; 8]; 16] {
     if has_avx512f() {
-        unsafe {
-            parallel16::compress_16blocks(cvs, blocks, counters, block_lens, flags)
-        }
+        unsafe { parallel16::compress_16blocks(cvs, blocks, counters, block_lens, flags) }
     } else {
         // Fallback to two 8-way parallel compressions
-        let cvs8_0: [[u32; 8]; 8] = [cvs[0], cvs[1], cvs[2], cvs[3], cvs[4], cvs[5], cvs[6], cvs[7]];
-        let cvs8_1: [[u32; 8]; 8] = [cvs[8], cvs[9], cvs[10], cvs[11], cvs[12], cvs[13], cvs[14], cvs[15]];
-        let blocks8_0: [[u8; 64]; 8] = [blocks[0], blocks[1], blocks[2], blocks[3], blocks[4], blocks[5], blocks[6], blocks[7]];
-        let blocks8_1: [[u8; 64]; 8] = [blocks[8], blocks[9], blocks[10], blocks[11], blocks[12], blocks[13], blocks[14], blocks[15]];
-        let counters8_0: [u64; 8] = [counters[0], counters[1], counters[2], counters[3], counters[4], counters[5], counters[6], counters[7]];
-        let counters8_1: [u64; 8] = [counters[8], counters[9], counters[10], counters[11], counters[12], counters[13], counters[14], counters[15]];
-        let block_lens8_0: [u32; 8] = [block_lens[0], block_lens[1], block_lens[2], block_lens[3], block_lens[4], block_lens[5], block_lens[6], block_lens[7]];
-        let block_lens8_1: [u32; 8] = [block_lens[8], block_lens[9], block_lens[10], block_lens[11], block_lens[12], block_lens[13], block_lens[14], block_lens[15]];
-        let flags8_0: [u8; 8] = [flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7]];
-        let flags8_1: [u8; 8] = [flags[8], flags[9], flags[10], flags[11], flags[12], flags[13], flags[14], flags[15]];
+        let cvs8_0: [[u32; 8]; 8] = [
+            cvs[0], cvs[1], cvs[2], cvs[3], cvs[4], cvs[5], cvs[6], cvs[7],
+        ];
+        let cvs8_1: [[u32; 8]; 8] = [
+            cvs[8], cvs[9], cvs[10], cvs[11], cvs[12], cvs[13], cvs[14], cvs[15],
+        ];
+        let blocks8_0: [[u8; 64]; 8] = [
+            blocks[0], blocks[1], blocks[2], blocks[3], blocks[4], blocks[5], blocks[6], blocks[7],
+        ];
+        let blocks8_1: [[u8; 64]; 8] = [
+            blocks[8], blocks[9], blocks[10], blocks[11], blocks[12], blocks[13], blocks[14],
+            blocks[15],
+        ];
+        let counters8_0: [u64; 8] = [
+            counters[0],
+            counters[1],
+            counters[2],
+            counters[3],
+            counters[4],
+            counters[5],
+            counters[6],
+            counters[7],
+        ];
+        let counters8_1: [u64; 8] = [
+            counters[8],
+            counters[9],
+            counters[10],
+            counters[11],
+            counters[12],
+            counters[13],
+            counters[14],
+            counters[15],
+        ];
+        let block_lens8_0: [u32; 8] = [
+            block_lens[0],
+            block_lens[1],
+            block_lens[2],
+            block_lens[3],
+            block_lens[4],
+            block_lens[5],
+            block_lens[6],
+            block_lens[7],
+        ];
+        let block_lens8_1: [u32; 8] = [
+            block_lens[8],
+            block_lens[9],
+            block_lens[10],
+            block_lens[11],
+            block_lens[12],
+            block_lens[13],
+            block_lens[14],
+            block_lens[15],
+        ];
+        let flags8_0: [u8; 8] = [
+            flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7],
+        ];
+        let flags8_1: [u8; 8] = [
+            flags[8], flags[9], flags[10], flags[11], flags[12], flags[13], flags[14], flags[15],
+        ];
 
-        let result0 = compress_8blocks_parallel(&cvs8_0, &blocks8_0, &counters8_0, &block_lens8_0, &flags8_0);
-        let result1 = compress_8blocks_parallel(&cvs8_1, &blocks8_1, &counters8_1, &block_lens8_1, &flags8_1);
+        let result0 =
+            compress_8blocks_parallel(&cvs8_0, &blocks8_0, &counters8_0, &block_lens8_0, &flags8_0);
+        let result1 =
+            compress_8blocks_parallel(&cvs8_1, &blocks8_1, &counters8_1, &block_lens8_1, &flags8_1);
 
         [
-            result0[0], result0[1], result0[2], result0[3], result0[4], result0[5], result0[6], result0[7],
-            result1[0], result1[1], result1[2], result1[3], result1[4], result1[5], result1[6], result1[7],
+            result0[0], result0[1], result0[2], result0[3], result0[4], result0[5], result0[6],
+            result0[7], result1[0], result1[1], result1[2], result1[3], result1[4], result1[5],
+            result1[6], result1[7],
         ]
     }
 }
@@ -3320,9 +4818,7 @@ pub fn compress_8blocks_parallel(
     flags: &[u8; 8],
 ) -> [[u32; 8]; 8] {
     if has_avx2() {
-        unsafe {
-            parallel8::compress_8blocks(cvs, blocks, counters, block_lens, flags)
-        }
+        unsafe { parallel8::compress_8blocks(cvs, blocks, counters, block_lens, flags) }
     } else {
         // Fallback to two 4-way parallel compressions
         let cvs4_0: [[u32; 8]; 4] = [cvs[0], cvs[1], cvs[2], cvs[3]];
@@ -3336,10 +4832,15 @@ pub fn compress_8blocks_parallel(
         let flags4_0: [u8; 4] = [flags[0], flags[1], flags[2], flags[3]];
         let flags4_1: [u8; 4] = [flags[4], flags[5], flags[6], flags[7]];
 
-        let result0 = compress_4blocks_parallel(&cvs4_0, &blocks4_0, &counters4_0, &block_lens4_0, &flags4_0);
-        let result1 = compress_4blocks_parallel(&cvs4_1, &blocks4_1, &counters4_1, &block_lens4_1, &flags4_1);
+        let result0 =
+            compress_4blocks_parallel(&cvs4_0, &blocks4_0, &counters4_0, &block_lens4_0, &flags4_0);
+        let result1 =
+            compress_4blocks_parallel(&cvs4_1, &blocks4_1, &counters4_1, &block_lens4_1, &flags4_1);
 
-        [result0[0], result0[1], result0[2], result0[3], result1[0], result1[1], result1[2], result1[3]]
+        [
+            result0[0], result0[1], result0[2], result0[3], result1[0], result1[1], result1[2],
+            result1[3],
+        ]
     }
 }
 
@@ -3355,9 +4856,7 @@ pub fn compress_parents_8_parallel(
     flags: u8,
 ) -> [[u32; 8]; 8] {
     if has_avx2() {
-        unsafe {
-            parallel8::compress_parents_8(key, left_cvs, right_cvs, flags)
-        }
+        unsafe { parallel8::compress_parents_8(key, left_cvs, right_cvs, flags) }
     } else {
         // Fallback to two 4-way parent compressions
         let left4_0: [[u32; 8]; 4] = [left_cvs[0], left_cvs[1], left_cvs[2], left_cvs[3]];
@@ -3368,7 +4867,10 @@ pub fn compress_parents_8_parallel(
         let result0 = compress_parents_parallel(key, &left4_0, &right4_0, flags);
         let result1 = compress_parents_parallel(key, &left4_1, &right4_1, flags);
 
-        [result0[0], result0[1], result0[2], result0[3], result1[0], result1[1], result1[2], result1[3]]
+        [
+            result0[0], result0[1], result0[2], result0[3], result1[0], result1[1], result1[2],
+            result1[3],
+        ]
     }
 }
 
@@ -3413,10 +4915,18 @@ pub fn hash_4_chunks_parallel(
 
         // Extract the corresponding block from each chunk
         let blocks: [[u8; 64]; 4] = [
-            chunks[0][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[1][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[2][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[3][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
+            chunks[0][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[1][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[2][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[3][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
         ];
 
         // Build flags for each block
@@ -3484,14 +4994,30 @@ pub fn hash_8_chunks_parallel(
 
         // Extract the corresponding block from each chunk
         let blocks: [[u8; 64]; 8] = [
-            chunks[0][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[1][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[2][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[3][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[4][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[5][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[6][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[7][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
+            chunks[0][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[1][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[2][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[3][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[4][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[5][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[6][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[7][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
         ];
 
         // Build flags for each block
@@ -3624,10 +5150,16 @@ pub unsafe fn hash_8_chunks_from_ptrs(
                 let is_first = block_idx == 0;
                 let is_last = block_idx == 15;
                 let mut flags = base_flags;
-                if is_first { flags |= CHUNK_START; }
-                if is_last { flags |= CHUNK_END; }
+                if is_first {
+                    flags |= CHUNK_START;
+                }
+                if is_last {
+                    flags |= CHUNK_END;
+                }
 
-                let block: [u8; 64] = chunk[block_idx * 64..(block_idx + 1) * 64].try_into().unwrap();
+                let block: [u8; 64] = chunk[block_idx * 64..(block_idx + 1) * 64]
+                    .try_into()
+                    .unwrap();
                 let output = compress_auto(&cv, &block, chunk_counters[i], 64, flags);
                 cv = output[..8].try_into().unwrap();
             }
@@ -3669,8 +5201,12 @@ pub unsafe fn hash_8_chunks_from_ptrs(
         }
 
         let mut block_flags = base_flags;
-        if is_first { block_flags |= CHUNK_START; }
-        if is_last { block_flags |= CHUNK_END; }
+        if is_first {
+            block_flags |= CHUNK_START;
+        }
+        if is_last {
+            block_flags |= CHUNK_END;
+        }
 
         cvs = parallel8::compress_8blocks_zero_copy(
             &cvs,
@@ -3737,30 +5273,52 @@ pub unsafe fn hash_16_chunks_from_ptrs(
     if !has_avx512f() {
         // Fallback to 2x 8-way
         let ptrs_lo: [*const u8; 8] = [
-            chunk_ptrs[0], chunk_ptrs[1], chunk_ptrs[2], chunk_ptrs[3],
-            chunk_ptrs[4], chunk_ptrs[5], chunk_ptrs[6], chunk_ptrs[7],
+            chunk_ptrs[0],
+            chunk_ptrs[1],
+            chunk_ptrs[2],
+            chunk_ptrs[3],
+            chunk_ptrs[4],
+            chunk_ptrs[5],
+            chunk_ptrs[6],
+            chunk_ptrs[7],
         ];
         let ptrs_hi: [*const u8; 8] = [
-            chunk_ptrs[8], chunk_ptrs[9], chunk_ptrs[10], chunk_ptrs[11],
-            chunk_ptrs[12], chunk_ptrs[13], chunk_ptrs[14], chunk_ptrs[15],
+            chunk_ptrs[8],
+            chunk_ptrs[9],
+            chunk_ptrs[10],
+            chunk_ptrs[11],
+            chunk_ptrs[12],
+            chunk_ptrs[13],
+            chunk_ptrs[14],
+            chunk_ptrs[15],
         ];
         let counters_lo: [u64; 8] = [
-            chunk_counters[0], chunk_counters[1], chunk_counters[2], chunk_counters[3],
-            chunk_counters[4], chunk_counters[5], chunk_counters[6], chunk_counters[7],
+            chunk_counters[0],
+            chunk_counters[1],
+            chunk_counters[2],
+            chunk_counters[3],
+            chunk_counters[4],
+            chunk_counters[5],
+            chunk_counters[6],
+            chunk_counters[7],
         ];
         let counters_hi: [u64; 8] = [
-            chunk_counters[8], chunk_counters[9], chunk_counters[10], chunk_counters[11],
-            chunk_counters[12], chunk_counters[13], chunk_counters[14], chunk_counters[15],
+            chunk_counters[8],
+            chunk_counters[9],
+            chunk_counters[10],
+            chunk_counters[11],
+            chunk_counters[12],
+            chunk_counters[13],
+            chunk_counters[14],
+            chunk_counters[15],
         ];
 
         let cvs_lo = hash_8_chunks_from_ptrs(key, &ptrs_lo, &counters_lo, base_flags);
         let cvs_hi = hash_8_chunks_from_ptrs(key, &ptrs_hi, &counters_hi, base_flags);
 
         return [
-            cvs_lo[0], cvs_lo[1], cvs_lo[2], cvs_lo[3],
-            cvs_lo[4], cvs_lo[5], cvs_lo[6], cvs_lo[7],
-            cvs_hi[0], cvs_hi[1], cvs_hi[2], cvs_hi[3],
-            cvs_hi[4], cvs_hi[5], cvs_hi[6], cvs_hi[7],
+            cvs_lo[0], cvs_lo[1], cvs_lo[2], cvs_lo[3], cvs_lo[4], cvs_lo[5], cvs_lo[6], cvs_lo[7],
+            cvs_hi[0], cvs_hi[1], cvs_hi[2], cvs_hi[3], cvs_hi[4], cvs_hi[5], cvs_hi[6], cvs_hi[7],
         ];
     }
 
@@ -3787,8 +5345,12 @@ pub unsafe fn hash_16_chunks_from_ptrs(
         }
 
         let mut block_flags = base_flags;
-        if is_first { block_flags |= CHUNK_START; }
-        if is_last { block_flags |= CHUNK_END; }
+        if is_first {
+            block_flags |= CHUNK_START;
+        }
+        if is_last {
+            block_flags |= CHUNK_END;
+        }
 
         // Process using AVX-512 16-way parallel
         cvs = parallel16::compress_16blocks_from_ptrs(
@@ -3820,28 +5382,38 @@ pub fn hash_16_chunks_parallel(
     if !has_avx512f() {
         // Fallback to two 8-way parallel calls
         let chunks8_0: [[u8; 1024]; 8] = [
-            chunks[0], chunks[1], chunks[2], chunks[3],
-            chunks[4], chunks[5], chunks[6], chunks[7],
+            chunks[0], chunks[1], chunks[2], chunks[3], chunks[4], chunks[5], chunks[6], chunks[7],
         ];
         let chunks8_1: [[u8; 1024]; 8] = [
-            chunks[8], chunks[9], chunks[10], chunks[11],
-            chunks[12], chunks[13], chunks[14], chunks[15],
+            chunks[8], chunks[9], chunks[10], chunks[11], chunks[12], chunks[13], chunks[14],
+            chunks[15],
         ];
         let counters8_0: [u64; 8] = [
-            chunk_counters[0], chunk_counters[1], chunk_counters[2], chunk_counters[3],
-            chunk_counters[4], chunk_counters[5], chunk_counters[6], chunk_counters[7],
+            chunk_counters[0],
+            chunk_counters[1],
+            chunk_counters[2],
+            chunk_counters[3],
+            chunk_counters[4],
+            chunk_counters[5],
+            chunk_counters[6],
+            chunk_counters[7],
         ];
         let counters8_1: [u64; 8] = [
-            chunk_counters[8], chunk_counters[9], chunk_counters[10], chunk_counters[11],
-            chunk_counters[12], chunk_counters[13], chunk_counters[14], chunk_counters[15],
+            chunk_counters[8],
+            chunk_counters[9],
+            chunk_counters[10],
+            chunk_counters[11],
+            chunk_counters[12],
+            chunk_counters[13],
+            chunk_counters[14],
+            chunk_counters[15],
         ];
         let result0 = hash_8_chunks_parallel(key, &chunks8_0, &counters8_0, base_flags);
         let result1 = hash_8_chunks_parallel(key, &chunks8_1, &counters8_1, base_flags);
         return [
-            result0[0], result0[1], result0[2], result0[3],
-            result0[4], result0[5], result0[6], result0[7],
-            result1[0], result1[1], result1[2], result1[3],
-            result1[4], result1[5], result1[6], result1[7],
+            result0[0], result0[1], result0[2], result0[3], result0[4], result0[5], result0[6],
+            result0[7], result1[0], result1[1], result1[2], result1[3], result1[4], result1[5],
+            result1[6], result1[7],
         ];
     }
 
@@ -3858,22 +5430,54 @@ pub fn hash_16_chunks_parallel(
 
         // Extract the corresponding block from each chunk
         let blocks: [[u8; 64]; 16] = [
-            chunks[0][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[1][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[2][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[3][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[4][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[5][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[6][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[7][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[8][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[9][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[10][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[11][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[12][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[13][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[14][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
-            chunks[15][block_idx * 64..(block_idx + 1) * 64].try_into().unwrap(),
+            chunks[0][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[1][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[2][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[3][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[4][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[5][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[6][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[7][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[8][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[9][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[10][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[11][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[12][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[13][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[14][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
+            chunks[15][block_idx * 64..(block_idx + 1) * 64]
+                .try_into()
+                .unwrap(),
         ];
 
         // Build flags for each block
@@ -3940,10 +5544,22 @@ pub fn hash_many_chunks_parallel(
             }
 
             let counters: [u64; 16] = [
-                chunk_counter, chunk_counter + 1, chunk_counter + 2, chunk_counter + 3,
-                chunk_counter + 4, chunk_counter + 5, chunk_counter + 6, chunk_counter + 7,
-                chunk_counter + 8, chunk_counter + 9, chunk_counter + 10, chunk_counter + 11,
-                chunk_counter + 12, chunk_counter + 13, chunk_counter + 14, chunk_counter + 15,
+                chunk_counter,
+                chunk_counter + 1,
+                chunk_counter + 2,
+                chunk_counter + 3,
+                chunk_counter + 4,
+                chunk_counter + 5,
+                chunk_counter + 6,
+                chunk_counter + 7,
+                chunk_counter + 8,
+                chunk_counter + 9,
+                chunk_counter + 10,
+                chunk_counter + 11,
+                chunk_counter + 12,
+                chunk_counter + 13,
+                chunk_counter + 14,
+                chunk_counter + 15,
             ];
 
             // SAFETY: data[offset..] contains at least 16 contiguous chunks (16KB)
@@ -3951,7 +5567,13 @@ pub fn hash_many_chunks_parallel(
             // Use load+transpose for small data (< 128KB fits in L2 cache), gather for larger.
             let use_transpose = data.len() <= 128 * 1024;
             let batch_cvs = unsafe {
-                parallel16::hash_16_chunks_fused(key, data.as_ptr().add(offset), &counters, base_flags, use_transpose)
+                parallel16::hash_16_chunks_fused(
+                    key,
+                    data.as_ptr().add(offset),
+                    &counters,
+                    base_flags,
+                    use_transpose,
+                )
             };
             cvs.extend_from_slice(&batch_cvs);
 
@@ -3998,9 +5620,15 @@ pub fn hash_many_chunks_parallel(
     while offset + BATCH_BYTES_4 <= data.len() {
         let chunks: [[u8; 1024]; 4] = [
             data[offset..offset + CHUNK_LEN].try_into().unwrap(),
-            data[offset + CHUNK_LEN..offset + 2 * CHUNK_LEN].try_into().unwrap(),
-            data[offset + 2 * CHUNK_LEN..offset + 3 * CHUNK_LEN].try_into().unwrap(),
-            data[offset + 3 * CHUNK_LEN..offset + 4 * CHUNK_LEN].try_into().unwrap(),
+            data[offset + CHUNK_LEN..offset + 2 * CHUNK_LEN]
+                .try_into()
+                .unwrap(),
+            data[offset + 2 * CHUNK_LEN..offset + 3 * CHUNK_LEN]
+                .try_into()
+                .unwrap(),
+            data[offset + 3 * CHUNK_LEN..offset + 4 * CHUNK_LEN]
+                .try_into()
+                .unwrap(),
         ];
 
         let counters = [
@@ -4031,19 +5659,16 @@ pub fn hash_many_chunks_parallel(
 
 /// Hash a single complete chunk (1024 bytes).
 #[cfg(all(feature = "std", target_arch = "x86_64"))]
-fn hash_single_chunk(
-    key: &[u32; 8],
-    chunk: &[u8; 1024],
-    counter: u64,
-    base_flags: u8,
-) -> [u32; 8] {
+fn hash_single_chunk(key: &[u32; 8], chunk: &[u8; 1024], counter: u64, base_flags: u8) -> [u32; 8] {
     const CHUNK_START: u8 = 1;
     const CHUNK_END: u8 = 2;
 
     let mut cv = *key;
 
     for block_idx in 0..16 {
-        let block: [u8; 64] = chunk[block_idx * 64..(block_idx + 1) * 64].try_into().unwrap();
+        let block: [u8; 64] = chunk[block_idx * 64..(block_idx + 1) * 64]
+            .try_into()
+            .unwrap();
         let is_first = block_idx == 0;
         let is_last = block_idx == 15;
 
@@ -4066,11 +5691,7 @@ fn hash_single_chunk(
 ///
 /// This performs the tree reduction, processing 8 parent nodes at a time with AVX2.
 #[cfg(all(feature = "std", target_arch = "x86_64"))]
-pub fn merge_cvs_to_root(
-    key: &[u32; 8],
-    cvs: &[[u32; 8]],
-    base_flags: u8,
-) -> [u32; 8] {
+pub fn merge_cvs_to_root(key: &[u32; 8], cvs: &[[u32; 8]], base_flags: u8) -> [u32; 8] {
     const PARENT: u8 = 4;
     const ROOT: u8 = 8;
 
@@ -4138,7 +5759,8 @@ pub fn merge_cvs_to_root(
 
         // Handle remaining pairs sequentially
         while i + 2 <= current_level.len() {
-            let parent_cv = parent_cv_single(key, &current_level[i], &current_level[i + 1], base_flags);
+            let parent_cv =
+                parent_cv_single(key, &current_level[i], &current_level[i + 1], base_flags);
             next_level.push(parent_cv);
             i += 2;
         }
@@ -4301,7 +5923,9 @@ pub fn hash_large_parallel_mt(data: &[u8]) -> [u8; 32] {
 
         for i in 0..leftover_chunks {
             let chunk_offset = leftover_offset + i * CHUNK_LEN;
-            let chunk: [u8; 1024] = data[chunk_offset..chunk_offset + CHUNK_LEN].try_into().unwrap();
+            let chunk: [u8; 1024] = data[chunk_offset..chunk_offset + CHUNK_LEN]
+                .try_into()
+                .unwrap();
             let cv = hash_single_chunk(&IV, &chunk, leftover_counter + i as u64, 0);
             cvs.push(cv);
         }
@@ -4401,10 +6025,22 @@ pub fn hash_hyper_parallel(data: &[u8]) -> [u8; 32] {
             let base_counter = (batch_idx * BATCH_SIZE) as u64;
 
             let counters: [u64; 16] = [
-                base_counter, base_counter + 1, base_counter + 2, base_counter + 3,
-                base_counter + 4, base_counter + 5, base_counter + 6, base_counter + 7,
-                base_counter + 8, base_counter + 9, base_counter + 10, base_counter + 11,
-                base_counter + 12, base_counter + 13, base_counter + 14, base_counter + 15,
+                base_counter,
+                base_counter + 1,
+                base_counter + 2,
+                base_counter + 3,
+                base_counter + 4,
+                base_counter + 5,
+                base_counter + 6,
+                base_counter + 7,
+                base_counter + 8,
+                base_counter + 9,
+                base_counter + 10,
+                base_counter + 11,
+                base_counter + 12,
+                base_counter + 13,
+                base_counter + 14,
+                base_counter + 15,
             ];
 
             // SAFETY: offset is within bounds
@@ -4453,7 +6089,9 @@ pub fn hash_hyper_parallel(data: &[u8]) -> [u8; 32] {
             // Process remaining (< 8) sequentially
             for i in 8..leftover_chunks {
                 let chunk_offset = leftover_offset + i * CHUNK_LEN;
-                let chunk: [u8; 1024] = data[chunk_offset..chunk_offset + CHUNK_LEN].try_into().unwrap();
+                let chunk: [u8; 1024] = data[chunk_offset..chunk_offset + CHUNK_LEN]
+                    .try_into()
+                    .unwrap();
                 let cv = hash_single_chunk(&IV, &chunk, leftover_counter + i as u64, 0);
                 cvs.push(cv);
             }
@@ -4461,7 +6099,9 @@ pub fn hash_hyper_parallel(data: &[u8]) -> [u8; 32] {
             // Process all leftover chunks sequentially
             for i in 0..leftover_chunks {
                 let chunk_offset = leftover_offset + i * CHUNK_LEN;
-                let chunk: [u8; 1024] = data[chunk_offset..chunk_offset + CHUNK_LEN].try_into().unwrap();
+                let chunk: [u8; 1024] = data[chunk_offset..chunk_offset + CHUNK_LEN]
+                    .try_into()
+                    .unwrap();
                 let cv = hash_single_chunk(&IV, &chunk, leftover_counter + i as u64, 0);
                 cvs.push(cv);
             }
@@ -4698,8 +6338,7 @@ pub fn hash_batch(messages: &[&[u8]]) -> Vec<[u8; 32]> {
         if chunk.len() == 8 {
             // Full batch
             let batch: [&[u8]; 8] = [
-                chunk[0], chunk[1], chunk[2], chunk[3],
-                chunk[4], chunk[5], chunk[6], chunk[7],
+                chunk[0], chunk[1], chunk[2], chunk[3], chunk[4], chunk[5], chunk[6], chunk[7],
             ];
             let hashes = hash_batch_8(&batch);
             results.extend_from_slice(&hashes);
@@ -4796,11 +6435,7 @@ fn hash_partial_chunk(key: &[u32; 8], data: &[u8], counter: u64) -> [u32; 8] {
 
 /// Merge CVs to root with proper ROOT flag handling.
 #[cfg(all(feature = "std", target_arch = "x86_64"))]
-fn merge_cvs_to_root_final(
-    key: &[u32; 8],
-    cvs: &[[u32; 8]],
-    base_flags: u8,
-) -> [u32; 8] {
+fn merge_cvs_to_root_final(key: &[u32; 8], cvs: &[[u32; 8]], base_flags: u8) -> [u32; 8] {
     const PARENT: u8 = 4;
     const ROOT: u8 = 8;
 
@@ -4838,7 +6473,11 @@ fn merge_cvs_to_root_final(
         // Handle remaining pairs sequentially
         while i + 2 <= current_level.len() {
             let is_root = is_final_level && i + 2 == current_level.len() && next_level.is_empty();
-            let flags = if is_root { base_flags | ROOT } else { base_flags };
+            let flags = if is_root {
+                base_flags | ROOT
+            } else {
+                base_flags
+            };
             let parent_cv = parent_cv_single(key, &current_level[i], &current_level[i + 1], flags);
             next_level.push(parent_cv);
             i += 2;
@@ -4938,13 +6577,13 @@ impl StreamingHasher {
 
             let chunks: [[u8; 1024]; 8] = [
                 batch_data[0..CHUNK_LEN].try_into().unwrap(),
-                batch_data[CHUNK_LEN..2*CHUNK_LEN].try_into().unwrap(),
-                batch_data[2*CHUNK_LEN..3*CHUNK_LEN].try_into().unwrap(),
-                batch_data[3*CHUNK_LEN..4*CHUNK_LEN].try_into().unwrap(),
-                batch_data[4*CHUNK_LEN..5*CHUNK_LEN].try_into().unwrap(),
-                batch_data[5*CHUNK_LEN..6*CHUNK_LEN].try_into().unwrap(),
-                batch_data[6*CHUNK_LEN..7*CHUNK_LEN].try_into().unwrap(),
-                batch_data[7*CHUNK_LEN..8*CHUNK_LEN].try_into().unwrap(),
+                batch_data[CHUNK_LEN..2 * CHUNK_LEN].try_into().unwrap(),
+                batch_data[2 * CHUNK_LEN..3 * CHUNK_LEN].try_into().unwrap(),
+                batch_data[3 * CHUNK_LEN..4 * CHUNK_LEN].try_into().unwrap(),
+                batch_data[4 * CHUNK_LEN..5 * CHUNK_LEN].try_into().unwrap(),
+                batch_data[5 * CHUNK_LEN..6 * CHUNK_LEN].try_into().unwrap(),
+                batch_data[6 * CHUNK_LEN..7 * CHUNK_LEN].try_into().unwrap(),
+                batch_data[7 * CHUNK_LEN..8 * CHUNK_LEN].try_into().unwrap(),
             ];
 
             let counters = [
@@ -5070,11 +6709,13 @@ mod tests {
 
         let portable_result = compress_portable(&cv, &block, counter, block_len, flags);
 
-        let sse41_result = unsafe {
-            sse41::compress_block_sse41(&cv, &block, counter, block_len, flags)
-        };
+        let sse41_result =
+            unsafe { sse41::compress_block_sse41(&cv, &block, counter, block_len, flags) };
 
-        assert_eq!(portable_result, sse41_result, "SSE4.1 result should match portable");
+        assert_eq!(
+            portable_result, sse41_result,
+            "SSE4.1 result should match portable"
+        );
     }
 
     #[test]
@@ -5099,8 +6740,8 @@ mod tests {
 
         let cv0 = IV;
         let cv1 = [
-            0x12345678, 0x9ABCDEF0, 0x13579BDF, 0x2468ACE0,
-            0x11111111, 0x22222222, 0x33333333, 0x44444444,
+            0x12345678, 0x9ABCDEF0, 0x13579BDF, 0x2468ACE0, 0x11111111, 0x22222222, 0x33333333,
+            0x44444444,
         ];
         let block0 = [0x42u8; 64];
         let block1 = [0x99u8; 64];
@@ -5110,52 +6751,69 @@ mod tests {
         let flags = 1u8;
 
         // Get SSE4.1 results separately
-        let sse41_result0 = unsafe {
-            sse41::compress_block_sse41(&cv0, &block0, counter0, block_len, flags)
-        };
-        let sse41_result1 = unsafe {
-            sse41::compress_block_sse41(&cv1, &block1, counter1, block_len, flags)
-        };
+        let sse41_result0 =
+            unsafe { sse41::compress_block_sse41(&cv0, &block0, counter0, block_len, flags) };
+        let sse41_result1 =
+            unsafe { sse41::compress_block_sse41(&cv1, &block1, counter1, block_len, flags) };
 
         // Get AVX2 results together
         let (avx2_result0, avx2_result1) = unsafe {
-            avx2::compress_2blocks_avx2(&cv0, &cv1, &block0, &block1, counter0, counter1, block_len, flags)
+            avx2::compress_2blocks_avx2(
+                &cv0, &cv1, &block0, &block1, counter0, counter1, block_len, flags,
+            )
         };
 
-        assert_eq!(sse41_result0, avx2_result0, "AVX2 block 0 should match SSE4.1");
-        assert_eq!(sse41_result1, avx2_result1, "AVX2 block 1 should match SSE4.1");
+        assert_eq!(
+            sse41_result0, avx2_result0,
+            "AVX2 block 0 should match SSE4.1"
+        );
+        assert_eq!(
+            sse41_result1, avx2_result1,
+            "AVX2 block 1 should match SSE4.1"
+        );
     }
 
     #[test]
     fn test_parallel4_matches_sequential() {
         let cvs = [
             IV,
-            [0x12345678, 0x9ABCDEF0, 0x13579BDF, 0x2468ACE0, 0x11111111, 0x22222222, 0x33333333, 0x44444444],
-            [0xDEADBEEF, 0xCAFEBABE, 0x12121212, 0x34343434, 0x56565656, 0x78787878, 0x9A9A9A9A, 0xBCBCBCBC],
-            [0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD, 0xEEEEEEEE, 0xFFFFFFFF, 0x00000000, 0x11111111],
+            [
+                0x12345678, 0x9ABCDEF0, 0x13579BDF, 0x2468ACE0, 0x11111111, 0x22222222, 0x33333333,
+                0x44444444,
+            ],
+            [
+                0xDEADBEEF, 0xCAFEBABE, 0x12121212, 0x34343434, 0x56565656, 0x78787878, 0x9A9A9A9A,
+                0xBCBCBCBC,
+            ],
+            [
+                0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD, 0xEEEEEEEE, 0xFFFFFFFF, 0x00000000,
+                0x11111111,
+            ],
         ];
-        let blocks = [
-            [0x42u8; 64],
-            [0x99u8; 64],
-            [0x11u8; 64],
-            [0xFFu8; 64],
-        ];
+        let blocks = [[0x42u8; 64], [0x99u8; 64], [0x11u8; 64], [0xFFu8; 64]];
         let counters = [0u64, 1, 2, 3];
         let block_lens = [64u32; 4];
         let flags = [1u8, 2, 3, 4];
 
         // Get sequential results
         let seq_results: [[u32; 8]; 4] = [
-            compress_portable(&cvs[0], &blocks[0], counters[0], block_lens[0], flags[0])[..8].try_into().unwrap(),
-            compress_portable(&cvs[1], &blocks[1], counters[1], block_lens[1], flags[1])[..8].try_into().unwrap(),
-            compress_portable(&cvs[2], &blocks[2], counters[2], block_lens[2], flags[2])[..8].try_into().unwrap(),
-            compress_portable(&cvs[3], &blocks[3], counters[3], block_lens[3], flags[3])[..8].try_into().unwrap(),
+            compress_portable(&cvs[0], &blocks[0], counters[0], block_lens[0], flags[0])[..8]
+                .try_into()
+                .unwrap(),
+            compress_portable(&cvs[1], &blocks[1], counters[1], block_lens[1], flags[1])[..8]
+                .try_into()
+                .unwrap(),
+            compress_portable(&cvs[2], &blocks[2], counters[2], block_lens[2], flags[2])[..8]
+                .try_into()
+                .unwrap(),
+            compress_portable(&cvs[3], &blocks[3], counters[3], block_lens[3], flags[3])[..8]
+                .try_into()
+                .unwrap(),
         ];
 
         // Get parallel results
-        let par_results = unsafe {
-            parallel4::compress_4blocks(&cvs, &blocks, &counters, &block_lens, &flags)
-        };
+        let par_results =
+            unsafe { parallel4::compress_4blocks(&cvs, &blocks, &counters, &block_lens, &flags) };
 
         for i in 0..4 {
             assert_eq!(seq_results[i], par_results[i], "Block {} mismatch", i);
@@ -5214,11 +6872,13 @@ mod tests {
     #[test]
     fn test_merge_cvs_to_root() {
         // Create some test CVs
-        let cvs: Vec<[u32; 8]> = (0..8).map(|i| {
-            let mut cv = IV;
-            cv[0] = cv[0].wrapping_add(i as u32);
-            cv
-        }).collect();
+        let cvs: Vec<[u32; 8]> = (0..8)
+            .map(|i| {
+                let mut cv = IV;
+                cv[0] = cv[0].wrapping_add(i as u32);
+                cv
+            })
+            .collect();
 
         // Merge to root
         let root = merge_cvs_to_root(&IV, &cvs, 0);
@@ -5236,17 +6896,17 @@ mod tests {
     fn test_hash_large_parallel_matches_reference() {
         // Test various sizes including edge cases
         let test_sizes = [
-            0,        // Empty
-            1,        // Single byte
-            64,       // One block
-            1024,     // One chunk
-            1025,     // One chunk + 1 byte
-            2048,     // Two chunks
-            4096,     // Four chunks (first parallel batch)
-            4097,     // Four chunks + 1 byte
-            8192,     // Eight chunks (8-way parallel with AVX2)
-            10000,    // Irregular size
-            100_000,  // Large input
+            0,       // Empty
+            1,       // Single byte
+            64,      // One block
+            1024,    // One chunk
+            1025,    // One chunk + 1 byte
+            2048,    // Two chunks
+            4096,    // Four chunks (first parallel batch)
+            4097,    // Four chunks + 1 byte
+            8192,    // Eight chunks (8-way parallel with AVX2)
+            10000,   // Irregular size
+            100_000, // Large input
         ];
 
         for size in test_sizes {
@@ -5271,17 +6931,17 @@ mod tests {
 
         // Test various sizes including edge cases
         let test_sizes = [
-            0,        // Empty
-            1,        // Single byte
-            64,       // One block
-            1024,     // One chunk
-            1025,     // One chunk + 1 byte
-            2048,     // Two chunks
-            4096,     // Four chunks (first parallel batch)
-            4097,     // Four chunks + 1 byte
-            8192,     // Eight chunks (8-way parallel with AVX2)
-            10000,    // Irregular size
-            100_000,  // Large input
+            0,         // Empty
+            1,         // Single byte
+            64,        // One block
+            1024,      // One chunk
+            1025,      // One chunk + 1 byte
+            2048,      // Two chunks
+            4096,      // Four chunks (first parallel batch)
+            4097,      // Four chunks + 1 byte
+            8192,      // Eight chunks (8-way parallel with AVX2)
+            10000,     // Irregular size
+            100_000,   // Large input
             1_000_000, // 1MB input (tests multi-threading)
         ];
 
@@ -5309,13 +6969,34 @@ mod tests {
         // Create 8 unique CVs
         let cvs: [[u32; 8]; 8] = [
             IV,
-            [0x12345678, 0x9ABCDEF0, 0x13579BDF, 0x2468ACE0, 0x11111111, 0x22222222, 0x33333333, 0x44444444],
-            [0xDEADBEEF, 0xCAFEBABE, 0x12121212, 0x34343434, 0x56565656, 0x78787878, 0x9A9A9A9A, 0xBCBCBCBC],
-            [0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD, 0xEEEEEEEE, 0xFFFFFFFF, 0x00000000, 0x11111111],
-            [0x11223344, 0x55667788, 0x99AABBCC, 0xDDEEFF00, 0x12345678, 0x9ABCDEF0, 0x13579BDF, 0x2468ACE0],
-            [0xFEDCBA98, 0x76543210, 0x01234567, 0x89ABCDEF, 0xFEDCBA98, 0x76543210, 0x01234567, 0x89ABCDEF],
-            [0x11111111, 0x22222222, 0x33333333, 0x44444444, 0x55555555, 0x66666666, 0x77777777, 0x88888888],
-            [0xA1B2C3D4, 0xE5F60718, 0x293A4B5C, 0x6D7E8F90, 0xA1B2C3D4, 0xE5F60718, 0x293A4B5C, 0x6D7E8F90],
+            [
+                0x12345678, 0x9ABCDEF0, 0x13579BDF, 0x2468ACE0, 0x11111111, 0x22222222, 0x33333333,
+                0x44444444,
+            ],
+            [
+                0xDEADBEEF, 0xCAFEBABE, 0x12121212, 0x34343434, 0x56565656, 0x78787878, 0x9A9A9A9A,
+                0xBCBCBCBC,
+            ],
+            [
+                0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD, 0xEEEEEEEE, 0xFFFFFFFF, 0x00000000,
+                0x11111111,
+            ],
+            [
+                0x11223344, 0x55667788, 0x99AABBCC, 0xDDEEFF00, 0x12345678, 0x9ABCDEF0, 0x13579BDF,
+                0x2468ACE0,
+            ],
+            [
+                0xFEDCBA98, 0x76543210, 0x01234567, 0x89ABCDEF, 0xFEDCBA98, 0x76543210, 0x01234567,
+                0x89ABCDEF,
+            ],
+            [
+                0x11111111, 0x22222222, 0x33333333, 0x44444444, 0x55555555, 0x66666666, 0x77777777,
+                0x88888888,
+            ],
+            [
+                0xA1B2C3D4, 0xE5F60718, 0x293A4B5C, 0x6D7E8F90, 0xA1B2C3D4, 0xE5F60718, 0x293A4B5C,
+                0x6D7E8F90,
+            ],
         ];
 
         // Create 8 unique blocks
@@ -5343,13 +7024,20 @@ mod tests {
         let block_lens_4 = [64u32; 4];
         let flags_4 = [1u8; 4];
 
-        let par4_lo = compress_4blocks_parallel(&cvs_lo, &blocks_lo, &counters_lo, &block_lens_4, &flags_4);
-        let par4_hi = compress_4blocks_parallel(&cvs_hi, &blocks_hi, &counters_hi, &block_lens_4, &flags_4);
+        let par4_lo =
+            compress_4blocks_parallel(&cvs_lo, &blocks_lo, &counters_lo, &block_lens_4, &flags_4);
+        let par4_hi =
+            compress_4blocks_parallel(&cvs_hi, &blocks_hi, &counters_hi, &block_lens_4, &flags_4);
 
         // Compare results
         for i in 0..4 {
             assert_eq!(par8_results[i], par4_lo[i], "Block {} mismatch (low)", i);
-            assert_eq!(par8_results[i + 4], par4_hi[i], "Block {} mismatch (high)", i + 4);
+            assert_eq!(
+                par8_results[i + 4],
+                par4_hi[i],
+                "Block {} mismatch (high)",
+                i + 4
+            );
         }
     }
 
@@ -5412,7 +7100,11 @@ mod tests {
         let zero_copy_cvs = hash_8_chunks_parallel_zero_copy(&IV, &chunks, &counters, 0);
 
         for i in 0..8 {
-            assert_eq!(copy_cvs[i], zero_copy_cvs[i], "Chunk {} CV mismatch between copy and zero-copy", i);
+            assert_eq!(
+                copy_cvs[i], zero_copy_cvs[i],
+                "Chunk {} CV mismatch between copy and zero-copy",
+                i
+            );
         }
     }
 
@@ -5450,8 +7142,8 @@ mod tests {
             b"",
             b"a",
             b"The quick brown fox jumps over the lazy dog",
-            &[0u8; 64],  // Exactly one block
-            &[0u8; 65],  // Just over one block
+            &[0u8; 64],   // Exactly one block
+            &[0u8; 65],   // Just over one block
             &[0xAB; 128], // Two blocks
             b"test message 8",
         ];
@@ -5475,15 +7167,15 @@ mod tests {
     fn test_batch_variable_sizes() {
         // Test batch hashing with various message sizes
         let test_cases: Vec<Vec<u8>> = vec![
-            vec![],                     // Empty
-            vec![0x42],                 // 1 byte
-            vec![0x42; 32],             // 32 bytes
-            vec![0x42; 64],             // Exactly 1 block
-            vec![0x42; 100],            // Between 1-2 blocks
-            vec![0x42; 256],            // 4 blocks
-            vec![0x42; 512],            // 8 blocks
-            vec![0x42; 1000],           // Almost 1 chunk
-            vec![0x42; 1024],           // Exactly 1 chunk
+            vec![],           // Empty
+            vec![0x42],       // 1 byte
+            vec![0x42; 32],   // 32 bytes
+            vec![0x42; 64],   // Exactly 1 block
+            vec![0x42; 100],  // Between 1-2 blocks
+            vec![0x42; 256],  // 4 blocks
+            vec![0x42; 512],  // 8 blocks
+            vec![0x42; 1000], // Almost 1 chunk
+            vec![0x42; 1024], // Exactly 1 chunk
         ];
 
         for (i, msg) in test_cases.iter().enumerate() {
@@ -5518,11 +7210,7 @@ mod tests {
     #[test]
     fn test_batch_flexible() {
         // Test the flexible batch API
-        let messages: Vec<&[u8]> = vec![
-            b"one",
-            b"two",
-            b"three",
-        ];
+        let messages: Vec<&[u8]> = vec![b"one", b"two", b"three"];
 
         let results = hash_batch(&messages);
         assert_eq!(results.len(), 3);
@@ -5678,14 +7366,14 @@ mod tests {
         let large_data: Vec<u8> = (0..5000).map(|i| (i % 256) as u8).collect();
 
         let messages: [&[u8]; 8] = [
-            b"small",                  // Single chunk
-            &large_data[0..500],       // Single chunk
-            &large_data[0..1024],      // Exactly one chunk
-            &large_data[0..1025],      // Just over one chunk
-            &large_data[0..2000],      // Two chunks
-            &large_data[0..3500],      // Multi-chunk
-            b"another small message",  // Single chunk
-            &large_data[0..5000],      // Multi-chunk
+            b"small",                 // Single chunk
+            &large_data[0..500],      // Single chunk
+            &large_data[0..1024],     // Exactly one chunk
+            &large_data[0..1025],     // Just over one chunk
+            &large_data[0..2000],     // Two chunks
+            &large_data[0..3500],     // Multi-chunk
+            b"another small message", // Single chunk
+            &large_data[0..5000],     // Multi-chunk
         ];
 
         let batch_results = hash_batch_8(&messages);

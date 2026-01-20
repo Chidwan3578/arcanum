@@ -229,10 +229,7 @@ impl MlDsa44Ops {
         let kp = MlDsa44Inner::from_seed(&seed.into());
         let expanded = kp.signing_key().to_expanded();
         let sk_bytes: &[u8] = expanded.as_ref();
-        (
-            sk_bytes.to_vec(),
-            kp.verifying_key().encode().to_vec(),
-        )
+        (sk_bytes.to_vec(), kp.verifying_key().encode().to_vec())
     }
 
     /// Sign a message.
@@ -284,10 +281,7 @@ impl MlDsa87Ops {
         let kp = MlDsa87Inner::from_seed(&seed.into());
         let expanded = kp.signing_key().to_expanded();
         let sk_bytes: &[u8] = expanded.as_ref();
-        (
-            sk_bytes.to_vec(),
-            kp.verifying_key().encode().to_vec(),
-        )
+        (sk_bytes.to_vec(), kp.verifying_key().encode().to_vec())
     }
 
     /// Sign a message.

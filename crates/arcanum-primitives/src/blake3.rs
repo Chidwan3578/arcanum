@@ -31,8 +31,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// BLAKE3 initialization vector (same as BLAKE2s)
 const IV: [u32; 8] = [
-    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-    0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
 ];
 
 /// Message word permutation for each round
@@ -472,14 +471,24 @@ impl Blake3 {
     /// - < 256KB: Single-threaded SIMD (~2 GiB/s)
     /// - 256KB - 8MB: Parallel chunks (~6.7 GiB/s)
     /// - >= 8MB: Apex mode (~8.5 GiB/s, **1.75x faster than blake3 crate**)
-    #[cfg(all(feature = "simd", feature = "std", feature = "rayon", target_arch = "x86_64"))]
+    #[cfg(all(
+        feature = "simd",
+        feature = "std",
+        feature = "rayon",
+        target_arch = "x86_64"
+    ))]
     pub fn hash(data: &[u8]) -> [u8; OUT_LEN] {
         // Use adaptive which picks optimal strategy based on data size
         crate::blake3_ultra::hash_adaptive(data)
     }
 
     /// Hash data in one shot (SIMD, single-threaded).
-    #[cfg(all(feature = "simd", feature = "std", not(feature = "rayon"), target_arch = "x86_64"))]
+    #[cfg(all(
+        feature = "simd",
+        feature = "std",
+        not(feature = "rayon"),
+        target_arch = "x86_64"
+    ))]
     pub fn hash(data: &[u8]) -> [u8; OUT_LEN] {
         crate::blake3_simd::hash_large_parallel(data)
     }
@@ -508,12 +517,7 @@ impl Blake3 {
 }
 
 /// Compute parent chaining value from two child CVs
-fn parent_cv(
-    left_cv: &[u32; 8],
-    right_cv: &[u32; 8],
-    key: &[u32; 8],
-    flags: u8,
-) -> [u32; 8] {
+fn parent_cv(left_cv: &[u32; 8], right_cv: &[u32; 8], key: &[u32; 8], flags: u8) -> [u32; 8] {
     let mut block = [0u8; BLOCK_LEN];
     block[..32].copy_from_slice(&words_to_le_bytes(left_cv));
     block[32..].copy_from_slice(&words_to_le_bytes(right_cv));
@@ -525,12 +529,7 @@ fn parent_cv(
 }
 
 /// Create parent output from two child CVs
-fn parent_output(
-    left_cv: &[u32; 8],
-    right_cv: &[u32; 8],
-    key: &[u32; 8],
-    flags: u8,
-) -> Output {
+fn parent_output(left_cv: &[u32; 8], right_cv: &[u32; 8], key: &[u32; 8], flags: u8) -> Output {
     let mut block = [0u8; BLOCK_LEN];
     block[..32].copy_from_slice(&words_to_le_bytes(left_cv));
     block[32..].copy_from_slice(&words_to_le_bytes(right_cv));
@@ -670,16 +669,13 @@ mod tests {
     #[test]
     fn test_blake3_vs_reference_random_sizes() {
         // Test various sizes
-        for size in [0, 1, 63, 64, 65, 127, 128, 1023, 1024, 1025, 2047, 2048, 4096] {
+        for size in [
+            0, 1, 63, 64, 65, 127, 128, 1023, 1024, 1025, 2047, 2048, 4096,
+        ] {
             let data: Vec<u8> = (0..size).map(|i| (i % 256) as u8).collect();
             let hash = Blake3::hash(&data);
             let expected = blake3::hash(&data);
-            assert_eq!(
-                hash,
-                *expected.as_bytes(),
-                "Mismatch for size {}",
-                size
-            );
+            assert_eq!(hash, *expected.as_bytes(), "Mismatch for size {}", size);
         }
     }
 
@@ -688,7 +684,13 @@ mod tests {
         // Test the G function and compression directly
         let cv = IV;
         let block = [0u8; 64];
-        let out = compress(&cv, &block, 0, 64, flags::CHUNK_START | flags::CHUNK_END | flags::ROOT);
+        let out = compress(
+            &cv,
+            &block,
+            0,
+            64,
+            flags::CHUNK_START | flags::CHUNK_END | flags::ROOT,
+        );
 
         // Should produce deterministic output
         assert_ne!(out, [0u32; 16]);

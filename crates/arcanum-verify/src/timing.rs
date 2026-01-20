@@ -55,14 +55,20 @@ pub struct PercentileCrop {
 
 impl Default for PercentileCrop {
     fn default() -> Self {
-        Self { low: 0.0, high: 0.0 }
+        Self {
+            low: 0.0,
+            high: 0.0,
+        }
     }
 }
 
 impl PercentileCrop {
     /// Create symmetric cropping (same percentage from both ends).
     pub fn symmetric(percent: f64) -> Self {
-        Self { low: percent, high: percent }
+        Self {
+            low: percent,
+            high: percent,
+        }
     }
 
     /// Create asymmetric cropping.
@@ -124,7 +130,11 @@ impl TimingResult {
             self.name,
             self.t_value,
             self.threshold,
-            if self.passed { "PASS" } else { "FAIL - TIMING LEAK DETECTED" }
+            if self.passed {
+                "PASS"
+            } else {
+                "FAIL - TIMING LEAK DETECTED"
+            }
         )
     }
 
@@ -148,7 +158,11 @@ impl TimingResult {
             self.timing_difference_percent(),
             self.t_value,
             self.threshold,
-            if self.passed { "PASS (constant-time)" } else { "FAIL (timing leak detected)" }
+            if self.passed {
+                "PASS (constant-time)"
+            } else {
+                "FAIL (timing leak detected)"
+            }
         )
     }
 }
@@ -404,9 +418,7 @@ pub fn assert_constant_time<F, R>(name: &str, iterations: usize, f: F) -> Verify
 where
     F: FnMut(Class) -> R,
 {
-    let result = TimingTest::new(name)
-        .iterations(iterations)
-        .run(f);
+    let result = TimingTest::new(name).iterations(iterations).run(f);
 
     if result.passed {
         Ok(())
@@ -470,7 +482,11 @@ pub mod patterns {
     /// Test padding oracle behavior.
     ///
     /// Compares timing for valid vs invalid padding.
-    pub fn test_padding_oracle<F, R, E>(name: &str, iterations: usize, mut decrypt: F) -> TimingResult
+    pub fn test_padding_oracle<F, R, E>(
+        name: &str,
+        iterations: usize,
+        mut decrypt: F,
+    ) -> TimingResult
     where
         F: FnMut(&[u8]) -> Result<R, E>,
     {
@@ -513,7 +529,11 @@ mod tests {
             });
 
         // Should pass (t-value close to 0)
-        assert!(result.t_value.abs() < 10.0, "t-value too high: {}", result.t_value);
+        assert!(
+            result.t_value.abs() < 10.0,
+            "t-value too high: {}",
+            result.t_value
+        );
     }
 
     #[test]
@@ -560,14 +580,13 @@ mod tests {
 
     #[test]
     fn test_online_mode() {
-        let result = TimingTest::new("online_test")
-            .iterations(1000)
-            .run_online(|class| {
-                match class {
+        let result =
+            TimingTest::new("online_test")
+                .iterations(1000)
+                .run_online(|class| match class {
                     Class::Left => 1u64,
                     Class::Right => 2u64,
-                }
-            });
+                });
 
         assert!(result.samples_after_crop == result.samples);
     }
@@ -580,6 +599,10 @@ mod tests {
         });
 
         // Key sum is constant-time
-        assert!(result.t_value.abs() < 20.0, "Unexpected timing variation: {}", result.t_value);
+        assert!(
+            result.t_value.abs() < 20.0,
+            "Unexpected timing variation: {}",
+            result.t_value
+        );
     }
 }

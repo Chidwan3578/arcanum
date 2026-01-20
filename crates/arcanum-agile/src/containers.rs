@@ -4,7 +4,9 @@
 
 use crate::errors::{AgileError, AgileResult};
 use crate::registry::{AlgorithmId, AlgorithmRegistry};
-use arcanum_symmetric::{Cipher, Aes256Gcm, Aes128Gcm, Aes256GcmSiv, ChaCha20Poly1305Cipher, XChaCha20Poly1305Cipher};
+use arcanum_symmetric::{
+    Aes128Gcm, Aes256Gcm, Aes256GcmSiv, ChaCha20Poly1305Cipher, Cipher, XChaCha20Poly1305Cipher,
+};
 use serde::{Deserialize, Serialize};
 
 /// Magic bytes identifying an Arcanum container.
@@ -59,13 +61,15 @@ impl ContainerHeader {
 
         let format_version = bytes[4];
         if format_version > CONTAINER_VERSION {
-            return Err(AgileError::UnsupportedVersion { version: format_version });
+            return Err(AgileError::UnsupportedVersion {
+                version: format_version,
+            });
         }
 
         // Parse algorithm ID
         let alg_id = u16::from_le_bytes([bytes[5], bytes[6]]);
-        let algorithm = AlgorithmId::from_u16(alg_id)
-            .ok_or(AgileError::UnknownAlgorithm(alg_id))?;
+        let algorithm =
+            AlgorithmId::from_u16(alg_id).ok_or(AgileError::UnknownAlgorithm(alg_id))?;
 
         Ok(Self {
             magic: CONTAINER_MAGIC,
@@ -125,7 +129,10 @@ impl AgileCiphertext {
             Some(MigrationRecommendation {
                 source: self.header.algorithm,
                 target: AlgorithmId::Aes256Gcm, // Default recommendation
-                reason: info.deprecation_reason().unwrap_or("Algorithm deprecated").into(),
+                reason: info
+                    .deprecation_reason()
+                    .unwrap_or("Algorithm deprecated")
+                    .into(),
             })
         } else {
             None
@@ -141,11 +148,7 @@ impl AgileCiphertext {
     ///
     /// # Errors
     /// Returns error if algorithm is unsupported or key size is invalid.
-    pub fn encrypt(
-        algorithm: AlgorithmId,
-        key: &[u8],
-        plaintext: &[u8],
-    ) -> AgileResult<Self> {
+    pub fn encrypt(algorithm: AlgorithmId, key: &[u8], plaintext: &[u8]) -> AgileResult<Self> {
         let info = AlgorithmRegistry::get(algorithm)
             .ok_or(AgileError::UnsupportedAlgorithm { id: algorithm })?;
 
@@ -158,51 +161,55 @@ impl AgileCiphertext {
         }
 
         // Generate nonce and encrypt based on algorithm
-        let (nonce, ciphertext) = match algorithm {
-            AlgorithmId::Aes256Gcm => {
-                let nonce = Aes256Gcm::generate_nonce();
-                let ct = Aes256Gcm::encrypt(key, &nonce, plaintext, None)
-                    .map_err(|_| AgileError::CryptoError {
-                        reason: "encryption failed".into(),
+        let (nonce, ciphertext) =
+            match algorithm {
+                AlgorithmId::Aes256Gcm => {
+                    let nonce = Aes256Gcm::generate_nonce();
+                    let ct = Aes256Gcm::encrypt(key, &nonce, plaintext, None).map_err(|_| {
+                        AgileError::CryptoError {
+                            reason: "encryption failed".into(),
+                        }
                     })?;
-                (nonce, ct)
-            }
-            AlgorithmId::Aes128Gcm => {
-                let nonce = Aes128Gcm::generate_nonce();
-                let ct = Aes128Gcm::encrypt(key, &nonce, plaintext, None)
-                    .map_err(|_| AgileError::CryptoError {
-                        reason: "encryption failed".into(),
+                    (nonce, ct)
+                }
+                AlgorithmId::Aes128Gcm => {
+                    let nonce = Aes128Gcm::generate_nonce();
+                    let ct = Aes128Gcm::encrypt(key, &nonce, plaintext, None).map_err(|_| {
+                        AgileError::CryptoError {
+                            reason: "encryption failed".into(),
+                        }
                     })?;
-                (nonce, ct)
-            }
-            AlgorithmId::Aes256GcmSiv => {
-                let nonce = Aes256GcmSiv::generate_nonce();
-                let ct = Aes256GcmSiv::encrypt(key, &nonce, plaintext, None)
-                    .map_err(|_| AgileError::CryptoError {
-                        reason: "encryption failed".into(),
+                    (nonce, ct)
+                }
+                AlgorithmId::Aes256GcmSiv => {
+                    let nonce = Aes256GcmSiv::generate_nonce();
+                    let ct = Aes256GcmSiv::encrypt(key, &nonce, plaintext, None).map_err(|_| {
+                        AgileError::CryptoError {
+                            reason: "encryption failed".into(),
+                        }
                     })?;
-                (nonce, ct)
-            }
-            AlgorithmId::ChaCha20Poly1305 => {
-                let nonce = ChaCha20Poly1305Cipher::generate_nonce();
-                let ct = ChaCha20Poly1305Cipher::encrypt(key, &nonce, plaintext, None)
-                    .map_err(|_| AgileError::CryptoError {
-                        reason: "encryption failed".into(),
-                    })?;
-                (nonce, ct)
-            }
-            AlgorithmId::XChaCha20Poly1305 => {
-                let nonce = XChaCha20Poly1305Cipher::generate_nonce();
-                let ct = XChaCha20Poly1305Cipher::encrypt(key, &nonce, plaintext, None)
-                    .map_err(|_| AgileError::CryptoError {
-                        reason: "encryption failed".into(),
-                    })?;
-                (nonce, ct)
-            }
-            _ => {
-                return Err(AgileError::UnsupportedAlgorithm { id: algorithm });
-            }
-        };
+                    (nonce, ct)
+                }
+                AlgorithmId::ChaCha20Poly1305 => {
+                    let nonce = ChaCha20Poly1305Cipher::generate_nonce();
+                    let ct = ChaCha20Poly1305Cipher::encrypt(key, &nonce, plaintext, None)
+                        .map_err(|_| AgileError::CryptoError {
+                            reason: "encryption failed".into(),
+                        })?;
+                    (nonce, ct)
+                }
+                AlgorithmId::XChaCha20Poly1305 => {
+                    let nonce = XChaCha20Poly1305Cipher::generate_nonce();
+                    let ct = XChaCha20Poly1305Cipher::encrypt(key, &nonce, plaintext, None)
+                        .map_err(|_| AgileError::CryptoError {
+                            reason: "encryption failed".into(),
+                        })?;
+                    (nonce, ct)
+                }
+                _ => {
+                    return Err(AgileError::UnsupportedAlgorithm { id: algorithm });
+                }
+            };
 
         let mut header = ContainerHeader::new(algorithm);
         header.nonce_len = nonce.len() as u8;
@@ -236,35 +243,34 @@ impl AgileCiphertext {
 
         // Decrypt based on algorithm
         match algorithm {
-            AlgorithmId::Aes256Gcm => {
-                Aes256Gcm::decrypt(key, &self.nonce, &self.ciphertext, None)
-                    .map_err(|_| AgileError::CryptoError {
-                        reason: "decryption failed".into(),
-                    })
-            }
-            AlgorithmId::Aes128Gcm => {
-                Aes128Gcm::decrypt(key, &self.nonce, &self.ciphertext, None)
-                    .map_err(|_| AgileError::CryptoError {
-                        reason: "decryption failed".into(),
-                    })
-            }
+            AlgorithmId::Aes256Gcm => Aes256Gcm::decrypt(key, &self.nonce, &self.ciphertext, None)
+                .map_err(|_| AgileError::CryptoError {
+                    reason: "decryption failed".into(),
+                }),
+            AlgorithmId::Aes128Gcm => Aes128Gcm::decrypt(key, &self.nonce, &self.ciphertext, None)
+                .map_err(|_| AgileError::CryptoError {
+                    reason: "decryption failed".into(),
+                }),
             AlgorithmId::Aes256GcmSiv => {
-                Aes256GcmSiv::decrypt(key, &self.nonce, &self.ciphertext, None)
-                    .map_err(|_| AgileError::CryptoError {
+                Aes256GcmSiv::decrypt(key, &self.nonce, &self.ciphertext, None).map_err(|_| {
+                    AgileError::CryptoError {
                         reason: "decryption failed".into(),
-                    })
+                    }
+                })
             }
             AlgorithmId::ChaCha20Poly1305 => {
-                ChaCha20Poly1305Cipher::decrypt(key, &self.nonce, &self.ciphertext, None)
-                    .map_err(|_| AgileError::CryptoError {
+                ChaCha20Poly1305Cipher::decrypt(key, &self.nonce, &self.ciphertext, None).map_err(
+                    |_| AgileError::CryptoError {
                         reason: "decryption failed".into(),
-                    })
+                    },
+                )
             }
             AlgorithmId::XChaCha20Poly1305 => {
-                XChaCha20Poly1305Cipher::decrypt(key, &self.nonce, &self.ciphertext, None)
-                    .map_err(|_| AgileError::CryptoError {
+                XChaCha20Poly1305Cipher::decrypt(key, &self.nonce, &self.ciphertext, None).map_err(
+                    |_| AgileError::CryptoError {
                         reason: "decryption failed".into(),
-                    })
+                    },
+                )
             }
             _ => Err(AgileError::UnsupportedAlgorithm { id: algorithm }),
         }
@@ -343,11 +349,7 @@ mod tests {
         let key = vec![0u8; 32];
         let plaintext = b"Hello, Arcanum!";
 
-        let container = AgileCiphertext::encrypt(
-            AlgorithmId::Aes256Gcm,
-            &key,
-            plaintext,
-        ).unwrap();
+        let container = AgileCiphertext::encrypt(AlgorithmId::Aes256Gcm, &key, plaintext).unwrap();
 
         let decrypted = container.decrypt(&key).unwrap();
         assert_eq!(&decrypted, plaintext);
@@ -358,11 +360,8 @@ mod tests {
         let key = vec![0u8; 32];
         let plaintext = b"Secret message";
 
-        let container = AgileCiphertext::encrypt(
-            AlgorithmId::ChaCha20Poly1305,
-            &key,
-            plaintext,
-        ).unwrap();
+        let container =
+            AgileCiphertext::encrypt(AlgorithmId::ChaCha20Poly1305, &key, plaintext).unwrap();
 
         let decrypted = container.decrypt(&key).unwrap();
         assert_eq!(&decrypted, plaintext);
@@ -373,11 +372,7 @@ mod tests {
         let key = vec![0u8; 32];
         let plaintext = b"Test data";
 
-        let container = AgileCiphertext::encrypt(
-            AlgorithmId::Aes256Gcm,
-            &key,
-            plaintext,
-        ).unwrap();
+        let container = AgileCiphertext::encrypt(AlgorithmId::Aes256Gcm, &key, plaintext).unwrap();
 
         let bytes = container.to_bytes();
         let parsed = AgileCiphertext::parse(&bytes).unwrap();

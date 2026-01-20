@@ -18,10 +18,10 @@
 //! - r is the blinding factor (randomness)
 //! - G, H are generator points (H is chosen via hash-to-curve)
 
-use crate::curve::{Scalar, RistrettoPoint, CompressedRistretto, RISTRETTO_BASEPOINT_POINT};
+use crate::curve::{CompressedRistretto, RISTRETTO_BASEPOINT_POINT, RistrettoPoint, Scalar};
 use arcanum_core::error::{Error, Result};
 use rand::RngCore;
-use sha2::{Sha512, Digest};
+use sha2::{Digest, Sha512};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// The second generator point H, derived from hashing G.
@@ -143,10 +143,9 @@ impl PedersenCommitment {
 
     /// Decompress from bytes.
     pub fn from_bytes(bytes: &[u8; 32]) -> Result<Self> {
-        let compressed = CompressedRistretto::from_slice(bytes)
-            .map_err(|_| Error::InvalidKeyFormat)?;
-        let point = compressed.decompress()
-            .ok_or(Error::InvalidKeyFormat)?;
+        let compressed =
+            CompressedRistretto::from_slice(bytes).map_err(|_| Error::InvalidKeyFormat)?;
+        let point = compressed.decompress().ok_or(Error::InvalidKeyFormat)?;
         Ok(Self { point })
     }
 
@@ -157,8 +156,7 @@ impl PedersenCommitment {
 
     /// Decode from hex.
     pub fn from_hex(hex_str: &str) -> Result<Self> {
-        let bytes = hex::decode(hex_str)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let bytes = hex::decode(hex_str).map_err(|_| Error::InvalidKeyFormat)?;
         if bytes.len() != 32 {
             return Err(Error::InvalidKeyLength {
                 expected: 32,

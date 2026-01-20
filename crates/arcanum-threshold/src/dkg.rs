@@ -85,12 +85,9 @@ impl DkgParticipant {
     pub fn round1(&mut self) -> Result<DkgRound1> {
         let mut rng = rand::rngs::OsRng;
 
-        let (secret_package, public_package) = frost::keys::dkg::part1(
-            self.identifier,
-            self.total,
-            self.threshold,
-            &mut rng,
-        ).map_err(|e| ThresholdError::DkgError(e.to_string()))?;
+        let (secret_package, public_package) =
+            frost::keys::dkg::part1(self.identifier, self.total, self.threshold, &mut rng)
+                .map_err(|e| ThresholdError::DkgError(e.to_string()))?;
 
         self.round1_secret = Some(secret_package);
 
@@ -105,7 +102,9 @@ impl DkgParticipant {
     /// # Arguments
     /// * `round1_packages` - Round 1 packages from all participants (including self)
     pub fn round2(&mut self, round1_packages: &[DkgRound1]) -> Result<Vec<DkgRound2>> {
-        let secret_package = self.round1_secret.take()
+        let secret_package = self
+            .round1_secret
+            .take()
             .ok_or_else(|| ThresholdError::DkgError("Round 1 not executed".to_string()))?;
 
         // Convert to FROST format, excluding self's package
@@ -118,10 +117,9 @@ impl DkgParticipant {
             }
         }
 
-        let (secret_package, round2_packages) = frost::keys::dkg::part2(
-            secret_package,
-            &frost_packages,
-        ).map_err(|e| ThresholdError::DkgError(e.to_string()))?;
+        let (secret_package, round2_packages) =
+            frost::keys::dkg::part2(secret_package, &frost_packages)
+                .map_err(|e| ThresholdError::DkgError(e.to_string()))?;
 
         self.round2_secret = Some(secret_package);
 
@@ -142,7 +140,9 @@ impl DkgParticipant {
         round1_packages: &[DkgRound1],
         round2_packages: &[DkgRound2],
     ) -> Result<(frost::keys::KeyPackage, PublicKeyPackage)> {
-        let secret_package = self.round2_secret.take()
+        let secret_package = self
+            .round2_secret
+            .take()
             .ok_or_else(|| ThresholdError::DkgError("Round 2 not executed".to_string()))?;
 
         // Convert round 1 packages, excluding self's package
@@ -164,11 +164,9 @@ impl DkgParticipant {
             }
         }
 
-        let (key_package, pubkey_package) = frost::keys::dkg::part3(
-            &secret_package,
-            &frost_round1,
-            &frost_round2,
-        ).map_err(|e| ThresholdError::DkgError(e.to_string()))?;
+        let (key_package, pubkey_package) =
+            frost::keys::dkg::part3(&secret_package, &frost_round1, &frost_round2)
+                .map_err(|e| ThresholdError::DkgError(e.to_string()))?;
 
         Ok((key_package, PublicKeyPackage::from_frost(pubkey_package)))
     }
@@ -199,17 +197,19 @@ impl DkgRound1 {
     fn from_frost(id: frost::Identifier, pkg: &frost::keys::dkg::round1::Package) -> Result<Self> {
         Ok(Self {
             sender_bytes: id.serialize(),
-            bytes: pkg.serialize().map_err(|e| ThresholdError::SerializationError(e.to_string()))?,
+            bytes: pkg
+                .serialize()
+                .map_err(|e| ThresholdError::SerializationError(e.to_string()))?,
         })
     }
 
     fn to_frost(&self) -> Result<(frost::Identifier, frost::keys::dkg::round1::Package)> {
         let id = frost::Identifier::deserialize(&self.sender_bytes)
             .map_err(|e| ThresholdError::InternalError(e.to_string()))?;
-        
+
         let pkg = frost::keys::dkg::round1::Package::deserialize(&self.bytes)
             .map_err(|e| ThresholdError::DkgError(format!("invalid round1 package: {}", e)))?;
-        
+
         Ok((id, pkg))
     }
 }
@@ -240,17 +240,19 @@ impl DkgRound2 {
         Ok(Self {
             sender_bytes: sender.serialize(),
             recipient_id: recipient,
-            bytes: pkg.serialize().map_err(|e| ThresholdError::SerializationError(e.to_string()))?,
+            bytes: pkg
+                .serialize()
+                .map_err(|e| ThresholdError::SerializationError(e.to_string()))?,
         })
     }
 
     fn to_frost(&self) -> Result<(frost::Identifier, frost::keys::dkg::round2::Package)> {
         let sender = frost::Identifier::deserialize(&self.sender_bytes)
             .map_err(|e| ThresholdError::InternalError(e.to_string()))?;
-        
+
         let pkg = frost::keys::dkg::round2::Package::deserialize(&self.bytes)
             .map_err(|e| ThresholdError::DkgError(format!("invalid round2 package: {}", e)))?;
-        
+
         Ok((sender, pkg))
     }
 }
@@ -350,7 +352,9 @@ mod tests {
             .iter()
             .enumerate()
             .map(|(i, signer)| {
-                signer.round2(message, &all_nonces[i], &signing_package).unwrap()
+                signer
+                    .round2(message, &all_nonces[i], &signing_package)
+                    .unwrap()
             })
             .collect();
 
@@ -377,7 +381,10 @@ mod tests {
         // Verify group key consistency
         let group_key = results[0].1.group_verifying_key().unwrap();
         for (_, pkg) in &results {
-            assert_eq!(group_key.as_bytes(), pkg.group_verifying_key().unwrap().as_bytes());
+            assert_eq!(
+                group_key.as_bytes(),
+                pkg.group_verifying_key().unwrap().as_bytes()
+            );
         }
     }
 

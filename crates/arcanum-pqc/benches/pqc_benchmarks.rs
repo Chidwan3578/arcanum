@@ -3,7 +3,7 @@
 //! Measures performance of ML-KEM and ML-DSA at various security levels,
 //! plus hybrid schemes combining classical and post-quantum crypto.
 
-use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ML-KEM-768 Benchmarks (using typed wrapper API)
@@ -11,19 +11,15 @@ use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId, Through
 
 #[cfg(feature = "ml-kem")]
 fn bench_ml_kem_768(c: &mut Criterion) {
-    use arcanum_pqc::{MlKem768, KeyEncapsulation};
+    use arcanum_pqc::{KeyEncapsulation, MlKem768};
 
     let mut group = c.benchmark_group("ML-KEM-768");
 
-    group.bench_function("keygen", |b| {
-        b.iter(|| MlKem768::generate_keypair())
-    });
+    group.bench_function("keygen", |b| b.iter(|| MlKem768::generate_keypair()));
 
     let (dk, ek) = MlKem768::generate_keypair();
 
-    group.bench_function("encapsulate", |b| {
-        b.iter(|| MlKem768::encapsulate(&ek))
-    });
+    group.bench_function("encapsulate", |b| b.iter(|| MlKem768::encapsulate(&ek)));
 
     let (ct, _) = MlKem768::encapsulate(&ek);
 
@@ -53,15 +49,11 @@ fn bench_ml_kem_512(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("ML-KEM-512");
 
-    group.bench_function("keygen", |b| {
-        b.iter(|| MlKem512::generate_keypair())
-    });
+    group.bench_function("keygen", |b| b.iter(|| MlKem512::generate_keypair()));
 
     let (dk, ek) = MlKem512::generate_keypair();
 
-    group.bench_function("encapsulate", |b| {
-        b.iter(|| MlKem512::encapsulate(&ek))
-    });
+    group.bench_function("encapsulate", |b| b.iter(|| MlKem512::encapsulate(&ek)));
 
     let (ct, _) = MlKem512::encapsulate(&ek).unwrap();
 
@@ -82,15 +74,11 @@ fn bench_ml_kem_1024(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("ML-KEM-1024");
 
-    group.bench_function("keygen", |b| {
-        b.iter(|| MlKem1024::generate_keypair())
-    });
+    group.bench_function("keygen", |b| b.iter(|| MlKem1024::generate_keypair()));
 
     let (dk, ek) = MlKem1024::generate_keypair();
 
-    group.bench_function("encapsulate", |b| {
-        b.iter(|| MlKem1024::encapsulate(&ek))
-    });
+    group.bench_function("encapsulate", |b| b.iter(|| MlKem1024::encapsulate(&ek)));
 
     let (ct, _) = MlKem1024::encapsulate(&ek).unwrap();
 
@@ -111,9 +99,7 @@ fn bench_ml_dsa_65(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("ML-DSA-65");
 
-    group.bench_function("keygen", |b| {
-        b.iter(|| MlDsa65::generate_keypair())
-    });
+    group.bench_function("keygen", |b| b.iter(|| MlDsa65::generate_keypair()));
 
     let (sk, vk) = MlDsa65::generate_keypair();
 
@@ -157,17 +143,13 @@ fn bench_ml_dsa_44(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("ML-DSA-44");
 
-    group.bench_function("keygen", |b| {
-        b.iter(|| MlDsa44Ops::generate_keypair())
-    });
+    group.bench_function("keygen", |b| b.iter(|| MlDsa44Ops::generate_keypair()));
 
     let (sk, vk) = MlDsa44Ops::generate_keypair();
     let message = b"benchmark message for ML-DSA-44";
     let signature = MlDsa44Ops::sign(&sk, message).unwrap();
 
-    group.bench_function("sign", |b| {
-        b.iter(|| MlDsa44Ops::sign(&sk, message))
-    });
+    group.bench_function("sign", |b| b.iter(|| MlDsa44Ops::sign(&sk, message)));
 
     group.bench_function("verify", |b| {
         b.iter(|| MlDsa44Ops::verify(&vk, message, &signature))
@@ -186,17 +168,13 @@ fn bench_ml_dsa_87(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("ML-DSA-87");
 
-    group.bench_function("keygen", |b| {
-        b.iter(|| MlDsa87Ops::generate_keypair())
-    });
+    group.bench_function("keygen", |b| b.iter(|| MlDsa87Ops::generate_keypair()));
 
     let (sk, vk) = MlDsa87Ops::generate_keypair();
     let message = b"benchmark message for ML-DSA-87";
     let signature = MlDsa87Ops::sign(&sk, message).unwrap();
 
-    group.bench_function("sign", |b| {
-        b.iter(|| MlDsa87Ops::sign(&sk, message))
-    });
+    group.bench_function("sign", |b| b.iter(|| MlDsa87Ops::sign(&sk, message)));
 
     group.bench_function("verify", |b| {
         b.iter(|| MlDsa87Ops::verify(&vk, message, &signature))
@@ -215,9 +193,7 @@ fn bench_hybrid_x25519_ml_kem_768(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("X25519-ML-KEM-768");
 
-    group.bench_function("keygen", |b| {
-        b.iter(|| X25519MlKem768::generate_keypair())
-    });
+    group.bench_function("keygen", |b| b.iter(|| X25519MlKem768::generate_keypair()));
 
     let (dk, ek) = X25519MlKem768::generate_keypair();
 
@@ -249,7 +225,7 @@ fn bench_hybrid_x25519_ml_kem_768(c: &mut Criterion) {
 
 #[cfg(all(feature = "ml-kem", feature = "hybrid"))]
 fn bench_kem_comparison(c: &mut Criterion) {
-    use arcanum_pqc::{MlKem768, KeyEncapsulation, X25519MlKem768};
+    use arcanum_pqc::{KeyEncapsulation, MlKem768, X25519MlKem768};
 
     let mut group = c.benchmark_group("KEM-Comparison");
 
@@ -305,12 +281,7 @@ criterion_group!(
 );
 
 #[cfg(all(not(feature = "ml-kem"), feature = "ml-dsa"))]
-criterion_group!(
-    benches,
-    bench_ml_dsa_44,
-    bench_ml_dsa_65,
-    bench_ml_dsa_87,
-);
+criterion_group!(benches, bench_ml_dsa_44, bench_ml_dsa_65, bench_ml_dsa_87,);
 
 #[cfg(not(any(feature = "ml-kem", feature = "ml-dsa")))]
 criterion_group!(benches,);

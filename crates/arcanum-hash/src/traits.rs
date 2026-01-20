@@ -40,9 +40,8 @@ impl HashOutput {
 
     /// Parse from hex string.
     pub fn from_hex(s: &str) -> Result<Self> {
-        let bytes = hex::decode(s).map_err(|e| {
-            arcanum_core::error::Error::ParseError(e.to_string())
-        })?;
+        let bytes =
+            hex::decode(s).map_err(|e| arcanum_core::error::Error::ParseError(e.to_string()))?;
         Ok(Self(bytes))
     }
 

@@ -223,7 +223,12 @@ impl ChaCha20Poly1305 {
     ///
     /// Allocates and returns a new vector containing ciphertext + tag.
     #[cfg(feature = "alloc")]
-    pub fn seal(&self, nonce: &[u8; NONCE_SIZE], aad: &[u8], plaintext: &[u8]) -> alloc::vec::Vec<u8> {
+    pub fn seal(
+        &self,
+        nonce: &[u8; NONCE_SIZE],
+        aad: &[u8],
+        plaintext: &[u8],
+    ) -> alloc::vec::Vec<u8> {
         let mut output = alloc::vec::Vec::with_capacity(plaintext.len() + TAG_SIZE);
         output.extend_from_slice(plaintext);
         let tag = self.encrypt(nonce, aad, &mut output);
@@ -344,7 +349,12 @@ impl XChaCha20Poly1305 {
 
     /// Encrypt and return ciphertext + tag.
     #[cfg(feature = "alloc")]
-    pub fn seal(&self, nonce: &[u8; XCHACHA_NONCE_SIZE], aad: &[u8], plaintext: &[u8]) -> alloc::vec::Vec<u8> {
+    pub fn seal(
+        &self,
+        nonce: &[u8; XCHACHA_NONCE_SIZE],
+        aad: &[u8],
+        plaintext: &[u8],
+    ) -> alloc::vec::Vec<u8> {
         let (subkey, chacha_nonce) = self.derive_subkey_and_nonce(nonce);
         let inner = ChaCha20Poly1305::new(&subkey);
         inner.seal(&chacha_nonce, aad, plaintext)
@@ -397,7 +407,7 @@ mod tests {
             "d31a8d34648e60db7b86afbc53ef7ec2a4aded51296e08fea9e2b5a736ee62d6\
              3dbea45e8ca9671282fafb69da92728b1a71de0a9e060b2905d6a5b67ecd3b36\
              92ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc\
-             3ff4def08e4b7a9de576d26586cec64b6116"
+             3ff4def08e4b7a9de576d26586cec64b6116",
         );
 
         let expected_tag = hex_to_bytes("1ae10b594f09e26a7e902ecbd0600691");
@@ -759,7 +769,8 @@ mod tests {
         let nonce = hex_to_bytes("000000090000004a0000000031415927");
         let nonce: [u8; 16] = nonce.try_into().unwrap();
 
-        let expected = hex_to_bytes("82413b4227b27bfed30e42508a877d73a0f9e4d58a74a853c12ec41326d3ecdc");
+        let expected =
+            hex_to_bytes("82413b4227b27bfed30e42508a877d73a0f9e4d58a74a853c12ec41326d3ecdc");
 
         let output = hchacha20(&key, &nonce);
         assert_eq!(bytes_to_hex(&output), bytes_to_hex(&expected));

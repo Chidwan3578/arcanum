@@ -699,9 +699,8 @@ impl FusedChaCha20Poly1305 {
                 unsafe { prefetch_ahead(buffer, offset, 256) };
 
                 // Generate 4 keystream blocks in parallel using SSE2
-                let keystream = unsafe {
-                    chacha20_simd::sse2::chacha20_blocks_4x(&self.key, counter, nonce)
-                };
+                let keystream =
+                    unsafe { chacha20_simd::sse2::chacha20_blocks_4x(&self.key, counter, nonce) };
                 counter = counter.wrapping_add(4);
 
                 // XOR 256 bytes
@@ -801,9 +800,8 @@ impl FusedChaCha20Poly1305 {
         while offset + 1024 <= buffer.len() {
             unsafe { prefetch_ahead(buffer, offset, 1024) };
 
-            let keystream = unsafe {
-                chacha20_simd::avx512::chacha20_blocks_16x(&self.key, counter, nonce)
-            };
+            let keystream =
+                unsafe { chacha20_simd::avx512::chacha20_blocks_16x(&self.key, counter, nonce) };
             counter = counter.wrapping_add(16);
 
             let chunk = &mut buffer[offset..offset + 1024];
@@ -821,9 +819,8 @@ impl FusedChaCha20Poly1305 {
         if has_avx2() && offset + 512 <= buffer.len() {
             unsafe { prefetch_ahead(buffer, offset, 512) };
 
-            let keystream = unsafe {
-                chacha20_simd::avx2::chacha20_blocks_8x(&self.key, counter, nonce)
-            };
+            let keystream =
+                unsafe { chacha20_simd::avx2::chacha20_blocks_8x(&self.key, counter, nonce) };
             counter = counter.wrapping_add(8);
 
             let chunk = &mut buffer[offset..offset + 512];
@@ -841,9 +838,8 @@ impl FusedChaCha20Poly1305 {
         while offset + 256 <= buffer.len() {
             unsafe { prefetch_ahead(buffer, offset, 256) };
 
-            let keystream = unsafe {
-                chacha20_simd::sse2::chacha20_blocks_4x(&self.key, counter, nonce)
-            };
+            let keystream =
+                unsafe { chacha20_simd::sse2::chacha20_blocks_4x(&self.key, counter, nonce) };
             counter = counter.wrapping_add(4);
 
             let chunk = &mut buffer[offset..offset + 256];
@@ -964,9 +960,8 @@ impl FusedChaCha20Poly1305 {
                 // Prefetch next chunk while processing current
                 unsafe { prefetch_ahead(buffer, offset, 256) };
 
-                let keystream = unsafe {
-                    chacha20_simd::sse2::chacha20_blocks_4x(&self.key, counter, nonce)
-                };
+                let keystream =
+                    unsafe { chacha20_simd::sse2::chacha20_blocks_4x(&self.key, counter, nonce) };
                 counter = counter.wrapping_add(4);
 
                 let chunk = &mut buffer[offset..offset + 256];
@@ -1070,7 +1065,12 @@ impl FusedChaCha20Poly1305 {
 
     /// Encrypt with detached tag allocation.
     #[cfg(feature = "alloc")]
-    pub fn seal(&self, nonce: &[u8; NONCE_SIZE], aad: &[u8], plaintext: &[u8]) -> alloc::vec::Vec<u8> {
+    pub fn seal(
+        &self,
+        nonce: &[u8; NONCE_SIZE],
+        aad: &[u8],
+        plaintext: &[u8],
+    ) -> alloc::vec::Vec<u8> {
         let mut output = alloc::vec::Vec::with_capacity(plaintext.len() + TAG_SIZE);
         output.extend_from_slice(plaintext);
         let tag = self.encrypt(nonce, aad, &mut output);
@@ -1174,7 +1174,12 @@ impl FusedXChaCha20Poly1305 {
 
     /// Encrypt and return ciphertext + tag.
     #[cfg(feature = "alloc")]
-    pub fn seal(&self, nonce: &[u8; XCHACHA_NONCE_SIZE], aad: &[u8], plaintext: &[u8]) -> alloc::vec::Vec<u8> {
+    pub fn seal(
+        &self,
+        nonce: &[u8; XCHACHA_NONCE_SIZE],
+        aad: &[u8],
+        plaintext: &[u8],
+    ) -> alloc::vec::Vec<u8> {
         let (subkey, chacha_nonce) = self.derive_subkey_and_nonce(nonce);
         let inner = FusedChaCha20Poly1305::new(&subkey);
         inner.seal(&chacha_nonce, aad, plaintext)
@@ -1235,8 +1240,12 @@ mod tests {
         assert_eq!(fused_tag, standard_tag, "Tag mismatch");
 
         // Verify both can decrypt
-        standard.decrypt(&nonce, aad, &mut standard_ct, &standard_tag).unwrap();
-        fused.decrypt(&nonce, aad, &mut fused_ct, &fused_tag).unwrap();
+        standard
+            .decrypt(&nonce, aad, &mut standard_ct, &standard_tag)
+            .unwrap();
+        fused
+            .decrypt(&nonce, aad, &mut fused_ct, &fused_tag)
+            .unwrap();
 
         assert_eq!(standard_ct.as_slice(), plaintext.as_slice());
         assert_eq!(fused_ct.as_slice(), plaintext.as_slice());
@@ -1259,7 +1268,7 @@ mod tests {
             "d31a8d34648e60db7b86afbc53ef7ec2a4aded51296e08fea9e2b5a736ee62d6\
              3dbea45e8ca9671282fafb69da92728b1a71de0a9e060b2905d6a5b67ecd3b36\
              92ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc\
-             3ff4def08e4b7a9de576d26586cec64b6116"
+             3ff4def08e4b7a9de576d26586cec64b6116",
         );
 
         let expected_tag = hex_to_bytes("1ae10b594f09e26a7e902ecbd0600691");
@@ -1294,13 +1303,16 @@ mod tests {
 
         let fused = FusedChaCha20Poly1305::new(&key);
 
-        for len in [0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 100, 256, 1000, 4096, 8192] {
+        for len in [
+            0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 100, 256, 1000, 4096, 8192,
+        ] {
             let plaintext = vec![0xAB; len];
 
             let mut ciphertext = plaintext.clone();
             let tag = fused.encrypt(&nonce, aad, &mut ciphertext);
 
-            fused.decrypt(&nonce, aad, &mut ciphertext, &tag)
+            fused
+                .decrypt(&nonce, aad, &mut ciphertext, &tag)
                 .expect(&format!("Decryption failed for length {}", len));
 
             assert_eq!(ciphertext, plaintext, "Roundtrip failed for length {}", len);

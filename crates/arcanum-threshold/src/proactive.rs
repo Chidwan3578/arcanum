@@ -182,10 +182,7 @@ impl ProactiveRefresh {
     ///
     /// # Returns
     /// Updated share with all contributions applied
-    pub fn apply_refresh(
-        current_share: &Share,
-        contributions: &[&Share],
-    ) -> Result<Share> {
+    pub fn apply_refresh(current_share: &Share, contributions: &[&Share]) -> Result<Share> {
         // All contributions must be for the same index as current_share
         for contrib in contributions {
             if contrib.index() != current_share.index() {
@@ -373,7 +370,10 @@ mod tests {
         assert_ne!(r2[0].value(), r3[0].value());
 
         // But all should reconstruct to the same secret
-        assert_eq!(secret.as_slice(), ShamirScheme::combine(&r3[..2]).unwrap().as_slice());
+        assert_eq!(
+            secret.as_slice(),
+            ShamirScheme::combine(&r3[..2]).unwrap().as_slice()
+        );
     }
 
     #[test]

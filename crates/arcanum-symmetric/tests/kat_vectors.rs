@@ -4,8 +4,7 @@
 //! test vectors from NIST and IETF RFCs.
 
 use arcanum_symmetric::{
-    Aes128Gcm, Aes256Gcm, Aes256GcmSiv, Cipher,
-    ChaCha20Poly1305Cipher, XChaCha20Poly1305Cipher,
+    Aes128Gcm, Aes256Gcm, Aes256GcmSiv, ChaCha20Poly1305Cipher, Cipher, XChaCha20Poly1305Cipher,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -19,8 +18,9 @@ fn aes256_gcm_nist_test_case_14() {
     // Key: 32 bytes
     let key = hex::decode(
         "feffe9928665731c6d6a8f9467308308\
-         feffe9928665731c6d6a8f9467308308"
-    ).unwrap();
+         feffe9928665731c6d6a8f9467308308",
+    )
+    .unwrap();
 
     // Nonce: 12 bytes (96-bit IV)
     let nonce = hex::decode("cafebabefacedbaddecaf888").unwrap();
@@ -30,8 +30,9 @@ fn aes256_gcm_nist_test_case_14() {
         "d9313225f88406e5a55909c5aff5269a\
          86a7a9531534f7da2e4c303d8a318a72\
          1c3c0c95956809532fcf0e2449a6b525\
-         b16aedf5aa0de657ba637b39"
-    ).unwrap();
+         b16aedf5aa0de657ba637b39",
+    )
+    .unwrap();
 
     // AAD: 20 bytes
     let aad = hex::decode("feedfacedeadbeeffeedfacedeadbeefabaddad2").unwrap();
@@ -41,8 +42,9 @@ fn aes256_gcm_nist_test_case_14() {
         "522dc1f099567d07f47f37a32a84427d\
          643a8cdcbfe5c0c97598a2bd2555d1aa\
          8cb08e48590dbb3da7b08b1056828838\
-         c5f61e6393ba7a0abcc9f662"
-    ).unwrap();
+         c5f61e6393ba7a0abcc9f662",
+    )
+    .unwrap();
 
     // Expected tag: 16 bytes
     let expected_tag = hex::decode("76fc6ece0f4e1768cddf8853bb2d551b").unwrap();
@@ -67,8 +69,9 @@ fn aes256_gcm_nist_test_case_14() {
 fn aes256_gcm_nist_test_case_13() {
     let key = hex::decode(
         "00000000000000000000000000000000\
-         00000000000000000000000000000000"
-    ).unwrap();
+         00000000000000000000000000000000",
+    )
+    .unwrap();
 
     let nonce = hex::decode("000000000000000000000000").unwrap();
     let plaintext: Vec<u8> = vec![];
@@ -93,8 +96,9 @@ fn aes256_gcm_nist_test_case_13() {
 fn aes256_gcm_16_byte_plaintext() {
     let key = hex::decode(
         "feffe9928665731c6d6a8f9467308308\
-         feffe9928665731c6d6a8f9467308308"
-    ).unwrap();
+         feffe9928665731c6d6a8f9467308308",
+    )
+    .unwrap();
 
     let nonce = hex::decode("cafebabefacedbaddecaf888").unwrap();
 
@@ -131,8 +135,9 @@ fn aes128_gcm_nist_style_vector() {
 fn aes256_gcm_siv_determinism() {
     let key = hex::decode(
         "01000000000000000000000000000000\
-         00000000000000000000000000000002"
-    ).unwrap();
+         00000000000000000000000000000002",
+    )
+    .unwrap();
 
     let nonce = hex::decode("030000000000000000000000").unwrap();
     let plaintext = hex::decode("0100000000000000").unwrap();
@@ -160,8 +165,9 @@ fn chacha20_poly1305_rfc8439_test_vector() {
     // Key from RFC 8439
     let key = hex::decode(
         "808182838485868788898a8b8c8d8e8f\
-         909192939495969798999a9b9c9d9e9f"
-    ).unwrap();
+         909192939495969798999a9b9c9d9e9f",
+    )
+    .unwrap();
 
     // Nonce from RFC 8439 (12 bytes, with 32-bit counter prepended as zeros internally)
     let nonce = hex::decode("070000004041424344454647").unwrap();
@@ -181,8 +187,9 @@ fn chacha20_poly1305_rfc8439_test_vector() {
          92ddbd7f2d778b8c9803aee328091b58\
          fab324e4fad675945585808b4831d7bc\
          3ff4def08e4b7a9de576d26586cec64b\
-         6116"
-    ).unwrap();
+         6116",
+    )
+    .unwrap();
 
     // Expected tag from RFC 8439
     let expected_tag = hex::decode("1ae10b594f09e26a7e902ecbd0600691").unwrap();
@@ -192,8 +199,16 @@ fn chacha20_poly1305_rfc8439_test_vector() {
 
     // Verify ciphertext and tag
     let (ct, tag) = result.split_at(result.len() - 16);
-    assert_eq!(ct, expected_ciphertext.as_slice(), "ChaCha20-Poly1305 ciphertext mismatch");
-    assert_eq!(tag, expected_tag.as_slice(), "ChaCha20-Poly1305 tag mismatch");
+    assert_eq!(
+        ct,
+        expected_ciphertext.as_slice(),
+        "ChaCha20-Poly1305 ciphertext mismatch"
+    );
+    assert_eq!(
+        tag,
+        expected_tag.as_slice(),
+        "ChaCha20-Poly1305 tag mismatch"
+    );
 
     // Verify decryption
     let decrypted = ChaCha20Poly1305Cipher::decrypt(&key, &nonce, &result, Some(&aad)).unwrap();
@@ -205,8 +220,9 @@ fn chacha20_poly1305_rfc8439_test_vector() {
 fn chacha20_poly1305_rfc8439_appendix_a5() {
     let key = hex::decode(
         "1c9240a5eb55d38af333888604f6b5f0\
-         473917c1402b80099dca5cbc207075c0"
-    ).unwrap();
+         473917c1402b80099dca5cbc207075c0",
+    )
+    .unwrap();
 
     let nonce = hex::decode("000000000102030405060708").unwrap();
 
@@ -228,8 +244,9 @@ fn chacha20_poly1305_rfc8439_appendix_a5() {
          6c206f7220746f206369746520746865\
          6d206f74686572207468616e20617320\
          2fe2809c776f726b20696e2070726f67\
-         726573732e2fe2809d"
-    ).unwrap();
+         726573732e2fe2809d",
+    )
+    .unwrap();
 
     let aad = hex::decode("f33388860000000000004e91").unwrap();
 
@@ -250,8 +267,9 @@ fn chacha20_poly1305_rfc8439_appendix_a5() {
          cebb4e466dae5a1073a6727627097a10\
          49e617d91d361094fa68f0ff77987130\
          305beaba2eda04df997b714d6c6f2c29\
-         a6ad5cb4022b02709b"
-    ).unwrap();
+         a6ad5cb4022b02709b",
+    )
+    .unwrap();
 
     let expected_tag = hex::decode("eead9d67890cbb22392336fea1851f38").unwrap();
 
@@ -272,14 +290,16 @@ fn xchacha20_poly1305_test_vector() {
     // Test vector from draft-irtf-cfrg-xchacha-03
     let key = hex::decode(
         "808182838485868788898a8b8c8d8e8f\
-         909192939495969798999a9b9c9d9e9f"
-    ).unwrap();
+         909192939495969798999a9b9c9d9e9f",
+    )
+    .unwrap();
 
     // 24-byte nonce for XChaCha20
     let nonce = hex::decode(
         "404142434445464748494a4b4c4d4e4f\
-         5051525354555658"
-    ).unwrap();
+         5051525354555658",
+    )
+    .unwrap();
 
     let plaintext = b"Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it.";
     let aad = hex::decode("50515253c0c1c2c3c4c5c6c7").unwrap();
@@ -304,13 +324,15 @@ fn xchacha20_poly1305_test_vector() {
 fn aes256_gcm_wrong_key_fails() {
     let key1 = hex::decode(
         "feffe9928665731c6d6a8f9467308308\
-         feffe9928665731c6d6a8f9467308308"
-    ).unwrap();
+         feffe9928665731c6d6a8f9467308308",
+    )
+    .unwrap();
 
     let key2 = hex::decode(
         "00000000000000000000000000000000\
-         00000000000000000000000000000000"
-    ).unwrap();
+         00000000000000000000000000000000",
+    )
+    .unwrap();
 
     let nonce = hex::decode("cafebabefacedbaddecaf888").unwrap();
     let plaintext = b"Test message";
@@ -326,8 +348,9 @@ fn aes256_gcm_wrong_key_fails() {
 fn aes256_gcm_tampered_ciphertext_fails() {
     let key = hex::decode(
         "feffe9928665731c6d6a8f9467308308\
-         feffe9928665731c6d6a8f9467308308"
-    ).unwrap();
+         feffe9928665731c6d6a8f9467308308",
+    )
+    .unwrap();
 
     let nonce = hex::decode("cafebabefacedbaddecaf888").unwrap();
     let plaintext = b"Test message for tampering";
@@ -338,7 +361,10 @@ fn aes256_gcm_tampered_ciphertext_fails() {
     ciphertext[0] ^= 0xFF;
 
     let result = Aes256Gcm::decrypt(&key, &nonce, &ciphertext, None);
-    assert!(result.is_err(), "Decryption should fail with tampered ciphertext");
+    assert!(
+        result.is_err(),
+        "Decryption should fail with tampered ciphertext"
+    );
 }
 
 /// Test that decryption fails with wrong AAD
@@ -346,8 +372,9 @@ fn aes256_gcm_tampered_ciphertext_fails() {
 fn aes256_gcm_wrong_aad_fails() {
     let key = hex::decode(
         "feffe9928665731c6d6a8f9467308308\
-         feffe9928665731c6d6a8f9467308308"
-    ).unwrap();
+         feffe9928665731c6d6a8f9467308308",
+    )
+    .unwrap();
 
     let nonce = hex::decode("cafebabefacedbaddecaf888").unwrap();
     let plaintext = b"Test message";
@@ -376,8 +403,9 @@ fn aes256_gcm_invalid_key_length() {
 fn aes256_gcm_invalid_nonce_length() {
     let key = hex::decode(
         "feffe9928665731c6d6a8f9467308308\
-         feffe9928665731c6d6a8f9467308308"
-    ).unwrap();
+         feffe9928665731c6d6a8f9467308308",
+    )
+    .unwrap();
 
     let short_nonce = hex::decode("0102030405").unwrap();
     let plaintext = b"Test";

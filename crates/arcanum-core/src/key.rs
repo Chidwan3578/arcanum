@@ -16,9 +16,9 @@ use chrono::{DateTime, Utc};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::mem::ManuallyDrop;
 use subtle::{Choice, ConstantTimeEq};
 use uuid::Uuid;
-use std::mem::ManuallyDrop;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 // ═══════════════════════════════════════════════════════════════════════════════

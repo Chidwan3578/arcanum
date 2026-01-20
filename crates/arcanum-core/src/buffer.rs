@@ -146,7 +146,9 @@ impl SecureVec {
 
     /// Create a buffer of given size filled with zeros.
     pub fn zeroed(len: usize) -> Self {
-        Self { data: vec![0u8; len] }
+        Self {
+            data: vec![0u8; len],
+        }
     }
 
     /// Create a buffer filled with cryptographically secure random bytes.

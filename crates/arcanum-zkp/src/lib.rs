@@ -40,8 +40,8 @@
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
 
-mod traits;
 mod commitment;
+mod traits;
 
 #[cfg(feature = "bulletproofs")]
 pub mod range_proof;
@@ -49,33 +49,30 @@ pub mod range_proof;
 #[cfg(feature = "schnorr-proofs")]
 pub mod schnorr_proof;
 
-pub use traits::*;
 pub use commitment::{PedersenCommitment, PedersenOpening};
+pub use traits::*;
 
 #[cfg(feature = "bulletproofs")]
 pub use range_proof::{RangeProof, RangeProofBatch};
 
 #[cfg(feature = "schnorr-proofs")]
-pub use schnorr_proof::{
-    SchnorrProof, SchnorrProofBuilder,
-    DiscreteLogProof, EqualityProof,
-};
+pub use schnorr_proof::{DiscreteLogProof, EqualityProof, SchnorrProof, SchnorrProofBuilder};
 
 /// Prelude for convenient imports.
 pub mod prelude {
-    pub use crate::traits::*;
     pub use crate::commitment::{PedersenCommitment, PedersenOpening};
+    pub use crate::traits::*;
 
     #[cfg(feature = "bulletproofs")]
     pub use crate::range_proof::{RangeProof, RangeProofBatch};
 
     #[cfg(feature = "schnorr-proofs")]
-    pub use crate::schnorr_proof::{SchnorrProof, DiscreteLogProof, EqualityProof};
+    pub use crate::schnorr_proof::{DiscreteLogProof, EqualityProof, SchnorrProof};
 }
 
 /// Re-export curve25519-dalek types for convenience.
 pub mod curve {
-    pub use curve25519_dalek::scalar::Scalar;
-    pub use curve25519_dalek::ristretto::{RistrettoPoint, CompressedRistretto};
     pub use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
+    pub use curve25519_dalek::ristretto::{CompressedRistretto, RistrettoPoint};
+    pub use curve25519_dalek::scalar::Scalar;
 }

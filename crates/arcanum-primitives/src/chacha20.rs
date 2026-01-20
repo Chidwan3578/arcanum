@@ -258,12 +258,8 @@ impl ChaCha20 {
         #[cfg(feature = "simd")]
         {
             if data.len() >= 256 {
-                self.counter = chacha20_simd::apply_keystream_auto(
-                    &self.key,
-                    &self.nonce,
-                    self.counter,
-                    data,
-                );
+                self.counter =
+                    chacha20_simd::apply_keystream_auto(&self.key, &self.nonce, self.counter, data);
                 self.buffer_pos = BLOCK_SIZE; // Invalidate buffer
                 return;
             }
@@ -350,7 +346,7 @@ mod tests {
 
         let expected = hex_to_bytes(
             "10f1e7e4d13b5915500fdd1fa32071c4c7d1f4c733c068030422aa9ac3d46c4e\
-             d2826446079faa0914c2d705d98b02a2b5129cd1de164eb9cbd083e8a2503c4e"
+             d2826446079faa0914c2d705d98b02a2b5129cd1de164eb9cbd083e8a2503c4e",
         );
 
         assert_eq!(output.as_slice(), expected.as_slice());
@@ -451,14 +447,14 @@ mod tests {
             "4c616469657320616e642047656e746c656d656e206f662074686520636c617373\
              206f66202739393a204966204920636f756c64206f6666657220796f75206f6e6c\
              79206f6e652074697020666f7220746865206675747572652c2073756e73637265\
-             656e20776f756c642062652069742e"
+             656e20776f756c642062652069742e",
         );
 
         let expected_ciphertext = hex_to_bytes(
             "6e2e359a2568f98041ba0728dd0d6981e97e7aec1d4360c20a27afccfd9fae0b\
              f91b65c5524733ab8f593dabcd62b3571639d624e65152ab8f530c359f0861d8\
              07ca0dbf500d6a6156a38e088a22b65e52bc514d16ccf806818ce91ab7793736\
-             5af90bbf74a35be6b40b8eedf2785e42874d"
+             5af90bbf74a35be6b40b8eedf2785e42874d",
         );
 
         let mut ciphertext = plaintext.clone();

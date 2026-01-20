@@ -19,11 +19,7 @@ pub struct EncryptedData {
 
 impl EncryptedData {
     /// Create a new encrypted data container.
-    pub fn new(
-        ciphertext: Vec<u8>,
-        nonce: Vec<u8>,
-        algorithm: impl Into<String>,
-    ) -> Self {
+    pub fn new(ciphertext: Vec<u8>, nonce: Vec<u8>, algorithm: impl Into<String>) -> Self {
         Self {
             ciphertext,
             nonce,
@@ -152,11 +148,7 @@ mod tests {
 
     #[test]
     fn test_encrypted_data() {
-        let data = EncryptedData::new(
-            vec![1, 2, 3, 4],
-            vec![5, 6, 7],
-            "AES-256-GCM",
-        );
+        let data = EncryptedData::new(vec![1, 2, 3, 4], vec![5, 6, 7], "AES-256-GCM");
 
         assert_eq!(data.ciphertext, vec![1, 2, 3, 4]);
         assert_eq!(data.nonce, vec![5, 6, 7]);
@@ -169,11 +161,7 @@ mod tests {
         let nonce = vec![0u8; 12];
         let ciphertext = vec![1, 2, 3, 4, 5, 6, 7, 8];
 
-        let payload = EncryptedPayload::new(
-            EncryptedPayload::ALG_AES_256_GCM,
-            &nonce,
-            &ciphertext,
-        );
+        let payload = EncryptedPayload::new(EncryptedPayload::ALG_AES_256_GCM, &nonce, &ciphertext);
 
         let bytes = payload.to_bytes();
         let decoded = EncryptedPayload::from_bytes(&bytes).unwrap();

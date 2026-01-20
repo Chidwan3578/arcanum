@@ -3,7 +3,7 @@
 //! These tests verify our implementations match official cryptographic
 //! test vectors from NIST CAVP and other standards.
 
-use arcanum_hash::{Hasher, Sha256, Sha384, Sha512, Blake3};
+use arcanum_hash::{Blake3, Hasher, Sha256, Sha384, Sha512};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SHA-256 Test Vectors (NIST CAVP)
@@ -166,7 +166,11 @@ fn blake3_derive_key() {
     let key1 = Blake3::derive_key(context, b"master-secret", 32);
     let key2 = Blake3::derive_key(context, b"master-secret", 32);
     assert_eq!(key1, key2, "BLAKE3 derive_key should be deterministic");
-    assert_eq!(key1.len(), 32, "BLAKE3 derive_key output should be 32 bytes");
+    assert_eq!(
+        key1.len(),
+        32,
+        "BLAKE3 derive_key output should be 32 bytes"
+    );
 
     // Different context should produce different output
     let key3 = Blake3::derive_key("different-context", b"master-secret", 32);
@@ -180,10 +184,26 @@ fn blake3_derive_key() {
 /// Verify output lengths match specification
 #[test]
 fn hash_output_lengths() {
-    assert_eq!(Sha256::hash(b"test").len(), 32, "SHA-256 output should be 32 bytes");
-    assert_eq!(Sha384::hash(b"test").len(), 48, "SHA-384 output should be 48 bytes");
-    assert_eq!(Sha512::hash(b"test").len(), 64, "SHA-512 output should be 64 bytes");
-    assert_eq!(Blake3::hash(b"test").len(), 32, "BLAKE3 output should be 32 bytes");
+    assert_eq!(
+        Sha256::hash(b"test").len(),
+        32,
+        "SHA-256 output should be 32 bytes"
+    );
+    assert_eq!(
+        Sha384::hash(b"test").len(),
+        48,
+        "SHA-384 output should be 48 bytes"
+    );
+    assert_eq!(
+        Sha512::hash(b"test").len(),
+        64,
+        "SHA-512 output should be 64 bytes"
+    );
+    assert_eq!(
+        Blake3::hash(b"test").len(),
+        32,
+        "BLAKE3 output should be 32 bytes"
+    );
 }
 
 /// Verify determinism: same input produces same output
@@ -191,18 +211,42 @@ fn hash_output_lengths() {
 fn hash_determinism() {
     let message = b"The quick brown fox jumps over the lazy dog";
 
-    assert_eq!(Sha256::hash(message), Sha256::hash(message), "SHA-256 should be deterministic");
-    assert_eq!(Sha512::hash(message), Sha512::hash(message), "SHA-512 should be deterministic");
-    assert_eq!(Blake3::hash(message), Blake3::hash(message), "BLAKE3 should be deterministic");
+    assert_eq!(
+        Sha256::hash(message),
+        Sha256::hash(message),
+        "SHA-256 should be deterministic"
+    );
+    assert_eq!(
+        Sha512::hash(message),
+        Sha512::hash(message),
+        "SHA-512 should be deterministic"
+    );
+    assert_eq!(
+        Blake3::hash(message),
+        Blake3::hash(message),
+        "BLAKE3 should be deterministic"
+    );
 }
 
 /// Verify avalanche: small change produces different hash
 #[test]
 fn hash_avalanche() {
     let msg1 = b"The quick brown fox jumps over the lazy dog";
-    let msg2 = b"The quick brown fox jumps over the lazy cog";  // 'd' -> 'c'
+    let msg2 = b"The quick brown fox jumps over the lazy cog"; // 'd' -> 'c'
 
-    assert_ne!(Sha256::hash(msg1), Sha256::hash(msg2), "Different messages should produce different SHA-256 hashes");
-    assert_ne!(Sha512::hash(msg1), Sha512::hash(msg2), "Different messages should produce different SHA-512 hashes");
-    assert_ne!(Blake3::hash(msg1), Blake3::hash(msg2), "Different messages should produce different BLAKE3 hashes");
+    assert_ne!(
+        Sha256::hash(msg1),
+        Sha256::hash(msg2),
+        "Different messages should produce different SHA-256 hashes"
+    );
+    assert_ne!(
+        Sha512::hash(msg1),
+        Sha512::hash(msg2),
+        "Different messages should produce different SHA-512 hashes"
+    );
+    assert_ne!(
+        Blake3::hash(msg1),
+        Blake3::hash(msg2),
+        "Different messages should produce different BLAKE3 hashes"
+    );
 }

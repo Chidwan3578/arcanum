@@ -35,8 +35,8 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-pub mod ct;
 pub mod backend;
+pub mod ct;
 
 #[cfg(feature = "sha2")]
 pub mod sha2;
@@ -113,13 +113,13 @@ pub mod fused;
 pub mod batch;
 
 // Re-exports
-pub use ct::{CtBool, CtEq, CtSelect};
 pub use backend::{Backend, NativeBackend};
+pub use ct::{CtBool, CtEq, CtSelect};
 
 /// Prelude for convenient imports
 pub mod prelude {
-    pub use crate::ct::{CtBool, CtEq, CtSelect};
     pub use crate::backend::Backend;
+    pub use crate::ct::{CtBool, CtEq, CtSelect};
 
     #[cfg(feature = "sha2")]
     pub use crate::sha2::{Sha256, Sha384, Sha512};

@@ -87,7 +87,7 @@ pub use registry::{AlgorithmId, AlgorithmInfo, AlgorithmRegistry, SecurityLevel}
 pub use containers::{AgileCiphertext, ContainerHeader};
 
 #[cfg(feature = "policy")]
-pub use policy::{Policy, PolicyBuilder, ComplianceProfile};
+pub use policy::{ComplianceProfile, Policy, PolicyBuilder};
 
 /// Prelude for convenient imports.
 pub mod prelude {
@@ -100,5 +100,5 @@ pub mod prelude {
     pub use crate::containers::{AgileCiphertext, ContainerHeader};
 
     #[cfg(feature = "policy")]
-    pub use crate::policy::{Policy, ComplianceProfile};
+    pub use crate::policy::{ComplianceProfile, Policy};
 }

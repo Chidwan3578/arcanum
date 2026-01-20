@@ -22,8 +22,9 @@ mod aes_gcm_boundaries {
     fn test_key() -> Vec<u8> {
         hex::decode(
             "feffe9928665731c6d6a8f9467308308\
-             feffe9928665731c6d6a8f9467308308"
-        ).unwrap()
+             feffe9928665731c6d6a8f9467308308",
+        )
+        .unwrap()
     }
 
     fn test_nonce() -> Vec<u8> {
@@ -201,8 +202,9 @@ mod aes_gcm_aad_boundaries {
     fn test_key() -> Vec<u8> {
         hex::decode(
             "feffe9928665731c6d6a8f9467308308\
-             feffe9928665731c6d6a8f9467308308"
-        ).unwrap()
+             feffe9928665731c6d6a8f9467308308",
+        )
+        .unwrap()
     }
 
     fn test_nonce() -> Vec<u8> {
@@ -298,8 +300,9 @@ mod aes_gcm_auth_failures {
     fn test_key() -> Vec<u8> {
         hex::decode(
             "feffe9928665731c6d6a8f9467308308\
-             feffe9928665731c6d6a8f9467308308"
-        ).unwrap()
+             feffe9928665731c6d6a8f9467308308",
+        )
+        .unwrap()
     }
 
     fn test_nonce() -> Vec<u8> {
@@ -391,7 +394,10 @@ mod aes_gcm_auth_failures {
         ct[0] ^= 0xFF;
 
         let result = Aes256Gcm::decrypt(&key, &nonce, &ct, None);
-        assert!(result.is_err(), "Modified ciphertext (first byte) must fail");
+        assert!(
+            result.is_err(),
+            "Modified ciphertext (first byte) must fail"
+        );
     }
 
     /// Modified ciphertext (middle byte) - MUST fail
@@ -522,8 +528,9 @@ mod chacha20_poly1305_boundaries {
     fn test_key() -> Vec<u8> {
         hex::decode(
             "808182838485868788898a8b8c8d8e8f\
-             909192939495969798999a9b9c9d9e9f"
-        ).unwrap()
+             909192939495969798999a9b9c9d9e9f",
+        )
+        .unwrap()
     }
 
     fn test_nonce() -> Vec<u8> {
@@ -671,8 +678,9 @@ mod chacha20_poly1305_auth_failures {
     fn test_key() -> Vec<u8> {
         hex::decode(
             "808182838485868788898a8b8c8d8e8f\
-             909192939495969798999a9b9c9d9e9f"
-        ).unwrap()
+             909192939495969798999a9b9c9d9e9f",
+        )
+        .unwrap()
     }
 
     fn test_nonce() -> Vec<u8> {
@@ -861,7 +869,10 @@ mod special_patterns {
         let ct1 = Aes256Gcm::encrypt(&key, &nonce1, msg, None).unwrap();
         let ct2 = Aes256Gcm::encrypt(&key, &nonce2, msg, None).unwrap();
 
-        assert_ne!(ct1, ct2, "Different nonces must produce different ciphertexts");
+        assert_ne!(
+            ct1, ct2,
+            "Different nonces must produce different ciphertexts"
+        );
     }
 
     /// Same nonce, different messages produce different output
@@ -875,7 +886,10 @@ mod special_patterns {
         let ct1 = Aes256Gcm::encrypt(&key, &nonce, msg1, None).unwrap();
         let ct2 = Aes256Gcm::encrypt(&key, &nonce, msg2, None).unwrap();
 
-        assert_ne!(ct1, ct2, "Different messages must produce different ciphertexts");
+        assert_ne!(
+            ct1, ct2,
+            "Different messages must produce different ciphertexts"
+        );
     }
 
     /// Deterministic encryption (same inputs = same output)

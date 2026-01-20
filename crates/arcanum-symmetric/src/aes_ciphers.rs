@@ -1,8 +1,8 @@
 //! AES-based encryption algorithms.
 
 use crate::traits::{Cipher, StreamCipher, validate_input_sizes};
-use aead::{Aead, AeadInPlace, KeyInit, Payload, consts::U12};
 use aead::generic_array::GenericArray;
+use aead::{Aead, AeadInPlace, KeyInit, Payload, consts::U12};
 use arcanum_core::error::{Error, Result};
 use rand_core::{OsRng, RngCore};
 
@@ -63,8 +63,8 @@ macro_rules! impl_aead_cipher {
                 validate_key_nonce::<Self>(key, nonce)?;
                 validate_input_sizes(plaintext, associated_data)?;
 
-                let cipher = <$inner_cipher>::new_from_slice(key)
-                    .map_err(|_| Error::InvalidKeyLength {
+                let cipher =
+                    <$inner_cipher>::new_from_slice(key).map_err(|_| Error::InvalidKeyLength {
                         expected: Self::KEY_SIZE,
                         actual: key.len(),
                     })?;
@@ -73,7 +73,13 @@ macro_rules! impl_aead_cipher {
 
                 let ciphertext = match associated_data {
                     Some(aad) => cipher
-                        .encrypt(nonce, Payload { msg: plaintext, aad })
+                        .encrypt(
+                            nonce,
+                            Payload {
+                                msg: plaintext,
+                                aad,
+                            },
+                        )
                         .map_err(|_| Error::EncryptionFailed)?,
                     None => cipher
                         .encrypt(nonce, plaintext)
@@ -98,8 +104,8 @@ macro_rules! impl_aead_cipher {
                     });
                 }
 
-                let cipher = <$inner_cipher>::new_from_slice(key)
-                    .map_err(|_| Error::InvalidKeyLength {
+                let cipher =
+                    <$inner_cipher>::new_from_slice(key).map_err(|_| Error::InvalidKeyLength {
                         expected: Self::KEY_SIZE,
                         actual: key.len(),
                     })?;
@@ -108,7 +114,13 @@ macro_rules! impl_aead_cipher {
 
                 let plaintext = match associated_data {
                     Some(aad) => cipher
-                        .decrypt(nonce, Payload { msg: ciphertext, aad })
+                        .decrypt(
+                            nonce,
+                            Payload {
+                                msg: ciphertext,
+                                aad,
+                            },
+                        )
                         .map_err(|_| Error::DecryptionFailed)?,
                     None => cipher
                         .decrypt(nonce, ciphertext)
@@ -127,8 +139,8 @@ macro_rules! impl_aead_cipher {
                 validate_key_nonce::<Self>(key, nonce)?;
                 validate_input_sizes(buffer, Some(associated_data))?;
 
-                let cipher = <$inner_cipher>::new_from_slice(key)
-                    .map_err(|_| Error::InvalidKeyLength {
+                let cipher =
+                    <$inner_cipher>::new_from_slice(key).map_err(|_| Error::InvalidKeyLength {
                         expected: Self::KEY_SIZE,
                         actual: key.len(),
                     })?;
@@ -148,8 +160,8 @@ macro_rules! impl_aead_cipher {
             ) -> Result<()> {
                 validate_key_nonce::<Self>(key, nonce)?;
 
-                let cipher = <$inner_cipher>::new_from_slice(key)
-                    .map_err(|_| Error::InvalidKeyLength {
+                let cipher =
+                    <$inner_cipher>::new_from_slice(key).map_err(|_| Error::InvalidKeyLength {
                         expected: Self::KEY_SIZE,
                         actual: key.len(),
                     })?;
@@ -183,7 +195,9 @@ impl_aead_cipher!(
     Aes256Gcm,
     aes_gcm::Aes256Gcm,
     AeadNonce,
-    32, 12, 16,
+    32,
+    12,
+    16,
     "AES-256-GCM"
 );
 
@@ -201,7 +215,9 @@ impl_aead_cipher!(
     Aes128Gcm,
     aes_gcm::Aes128Gcm,
     AeadNonce,
-    16, 12, 16,
+    16,
+    12,
+    16,
     "AES-128-GCM"
 );
 
@@ -223,7 +239,9 @@ impl_aead_cipher!(
     Aes256GcmSiv,
     aes_gcm_siv::Aes256GcmSiv,
     AeadNonce,
-    32, 12, 16,
+    32,
+    12,
+    16,
     "AES-256-GCM-SIV"
 );
 
@@ -264,13 +282,17 @@ impl StreamCipher for Aes256Ctr {
         }
 
         use cipher::KeyIvInit;
-        let cipher = ctr::Ctr64BE::<aes::Aes256>::new_from_slices(key, nonce)
-            .map_err(|_| Error::InvalidKeyLength {
+        let cipher = ctr::Ctr64BE::<aes::Aes256>::new_from_slices(key, nonce).map_err(|_| {
+            Error::InvalidKeyLength {
                 expected: Self::KEY_SIZE,
                 actual: key.len(),
-            })?;
+            }
+        })?;
 
-        Ok(Self { cipher, position: 0 })
+        Ok(Self {
+            cipher,
+            position: 0,
+        })
     }
 
     fn apply_keystream(&mut self, data: &mut [u8]) {

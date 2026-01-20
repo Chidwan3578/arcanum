@@ -10,13 +10,12 @@
 //! - Edge cases at field boundaries
 //! - Cross-curve confusion prevention
 
-use arcanum_signatures::{SigningKey, VerifyingKey, Signature};
-use arcanum_signatures::{Ed25519SigningKey, Ed25519VerifyingKey, Ed25519Signature};
+use arcanum_signatures::{Ed25519Signature, Ed25519SigningKey, Ed25519VerifyingKey};
 use arcanum_signatures::{
-    P256SigningKey, P256VerifyingKey, P256Signature,
-    P384SigningKey, P384VerifyingKey, P384Signature,
-    Secp256k1SigningKey, Secp256k1VerifyingKey, Secp256k1Signature,
+    P256Signature, P256SigningKey, P256VerifyingKey, P384Signature, P384SigningKey,
+    P384VerifyingKey, Secp256k1Signature, Secp256k1SigningKey, Secp256k1VerifyingKey,
 };
+use arcanum_signatures::{Signature, SigningKey, VerifyingKey};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Ed25519 Wycheproof Tests
@@ -107,7 +106,10 @@ mod ed25519_wycheproof {
 
         let ones_sig = [0xFFu8; 64];
         if let Ok(sig) = Ed25519Signature::from_bytes(&ones_sig) {
-            assert!(vk.verify(msg, &sig).is_err(), "All-ones signature must fail");
+            assert!(
+                vk.verify(msg, &sig).is_err(),
+                "All-ones signature must fail"
+            );
         }
     }
 
@@ -154,7 +156,10 @@ mod ed25519_wycheproof {
         let vk = key.verifying_key();
 
         let sig = key.sign(b"Original");
-        assert!(vk.verify(b"Wrong", &sig).is_err(), "Wrong message must fail");
+        assert!(
+            vk.verify(b"Wrong", &sig).is_err(),
+            "Wrong message must fail"
+        );
     }
 
     /// Wrong key must fail
@@ -226,7 +231,11 @@ mod ed25519_wycheproof {
         let sig1 = key.sign(msg);
         let sig2 = key.sign(msg);
 
-        assert_eq!(sig1.to_bytes(), sig2.to_bytes(), "Ed25519 must be deterministic");
+        assert_eq!(
+            sig1.to_bytes(),
+            sig2.to_bytes(),
+            "Ed25519 must be deterministic"
+        );
     }
 }
 
@@ -386,14 +395,12 @@ mod ecdsa_p256_wycheproof {
         use std::panic;
 
         let short = [0u8; 31];
-        let result = panic::catch_unwind(|| {
-            P256SigningKey::from_bytes(&short)
-        });
+        let result = panic::catch_unwind(|| P256SigningKey::from_bytes(&short));
 
         // Either panic or error is acceptable for invalid input
         match result {
             Ok(Err(_)) => {} // Returned error - good
-            Err(_) => {}      // Panicked - also rejects the input
+            Err(_) => {}     // Panicked - also rejects the input
             Ok(Ok(_)) => panic!("Short key should be rejected"),
         }
     }
@@ -638,17 +645,16 @@ mod ecdsa_secp256k1_wycheproof {
     /// Known generator point (private key = 1)
     #[test]
     fn secp256k1_generator_point() {
-        let one = hex::decode(
-            "0000000000000000000000000000000000000000000000000000000000000001"
-        ).unwrap();
+        let one = hex::decode("0000000000000000000000000000000000000000000000000000000000000001")
+            .unwrap();
 
         let key = Secp256k1SigningKey::from_bytes(&one).unwrap();
         let vk = key.verifying_key();
 
         // G (compressed): 02 79be667e...
-        let expected = hex::decode(
-            "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-        ).unwrap();
+        let expected =
+            hex::decode("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798")
+                .unwrap();
 
         assert_eq!(vk.to_bytes(), expected);
     }
@@ -781,7 +787,9 @@ mod message_boundary_tests {
         let key = Ed25519SigningKey::generate();
         let vk = key.verifying_key();
 
-        for size in [0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 128, 255, 256, 1024, 4096] {
+        for size in [
+            0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 128, 255, 256, 1024, 4096,
+        ] {
             let msg = vec![0x42u8; size];
             let sig = key.sign(&msg);
             assert!(

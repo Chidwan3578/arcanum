@@ -272,8 +272,13 @@ impl AlgorithmRegistry {
     pub fn all() -> Vec<AlgorithmInfo> {
         use AlgorithmId::*;
         [
-            Aes256Gcm, Aes128Gcm, ChaCha20Poly1305,
-            Blake3, MlKem768, HybridKem, TripleDes,
+            Aes256Gcm,
+            Aes128Gcm,
+            ChaCha20Poly1305,
+            Blake3,
+            MlKem768,
+            HybridKem,
+            TripleDes,
         ]
         .iter()
         .filter_map(|&id| Self::get(id))
