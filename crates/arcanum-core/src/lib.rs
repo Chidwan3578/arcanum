@@ -36,6 +36,7 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 #[cfg(feature = "alloc")]
+#[allow(unused_extern_crates)] // Used in no_std mode
 extern crate alloc;
 
 pub mod buffer;

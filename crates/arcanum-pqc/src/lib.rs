@@ -48,6 +48,7 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+#![allow(clippy::too_many_arguments)]
 
 #[cfg(feature = "ml-kem")]
 pub mod kem;

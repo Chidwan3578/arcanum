@@ -31,6 +31,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_docs, rust_2018_idioms)]
+// Allow various lints in SIMD modules - code is conditionally compiled per architecture
+#![allow(dead_code, unused_imports, unused_variables, unused_mut)]
+#![allow(clippy::missing_safety_doc, clippy::manual_is_multiple_of)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;

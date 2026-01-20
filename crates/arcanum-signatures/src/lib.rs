@@ -44,6 +44,7 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+#![allow(unused_imports, dead_code)]
 
 #[cfg(feature = "ed25519")]
 pub mod ed25519;

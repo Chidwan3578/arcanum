@@ -5,7 +5,6 @@
 //! implementation that satisfies the trait bounds.
 
 use crate::error::Result;
-use crate::key::{PublicKey, SecretKey};
 use async_trait::async_trait;
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -444,6 +443,7 @@ pub trait PostQuantumHybrid {
     type PqPrivateKey;
 
     /// Generate hybrid key pair.
+    #[allow(clippy::type_complexity)]
     fn generate_keypair() -> Result<(
         (Self::ClassicalPrivateKey, Self::PqPrivateKey),
         (Self::ClassicalPublicKey, Self::PqPublicKey),

@@ -79,6 +79,7 @@ impl Base64 {
     }
 
     /// Calculate encoded length for given input length.
+    #[allow(clippy::manual_div_ceil)] // Not div_ceil: formula is ceil(n/3) * 4
     pub fn encoded_len(input_len: usize) -> usize {
         // Standard base64: (input_len + 2) / 3 * 4
         ((input_len + 2) / 3) * 4

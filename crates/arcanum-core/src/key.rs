@@ -19,7 +19,7 @@ use std::fmt;
 use std::mem::ManuallyDrop;
 use subtle::{Choice, ConstantTimeEq};
 use uuid::Uuid;
-use zeroize::{Zeroize, ZeroizeOnDrop};
+use zeroize::ZeroizeOnDrop;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECRET KEY
@@ -170,7 +170,7 @@ impl<const N: usize> PublicKey<N> {
 
     /// Encode as hex string.
     pub fn to_hex(&self) -> String {
-        hex::encode(&self.bytes)
+        hex::encode(self.bytes)
     }
 
     /// Decode from hex string.
@@ -355,6 +355,7 @@ pub enum KeyUsage {
 
 /// Key algorithm identifiers.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[allow(missing_docs)] // Variants are self-documenting
 pub enum KeyAlgorithm {
     // Symmetric
     Aes128,

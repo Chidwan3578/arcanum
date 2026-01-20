@@ -31,17 +31,10 @@ cuda = ["std"]
 # Multi-threaded parallel hashing
 rayon = ["dep:rayon", "std"]
 
-# For benchmarking against other implementations
-bench-comparison = ["sha2-crate", "blake3-crate"]
-
 [dependencies]
 zeroize = { version = "1.8", default-features = false, features = ["derive"] }
 subtle = { version = "2.5", default-features = false }
 rayon = { version = "1.10", optional = true }
-
-# Optional: for benchmark comparisons only
-sha2-crate = { package = "sha2", version = "0.10", optional = true }
-blake3-crate = { package = "blake3", version = "1.5", optional = true }
 
 [dev-dependencies]
 hex = "0.4"

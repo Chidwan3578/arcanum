@@ -109,13 +109,13 @@ impl<const N: usize> AsRef<[u8]> for Nonce<N> {
 
 impl<const N: usize> std::fmt::Debug for Nonce<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Nonce<{}>({})", N, hex::encode(&self.bytes))
+        write!(f, "Nonce<{}>({})", N, hex::encode(self.bytes))
     }
 }
 
 impl<const N: usize> std::fmt::Display for Nonce<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", hex::encode(&self.bytes))
+        write!(f, "{}", hex::encode(self.bytes))
     }
 }
 

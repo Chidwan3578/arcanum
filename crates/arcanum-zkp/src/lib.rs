@@ -38,6 +38,8 @@
 //! ```
 
 #![deny(unsafe_code)]
+#![allow(clippy::needless_return, clippy::manual_is_multiple_of)]
+#![allow(unused_imports, unused_mut, dead_code)]
 #![warn(missing_docs, rust_2018_idioms)]
 
 mod commitment;

@@ -47,6 +47,7 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+#![allow(unused_imports)]
 
 mod traits;
 
