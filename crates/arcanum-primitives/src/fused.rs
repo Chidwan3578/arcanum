@@ -471,11 +471,27 @@ unsafe fn xor_keystream_avx512_nt(data: &mut [u8], keystream: &[u8]) {
 }
 
 /// Check if we should use non-temporal stores based on message size.
-/// Currently disabled due to performance regression at threshold boundary.
+///
+/// # Current Status: Disabled
+///
+/// Non-temporal stores are currently disabled due to a performance regression
+/// observed at the 256KB threshold boundary. When the message size crosses
+/// the `NT_STORE_THRESHOLD`, alignment issues cause approximately 2x slowdown
+/// instead of the expected speedup.
+///
+/// ## Root Cause (Suspected)
+///
+/// The issue appears to be related to unaligned memory access when the output
+/// buffer isn't 32/64-byte aligned. Non-temporal stores require aligned memory
+/// for optimal performance, and the fallback path has overhead.
+///
+/// ## Re-enabling
+///
+/// To re-enable, uncomment the size check and ensure callers provide aligned
+/// buffers, or implement proper alignment detection with graceful fallback.
 #[inline]
 fn use_non_temporal(_total_size: usize) -> bool {
-    // NT stores disabled - alignment issues cause 2x slowdown at 256KB threshold
-    // TODO: investigate root cause and re-enable
+    // Disabled - see doc comment above for details
     false
     // total_size >= NT_STORE_THRESHOLD
 }
