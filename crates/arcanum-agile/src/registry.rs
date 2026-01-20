@@ -193,6 +193,16 @@ impl AlgorithmRegistry {
                 key_size: 16,
                 nonce_size: Some(12),
             },
+            AlgorithmId::Aes256GcmSiv => AlgorithmInfo {
+                id,
+                name: "AES-256-GCM-SIV",
+                security_level: SecurityLevel::Bits256,
+                deprecated: false,
+                deprecation_reason: None,
+                post_quantum: false,
+                key_size: 32,
+                nonce_size: Some(12),
+            },
             AlgorithmId::ChaCha20Poly1305 => AlgorithmInfo {
                 id,
                 name: "ChaCha20-Poly1305",
@@ -202,6 +212,16 @@ impl AlgorithmRegistry {
                 post_quantum: false,
                 key_size: 32,
                 nonce_size: Some(12),
+            },
+            AlgorithmId::XChaCha20Poly1305 => AlgorithmInfo {
+                id,
+                name: "XChaCha20-Poly1305",
+                security_level: SecurityLevel::Bits256,
+                deprecated: false,
+                deprecation_reason: None,
+                post_quantum: false,
+                key_size: 32,
+                nonce_size: Some(24),
             },
             AlgorithmId::Blake3 => AlgorithmInfo {
                 id,

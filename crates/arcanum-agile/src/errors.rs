@@ -1,5 +1,6 @@
 //! Error types for cryptographic agility operations.
 
+use crate::registry::AlgorithmId;
 use thiserror::Error;
 
 /// Errors that can occur during agility operations.
@@ -8,6 +9,14 @@ pub enum AgileError {
     /// Algorithm not found in registry.
     #[error("Unknown algorithm ID: {0}")]
     UnknownAlgorithm(u16),
+
+    /// Algorithm not supported for this operation.
+    #[error("Algorithm {id:?} is not supported for this operation")]
+    UnsupportedAlgorithm { id: AlgorithmId },
+
+    /// Invalid key size for algorithm.
+    #[error("Invalid key size: expected {expected} bytes, got {actual}")]
+    InvalidKeySize { expected: usize, actual: usize },
 
     /// Algorithm is deprecated and not allowed by policy.
     #[error("Algorithm {algorithm} is deprecated: {reason}")]

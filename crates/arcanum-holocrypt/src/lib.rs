@@ -100,7 +100,6 @@
 #![warn(missing_docs, rust_2018_idioms)]
 
 pub mod container;
-pub mod layers;
 pub mod properties;
 pub mod selective;
 pub mod errors;
