@@ -10,16 +10,17 @@ See [BENCHMARK_REPORT.md](BENCHMARK_REPORT.md) for performance data.
 arcanum/
 ├── crates/
 │   ├── arcanum-core        # Core traits, types, secure memory
-│   ├── arcanum-primitives  # Native cryptographic primitives (zero-dependency)
+│   ├── arcanum-primitives  # Native SIMD-optimized primitives
 │   ├── arcanum-symmetric   # AES-GCM, ChaCha20-Poly1305, XChaCha20
+│   ├── arcanum-asymmetric  # RSA, ECIES, X25519, X448
 │   ├── arcanum-signatures  # Ed25519, ECDSA, Schnorr
 │   ├── arcanum-hash        # SHA-2/3, Blake2/3, KDFs (Argon2, HKDF)
-│   ├── arcanum-asymmetric  # RSA, ECIES, X25519, X448
-│   ├── arcanum-pqc         # ML-KEM, ML-DSA, hybrid schemes
-│   ├── arcanum-zkp         # Zero-knowledge proofs
-│   ├── arcanum-keystore    # Key management, HSM, TPM
-│   ├── arcanum-protocols   # Noise, Double Ratchet
-│   └── arcanum-formats     # X.509, JWE/JWS, OpenPGP
+│   ├── arcanum-pqc         # ML-KEM, hybrid schemes
+│   ├── arcanum-zkp         # Zero-knowledge proofs (Bulletproofs)
+│   ├── arcanum-threshold   # Shamir, Feldman VSS, FROST
+│   ├── arcanum-agile       # Algorithm versioning and migration
+│   ├── arcanum-verify      # Timing analysis, side-channel detection
+│   └── arcanum-holocrypt   # Composable multi-layer cryptography
 ```
 
 ## Features
@@ -43,10 +44,9 @@ arcanum/
 - **HKDF**: Key derivation (RFC 5869)
 
 ### Post-Quantum Cryptography
-- **ML-KEM** (CRYSTALS-Kyber): NIST-standardized KEM
-- **ML-DSA** (CRYSTALS-Dilithium): NIST-standardized signatures
-- **SLH-DSA** (SPHINCS+): Hash-based signatures
-- **Hybrid schemes**: Classical + PQ for defense in depth
+- **ML-KEM** (CRYSTALS-Kyber): NIST-standardized KEM (FIPS 203)
+- **ML-DSA** (CRYSTALS-Dilithium): NIST-standardized signatures (feature-gated)
+- **Hybrid schemes**: X25519 + ML-KEM for defense in depth
 
 ### Advanced Features
 - Zero-knowledge proofs (Bulletproofs, Groth16)
