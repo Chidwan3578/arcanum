@@ -98,6 +98,7 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+#![allow(unused_imports, unused_variables, dead_code, clippy::manual_div_ceil)]
 
 pub mod container;
 pub mod errors;

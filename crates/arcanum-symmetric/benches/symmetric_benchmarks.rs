@@ -5,6 +5,8 @@
 //! - ring (BoringSSL wrapper)
 //! - sodiumoxide (libsodium bindings)
 
+#![allow(clippy::redundant_closure)]
+
 use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 // Message sizes for benchmarking (covering various use cases)

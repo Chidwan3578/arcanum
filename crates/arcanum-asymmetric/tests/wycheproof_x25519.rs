@@ -10,6 +10,8 @@
 //! - RFC 7748 test vectors
 //! - Edge cases with special byte patterns
 
+#![allow(unused_imports)]
+
 use arcanum_asymmetric::x25519::{X25519, X25519PublicKey, X25519SecretKey, X25519SharedSecret};
 
 // ═══════════════════════════════════════════════════════════════════════════════

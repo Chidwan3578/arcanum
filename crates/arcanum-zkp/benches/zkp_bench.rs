@@ -5,6 +5,8 @@
 //! - Schnorr proofs (discrete log, equality)
 //! - Pedersen commitments
 
+#![allow(clippy::redundant_closure)]
+
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 
 // ═══════════════════════════════════════════════════════════════════════════════

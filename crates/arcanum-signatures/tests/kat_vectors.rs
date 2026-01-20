@@ -3,6 +3,8 @@
 //! These tests verify our implementations match official test vectors
 //! from RFC 8032 (Ed25519), NIST FIPS 186-4 (ECDSA), and other standards.
 
+#![allow(unused_imports)]
+
 use arcanum_signatures::{Ed25519Signature, Ed25519SigningKey, Ed25519VerifyingKey};
 use arcanum_signatures::{
     P256Signature, P256SigningKey, P256VerifyingKey, P384Signature, P384SigningKey,

@@ -69,11 +69,15 @@ impl EncryptedPayload {
     /// Current format version.
     pub const VERSION: u8 = 1;
 
-    /// Algorithm identifiers.
+    /// Algorithm identifier for AES-128-GCM.
     pub const ALG_AES_128_GCM: u8 = 1;
+    /// Algorithm identifier for AES-256-GCM.
     pub const ALG_AES_256_GCM: u8 = 2;
+    /// Algorithm identifier for AES-256-GCM-SIV.
     pub const ALG_AES_256_GCM_SIV: u8 = 3;
+    /// Algorithm identifier for ChaCha20-Poly1305.
     pub const ALG_CHACHA20_POLY1305: u8 = 4;
+    /// Algorithm identifier for XChaCha20-Poly1305.
     pub const ALG_XCHACHA20_POLY1305: u8 = 5;
 
     /// Create a new payload.

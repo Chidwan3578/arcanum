@@ -4,6 +4,8 @@
 //! - RustCrypto (direct backend via ed25519-dalek)
 //! - ring (BoringSSL wrapper)
 
+#![allow(clippy::redundant_closure)]
+
 use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 // Message sizes for benchmarking

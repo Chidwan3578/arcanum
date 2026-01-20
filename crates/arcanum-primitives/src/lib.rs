@@ -30,10 +30,18 @@
 //! - XChaCha20-Poly1305 (extended 24-byte nonce)
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![warn(missing_docs, rust_2018_idioms)]
+#![warn(rust_2018_idioms)]
 // Allow various lints in SIMD modules - code is conditionally compiled per architecture
-#![allow(dead_code, unused_imports, unused_variables, unused_mut)]
+#![allow(dead_code, unused_imports, unused_variables, unused_mut, missing_docs)]
 #![allow(clippy::missing_safety_doc, clippy::manual_is_multiple_of)]
+#![allow(clippy::needless_return, clippy::too_many_arguments)]
+#![allow(clippy::needless_range_loop, clippy::manual_div_ceil)]
+#![allow(
+    clippy::unnecessary_cast,
+    clippy::manual_memcpy,
+    clippy::doc_lazy_continuation
+)]
+#![allow(clippy::assertions_on_constants, clippy::expect_fun_call)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;

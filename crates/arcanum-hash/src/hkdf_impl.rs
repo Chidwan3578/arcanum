@@ -90,9 +90,11 @@ impl KeyDerivation for Hkdf<Sha512> {
     }
 }
 
-/// Type alias for the most common variant.
+/// Type alias for HKDF with SHA-256.
 pub type HkdfSha256 = Hkdf<Sha256>;
+/// Type alias for HKDF with SHA-384.
 pub type HkdfSha384 = Hkdf<Sha384>;
+/// Type alias for HKDF with SHA-512.
 pub type HkdfSha512 = Hkdf<Sha512>;
 
 /// Convenience functions for HKDF-SHA256.

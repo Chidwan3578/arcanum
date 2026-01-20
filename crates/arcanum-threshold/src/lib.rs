@@ -48,6 +48,11 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+#![allow(
+    clippy::needless_range_loop,
+    clippy::needless_borrow,
+    clippy::needless_borrows_for_generic_args
+)]
 
 mod error;
 

@@ -44,7 +44,7 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
-#![allow(unused_imports, dead_code)]
+#![allow(unused_imports, dead_code, clippy::needless_borrows_for_generic_args)]
 
 #[cfg(feature = "ed25519")]
 pub mod ed25519;

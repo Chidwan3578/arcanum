@@ -2,6 +2,8 @@
 //!
 //! Benchmarks key generation, key exchange, and encryption operations.
 
+#![allow(clippy::unit_arg)]
+
 use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 use arcanum_asymmetric::{

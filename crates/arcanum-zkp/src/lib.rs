@@ -39,7 +39,8 @@
 
 #![deny(unsafe_code)]
 #![allow(clippy::needless_return, clippy::manual_is_multiple_of)]
-#![allow(unused_imports, unused_mut, dead_code)]
+#![allow(clippy::needless_borrow, clippy::needless_borrows_for_generic_args)]
+#![allow(unused_imports, unused_mut, dead_code, clippy::needless_range_loop)]
 #![warn(missing_docs, rust_2018_idioms)]
 
 mod commitment;

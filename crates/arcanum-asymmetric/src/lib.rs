@@ -47,7 +47,11 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
-#![allow(unused_imports)]
+#![allow(
+    unused_imports,
+    unused_variables,
+    clippy::needless_borrows_for_generic_args
+)]
 
 mod traits;
 

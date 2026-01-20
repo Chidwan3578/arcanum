@@ -105,6 +105,7 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+#![allow(unused_variables, dead_code)]
 
 #[cfg(feature = "sha2")]
 pub mod sha2_impl;

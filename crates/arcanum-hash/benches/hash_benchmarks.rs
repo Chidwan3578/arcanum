@@ -5,6 +5,8 @@
 //! - ring (BoringSSL wrapper)
 //! - blake3 crate (reference implementation)
 
+#![allow(dead_code)]
+
 use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 // Data sizes for benchmarking (covering various use cases)

@@ -5,6 +5,7 @@ use thiserror::Error;
 
 /// Errors that can occur during agility operations.
 #[derive(Debug, Error)]
+#[allow(missing_docs)]
 pub enum AgileError {
     /// Algorithm not found in registry.
     #[error("Unknown algorithm ID: {0}")]

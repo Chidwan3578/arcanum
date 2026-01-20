@@ -10,6 +10,8 @@
 //! - Authentication failure detection
 //! - Large message handling
 
+#![allow(clippy::needless_range_loop)]
+
 use arcanum_symmetric::{Aes128Gcm, Aes256Gcm, ChaCha20Poly1305Cipher, Cipher};
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -63,6 +63,7 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+#![allow(clippy::op_ref)]
 
 #[cfg(feature = "registry")]
 pub mod registry;

@@ -4,6 +4,13 @@
 //!
 //! These benchmarks compare native Arcanum implementations against RustCrypto equivalents.
 
+#![allow(
+    unused_imports,
+    clippy::needless_range_loop,
+    clippy::manual_memcpy,
+    clippy::get_first
+)]
+
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 
 use arcanum_primitives::blake3::Blake3;

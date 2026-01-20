@@ -10,6 +10,8 @@
 //! - Edge cases at field boundaries
 //! - Cross-curve confusion prevention
 
+#![allow(unused_imports)]
+
 use arcanum_signatures::{Ed25519Signature, Ed25519SigningKey, Ed25519VerifyingKey};
 use arcanum_signatures::{
     P256Signature, P256SigningKey, P256VerifyingKey, P384Signature, P384SigningKey,
