@@ -33,6 +33,11 @@ impl Share {
         &self.value
     }
 
+    /// Get mutable access to the share value.
+    pub fn value_mut(&mut self) -> &mut [u8] {
+        &mut self.value
+    }
+
     /// Serialize to bytes.
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(1 + self.value.len());

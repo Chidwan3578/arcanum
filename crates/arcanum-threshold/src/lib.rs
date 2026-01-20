@@ -22,6 +22,16 @@
 //! - **Pedersen DKG**: Two-round DKG with information-theoretic security
 //! - **FROST DKG**: Integrated key generation for FROST signing
 //!
+//! ## Proactive Refresh
+//!
+//! Limit the window of compromise with periodic share refresh:
+//!
+//! - **Centralized refresh**: Dealer refreshes all shares at once
+//! - **Distributed refresh**: Participants cooperatively refresh without dealer
+//!
+//! After refresh, old shares are incompatible with new shares, preventing
+//! attackers from combining shares collected over different time periods.
+//!
 //! ## Example
 //!
 //! ```ignore
@@ -50,6 +60,9 @@ pub mod frost;
 #[cfg(feature = "dkg")]
 pub mod dkg;
 
+#[cfg(feature = "proactive")]
+pub mod proactive;
+
 pub use error::{ThresholdError, Result};
 
 #[cfg(feature = "shamir")]
@@ -60,6 +73,9 @@ pub use frost::{FrostSigner, FrostVerifier, SigningShare, VerifyingShare};
 
 #[cfg(feature = "dkg")]
 pub use dkg::{DkgParticipant, DkgRound1, DkgRound2};
+
+#[cfg(feature = "proactive")]
+pub use proactive::{ProactiveRefresh, RefreshShares};
 
 /// Prelude for convenient imports.
 pub mod prelude {
@@ -73,6 +89,9 @@ pub mod prelude {
 
     #[cfg(feature = "dkg")]
     pub use crate::dkg::{DkgParticipant, DkgRound1, DkgRound2};
+
+    #[cfg(feature = "proactive")]
+    pub use crate::proactive::{ProactiveRefresh, RefreshShares};
 }
 
 /// Re-export identifier type for participants.
