@@ -589,19 +589,27 @@ fn kat_sha2_128f_sign_verify() {
 
 ---
 
-## 11. Open Questions
+## 11. Design Decisions (Resolved)
 
-1. **SHAKE256 Support**: Implement in arcanum-primitives or use sha3 crate?
-   - Recommendation: Add native SHAKE256 for consistency
+1. **SHAKE256 Support**: ✅ Add native implementation to arcanum-primitives
+   - Maintains zero external crypto dependencies philosophy
+   - Enables SHAKE variants for full FIPS 205 coverage
 
-2. **Deterministic vs Randomized Signing**: FIPS 205 allows both
-   - Recommendation: Support both, default to randomized
+2. **Deterministic vs Randomized Signing**: ✅ Default to randomized, deterministic via flag
+   - Randomized: Better for production (hedged signatures)
+   - Deterministic: Available via `sign_deterministic()` for testing/debugging
+   - API: `sign()` = randomized, `sign_deterministic()` = reproducible
 
-3. **Batch Verification API**: Worth adding?
-   - Recommendation: Defer to Phase 5, profile first
+3. **no_std Support**: ✅ Required for v1
+   - Design with `#![no_std]` from the start
+   - Use `alloc` for dynamic allocations
+   - Feature flag: `std` for std-dependent functionality
 
-4. **no_std Support**: Required for initial release?
-   - Recommendation: Design for it, implement in Phase 5
+### 11.1 Deferred Decisions
+
+4. **Batch Verification API**: Defer to Phase 5
+   - Profile single verification first
+   - Assess if batch provides meaningful speedup
 
 ---
 

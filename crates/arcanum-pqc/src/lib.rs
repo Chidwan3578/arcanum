@@ -49,12 +49,18 @@
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
 #![allow(clippy::too_many_arguments, dead_code)]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
 
 #[cfg(feature = "ml-kem")]
 pub mod kem;
 
 #[cfg(feature = "ml-dsa")]
 pub mod dsa;
+
+#[cfg(feature = "slh-dsa")]
+pub mod slh_dsa;
 
 #[cfg(feature = "hybrid")]
 pub mod hybrid;

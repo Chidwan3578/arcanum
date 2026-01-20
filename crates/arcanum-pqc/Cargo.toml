@@ -13,20 +13,22 @@ categories = ["cryptography"]
 [features]
 # Note: ml-dsa is excluded from default until it has a stable release
 # (currently depends on rand_core release candidates)
-default = ["ml-kem"]
+default = ["std", "ml-kem"]
+std = []
 ml-kem = ["dep:ml-kem"]
 ml-dsa = ["dep:ml-dsa"]
-slh-dsa = ["dep:slh-dsa"]
+# Native SLH-DSA implementation (FIPS 205) - no external dependency
+slh-dsa = []
 hybrid = ["ml-kem"]
 all = ["ml-kem", "ml-dsa", "slh-dsa", "hybrid"]
 
 [dependencies]
 arcanum-core = { workspace = true }
 
-# NIST PQC Standards (FIPS 203, 204, 205)
+# NIST PQC Standards (FIPS 203, 204)
 ml-kem = { workspace = true, optional = true }
 ml-dsa = { workspace = true, optional = true }
-slh-dsa = { workspace = true, optional = true }
+# Note: slh-dsa is implemented natively, no external dependency
 
 # KEM traits (required by ml-kem)
 kem = "0.3.0-pre.0"
