@@ -470,30 +470,31 @@ unsafe fn xor_keystream_avx512_nt(data: &mut [u8], keystream: &[u8]) {
     }
 }
 
-/// Check if we should use non-temporal stores based on message size.
+/// Check if we should use non-temporal stores based on message size and alignment.
 ///
-/// # Current Status: Disabled
+/// Non-temporal (streaming) stores bypass the CPU cache, which is beneficial for
+/// large buffers that won't fit in cache anyway. However, they require proper
+/// alignment to be efficient.
 ///
-/// Non-temporal stores are currently disabled due to a performance regression
-/// observed at the 256KB threshold boundary. When the message size crosses
-/// the `NT_STORE_THRESHOLD`, alignment issues cause approximately 2x slowdown
-/// instead of the expected speedup.
+/// # Requirements
 ///
-/// ## Root Cause (Suspected)
+/// Returns `true` only if:
+/// 1. Buffer size exceeds `NT_STORE_THRESHOLD` (256 KB)
+/// 2. Buffer is 64-byte aligned (optimal for AVX-512) or 32-byte aligned (AVX2)
 ///
-/// The issue appears to be related to unaligned memory access when the output
-/// buffer isn't 32/64-byte aligned. Non-temporal stores require aligned memory
-/// for optimal performance, and the fallback path has overhead.
-///
-/// ## Re-enabling
-///
-/// To re-enable, uncomment the size check and ensure callers provide aligned
-/// buffers, or implement proper alignment detection with graceful fallback.
+/// If the buffer is large but unaligned, we skip NT stores entirely rather than
+/// paying the overhead of alignment checking in the inner loop.
 #[inline]
-fn use_non_temporal(_total_size: usize) -> bool {
-    // Disabled - see doc comment above for details
-    false
-    // total_size >= NT_STORE_THRESHOLD
+fn use_non_temporal(buffer: &[u8]) -> bool {
+    // Size check: only use NT stores for buffers larger than L2 cache
+    if buffer.len() < NT_STORE_THRESHOLD {
+        return false;
+    }
+
+    // Alignment check: NT stores require aligned memory for efficiency
+    // Check for 64-byte alignment (AVX-512) or fall back to 32-byte (AVX2)
+    let ptr = buffer.as_ptr() as usize;
+    ptr % 64 == 0 || ptr % 32 == 0
 }
 
 // Use SIMD-accelerated Poly1305 when available
@@ -622,7 +623,7 @@ impl FusedChaCha20Poly1305 {
         let mut offset = 0;
 
         // Use non-temporal stores for large messages to avoid cache pollution
-        let use_nt = use_non_temporal(buffer.len());
+        let use_nt = use_non_temporal(buffer);
 
         // Use SIMD-accelerated keystream generation when available
         #[cfg(all(target_arch = "x86_64", feature = "simd", feature = "std"))]
@@ -791,7 +792,7 @@ impl FusedChaCha20Poly1305 {
         let mut offset = 0;
 
         // Use non-temporal stores for large messages to avoid cache pollution
-        let use_nt = use_non_temporal(buffer.len());
+        let use_nt = use_non_temporal(buffer);
 
         // Use SIMD-accelerated keystream generation when available
         #[cfg(all(target_arch = "x86_64", feature = "simd", feature = "std"))]
