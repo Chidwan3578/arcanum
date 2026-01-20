@@ -1000,8 +1000,50 @@ impl FusedChaCha20Poly1305 {
         aad: &[u8],
         ciphertext: &[u8],
     ) -> [u8; TAG_SIZE] {
+        // Use AVX-512 optimized path when available and beneficial
+        #[cfg(all(target_arch = "x86_64", feature = "simd", feature = "std"))]
+        {
+            if has_avx512f() && ciphertext.len() >= 1024 {
+                return self.compute_tag_decrypt_avx512(nonce, aad, ciphertext);
+            }
+        }
+
         let poly_key = self.poly_key(nonce);
         let mut poly = Poly1305::new(&poly_key);
+
+        // AAD
+        poly.update(aad);
+        let aad_padding = pad16(aad.len());
+        if aad_padding > 0 {
+            poly.update(&[0u8; 16][..aad_padding]);
+        }
+
+        // Ciphertext
+        poly.update(ciphertext);
+        let ct_padding = pad16(ciphertext.len());
+        if ct_padding > 0 {
+            poly.update(&[0u8; 16][..ct_padding]);
+        }
+
+        // Lengths
+        let aad_len = (aad.len() as u64).to_le_bytes();
+        let ct_len = (ciphertext.len() as u64).to_le_bytes();
+        poly.update(&aad_len);
+        poly.update(&ct_len);
+
+        poly.finalize()
+    }
+
+    /// AVX-512 optimized tag computation for decryption verification.
+    #[cfg(all(target_arch = "x86_64", feature = "simd", feature = "std"))]
+    fn compute_tag_decrypt_avx512(
+        &self,
+        nonce: &[u8; NONCE_SIZE],
+        aad: &[u8],
+        ciphertext: &[u8],
+    ) -> [u8; TAG_SIZE] {
+        let poly_key = self.poly_key(nonce);
+        let mut poly = Poly1305Simd512::new(&poly_key);
 
         // AAD
         poly.update(aad);
