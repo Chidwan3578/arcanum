@@ -205,8 +205,15 @@ impl X25519SharedSecret {
     ///
     /// Returns true if the shared secret is all zeros, which indicates
     /// the peer provided a malicious low-order public key.
+    ///
+    /// # Security
+    ///
+    /// This check is performed in constant time to prevent timing attacks
+    /// that could leak information about the shared secret.
     pub fn is_low_order(&self) -> bool {
-        self.bytes.iter().all(|&b| b == 0)
+        use subtle::ConstantTimeEq;
+        let zero = [0u8; 32];
+        self.bytes.ct_eq(&zero).into()
     }
 
     /// Derive a key using HKDF.

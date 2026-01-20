@@ -43,6 +43,9 @@ subtle = "2.5"
 pkcs8 = { version = "0.10", features = ["std", "encryption"] }
 spki = "0.7"
 
+# Optional: Ethereum address support
+sha3 = { version = "0.10", optional = true }
+
 [dev-dependencies]
 criterion = "0.5"
 proptest = "1.5"
@@ -54,6 +57,7 @@ ecies = []
 x25519 = []
 x448 = []
 serde = ["dep:serde"]
+ethereum = ["dep:sha3"]  # Ethereum address derivation from secp256k1 keys
 
 [[bench]]
 name = "asymmetric_bench"

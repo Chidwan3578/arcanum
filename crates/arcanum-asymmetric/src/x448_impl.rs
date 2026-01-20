@@ -153,8 +153,14 @@ impl X448SharedSecret {
     }
 
     /// Check if this is a low-order point.
+    ///
+    /// # Security
+    ///
+    /// This check is performed in constant time to prevent timing attacks.
     pub fn is_low_order(&self) -> bool {
-        self.bytes.iter().all(|&b| b == 0)
+        use subtle::ConstantTimeEq;
+        let zero = [0u8; 56];
+        self.bytes.ct_eq(&zero).into()
     }
 
     /// Derive a key using HKDF.

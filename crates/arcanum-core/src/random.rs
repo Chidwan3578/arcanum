@@ -150,8 +150,16 @@ impl ThreadLocalRng {
     }
 
     /// Generate random bytes.
+    ///
+    /// # Panics
+    ///
+    /// This function will not panic even if the mutex was poisoned by a panic
+    /// in another thread - it recovers the inner RNG state.
     pub fn fill_bytes(&self, dest: &mut [u8]) {
-        self.rng.lock().unwrap().fill_bytes(dest);
+        self.rng
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .fill_bytes(dest);
     }
 
     /// Generate a random array.
@@ -162,8 +170,15 @@ impl ThreadLocalRng {
     }
 
     /// Reseed from the OS RNG.
+    ///
+    /// # Panics
+    ///
+    /// This function will not panic even if the mutex was poisoned by a panic
+    /// in another thread - it recovers and reseeds the RNG.
     pub fn reseed(&self) {
-        *self.rng.lock().unwrap() = ChaCha20Rng::from_entropy();
+        *self.rng
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = ChaCha20Rng::from_entropy();
     }
 }
 
