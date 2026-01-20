@@ -39,12 +39,12 @@ This specification defines the native implementation of ML-DSA (Module-Lattice-B
 
 ### 1.4 Prerequisites
 
-**BLOCKING DEPENDENCY**: This implementation requires SHAKE128/SHAKE256 primitives.
+**STATUS**: All prerequisites are now met. Ready for Green Phase.
 
 | Prerequisite | Location | Status | Spec |
 |--------------|----------|--------|------|
-| SHAKE128 | arcanum-primitives | **NOT IMPLEMENTED** | [SHAKE-SPEC.md](./SHAKE-SPEC.md) |
-| SHAKE256 | arcanum-primitives | **NOT IMPLEMENTED** | [SHAKE-SPEC.md](./SHAKE-SPEC.md) |
+| SHAKE128 | arcanum-primitives | ✅ IMPLEMENTED | [SHAKE-SPEC.md](./SHAKE-SPEC.md) |
+| SHAKE256 | arcanum-primitives | ✅ IMPLEMENTED | [SHAKE-SPEC.md](./SHAKE-SPEC.md) |
 
 ML-DSA uses SHAKE (SHA-3 XOF) extensively for:
 - **ExpandA**: Generating public matrix A (SHAKE128)
@@ -54,9 +54,9 @@ ML-DSA uses SHAKE (SHA-3 XOF) extensively for:
 - **SampleInBall**: Sampling challenge polynomial (SHAKE256)
 
 **Implementation Order**:
-1. Implement SHAKE128/SHAKE256 in arcanum-primitives (see SHAKE-SPEC.md)
-2. Add feature flag `shake` to arcanum-primitives
-3. Update arcanum-pqc dependency on arcanum-primitives
+1. ~~Implement SHAKE128/SHAKE256 in arcanum-primitives~~ ✅ Done
+2. ~~Add feature flag `shake` to arcanum-primitives~~ ✅ Done
+3. Update arcanum-pqc dependency on arcanum-primitives (add `shake` feature)
 4. Proceed with ML-DSA Green Phase
 
 ---

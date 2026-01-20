@@ -17,8 +17,8 @@ default = ["std", "ml-kem"]
 std = []
 ml-kem = ["dep:ml-kem"]
 ml-dsa = ["dep:ml-dsa"]
-# Native ML-DSA implementation (FIPS 204) - TDD scaffold, requires SHAKE primitives
-ml-dsa-native = []
+# Native ML-DSA implementation (FIPS 204) - requires SHAKE primitives from arcanum-primitives
+ml-dsa-native = ["arcanum-primitives/shake"]
 # Native SLH-DSA implementation (FIPS 205) - no external dependency
 slh-dsa = []
 hybrid = ["ml-kem"]
@@ -26,7 +26,7 @@ all = ["ml-kem", "ml-dsa", "ml-dsa-native", "slh-dsa", "hybrid"]
 
 [dependencies]
 arcanum-core = { workspace = true }
-# Native primitives for SLH-DSA (SHA-256)
+# Native primitives for SLH-DSA (SHA-256) and ML-DSA (SHAKE when ml-dsa-native enabled)
 arcanum-primitives = { workspace = true, features = ["sha2"] }
 
 # NIST PQC Standards (FIPS 203, 204)
