@@ -206,13 +206,14 @@ Documentation quality is high:
 | Issue | Location | Severity | Status |
 |-------|----------|----------|--------|
 | `decompose` uses branching on data | `rounding.rs` | Low | **RESOLVED** - Now uses constant-time arithmetic masking |
-| `TODO` comments in key parsing | `ml_dsa/mod.rs:112-114` | Low | Open |
+| `TODO` comments in key parsing | `ml_dsa/mod.rs:112-114` | Low | **RESOLVED** - Proper FIPS 204 key byte extraction implemented |
 
 ### 5.3 Observations (Not Issues)
 
 - The SECURITY.md transparency is exemplary
 - Test coverage is substantial but fuzzing is explicitly noted as missing
 - The library correctly uses `getrandom` for entropy
+- Dependabot configured for automated dependency security monitoring
 
 ---
 
@@ -251,5 +252,5 @@ The library's self-awareness about its audit status and the comprehensive SECURI
 
 ---
 
-**Document Hash**: This review covers commit `fb17b48` (HEAD at time of review)
+**Document Hash**: This review covers commits up to `6b4ec7e` (updated with resolutions)
 **Methodology**: Static code review, documentation analysis, test examination
