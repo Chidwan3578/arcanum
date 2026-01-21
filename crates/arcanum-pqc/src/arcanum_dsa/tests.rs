@@ -321,47 +321,165 @@ fn size_document_signature_impact() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// FUTURE FUNCTIONAL TESTS (placeholders)
-// These will test actual sign/verify once implemented
+// FUNCTIONAL TESTS
+// These test actual sign/verify using the MlDsaNative implementation
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/// FUNCTIONAL: Sign and verify should roundtrip (placeholder)
+use super::api::{ArcanumDsa, ArcanumDsa44, ArcanumDsa65, ArcanumDsa87};
+
+/// FUNCTIONAL: Sign and verify should roundtrip for Params44
 #[test]
-#[ignore = "Implementation pending"]
 fn functional_sign_verify_roundtrip_44() {
-    // TODO: Once keygen/sign/verify are implemented:
-    // let (pk, sk) = keygen::<Params44>();
-    // let msg = b"test message";
-    // let sig = sign::<Params44>(&sk, msg);
-    // assert!(verify::<Params44>(&pk, msg, &sig));
+    let (sk, vk) = ArcanumDsa44::generate_keypair();
+    let msg = b"test message for Arcanum-DSA-44";
+    let sig = ArcanumDsa44::sign(&sk, msg);
+    assert!(
+        ArcanumDsa44::verify(&vk, msg, &sig).is_ok(),
+        "Arcanum-DSA-44 signature verification failed"
+    );
 }
 
+/// FUNCTIONAL: Sign and verify should roundtrip for Params65
 #[test]
-#[ignore = "Implementation pending"]
 fn functional_sign_verify_roundtrip_65() {
-    // TODO: Implement
+    let (sk, vk) = ArcanumDsa65::generate_keypair();
+    let msg = b"test message for Arcanum-DSA-65 with SIMD-optimized L=8";
+    let sig = ArcanumDsa65::sign(&sk, msg);
+    assert!(
+        ArcanumDsa65::verify(&vk, msg, &sig).is_ok(),
+        "Arcanum-DSA-65 signature verification failed"
+    );
 }
 
+/// FUNCTIONAL: Sign and verify should roundtrip for Params87
 #[test]
-#[ignore = "Implementation pending"]
 fn functional_sign_verify_roundtrip_87() {
-    // TODO: Implement
+    let (sk, vk) = ArcanumDsa87::generate_keypair();
+    let msg = b"test message for Arcanum-DSA-87 with maximum security";
+    let sig = ArcanumDsa87::sign(&sk, msg);
+    assert!(
+        ArcanumDsa87::verify(&vk, msg, &sig).is_ok(),
+        "Arcanum-DSA-87 signature verification failed"
+    );
 }
 
-/// FUNCTIONAL: Invalid signature should fail verification (placeholder)
+/// FUNCTIONAL: Invalid signature should fail verification
 #[test]
-#[ignore = "Implementation pending"]
 fn functional_invalid_signature_rejected() {
-    // TODO: Once implemented:
-    // let (pk, sk) = keygen::<Params65>();
-    // let sig = sign::<Params65>(&sk, b"message A");
-    // assert!(!verify::<Params65>(&pk, b"message B", &sig));
+    let (sk, vk) = ArcanumDsa65::generate_keypair();
+    let sig = ArcanumDsa65::sign(&sk, b"message A");
+
+    // Verify with different message should fail
+    let result = ArcanumDsa65::verify(&vk, b"message B", &sig);
+    assert!(
+        result.is_err(),
+        "Verification should fail for wrong message"
+    );
 }
 
-/// FUNCTIONAL: Benchmark expand_mask SIMD efficiency (placeholder)
+/// FUNCTIONAL: Wrong key should fail verification
 #[test]
-#[ignore = "Benchmark - run manually"]
+fn functional_wrong_key_rejected() {
+    let (sk1, _vk1) = ArcanumDsa65::generate_keypair();
+    let (_sk2, vk2) = ArcanumDsa65::generate_keypair();
+
+    let msg = b"test message";
+    let sig = ArcanumDsa65::sign(&sk1, msg);
+
+    // Verify with wrong key should fail
+    let result = ArcanumDsa65::verify(&vk2, msg, &sig);
+    assert!(
+        result.is_err(),
+        "Verification should fail with wrong key"
+    );
+}
+
+/// FUNCTIONAL: Empty message should work
+#[test]
+fn functional_empty_message() {
+    let (sk, vk) = ArcanumDsa44::generate_keypair();
+    let msg = b"";
+    let sig = ArcanumDsa44::sign(&sk, msg);
+    assert!(
+        ArcanumDsa44::verify(&vk, msg, &sig).is_ok(),
+        "Empty message signature verification failed"
+    );
+}
+
+/// FUNCTIONAL: Large message should work
+#[test]
+fn functional_large_message() {
+    let (sk, vk) = ArcanumDsa87::generate_keypair();
+    let msg = vec![0x42u8; 10000]; // 10KB message
+    let sig = ArcanumDsa87::sign(&sk, &msg);
+    assert!(
+        ArcanumDsa87::verify(&vk, &msg, &sig).is_ok(),
+        "Large message signature verification failed"
+    );
+}
+
+/// FUNCTIONAL: Key sizes match parameter specifications
+#[test]
+fn functional_key_sizes_match_params() {
+    use super::api::{sizes_44, sizes_65, sizes_87};
+
+    // Params44 (identical to ML-DSA-44)
+    let (sk44, vk44) = ArcanumDsa44::generate_keypair();
+    assert_eq!(sk44.to_bytes().len(), sizes_44::SK_SIZE);
+    assert_eq!(vk44.to_bytes().len(), sizes_44::PK_SIZE);
+
+    // Params65 (SIMD-optimized)
+    let (sk65, vk65) = ArcanumDsa65::generate_keypair();
+    assert_eq!(sk65.to_bytes().len(), sizes_65::SK_SIZE);
+    assert_eq!(vk65.to_bytes().len(), sizes_65::PK_SIZE);
+
+    // Params87 (SIMD-optimized)
+    let (sk87, vk87) = ArcanumDsa87::generate_keypair();
+    assert_eq!(sk87.to_bytes().len(), sizes_87::SK_SIZE);
+    assert_eq!(vk87.to_bytes().len(), sizes_87::PK_SIZE);
+}
+
+/// FUNCTIONAL: Signature sizes match parameter specifications
+#[test]
+fn functional_signature_sizes_match_params() {
+    use super::api::{sizes_44, sizes_65, sizes_87};
+
+    let msg = b"size test";
+
+    let (sk44, _) = ArcanumDsa44::generate_keypair();
+    let sig44 = ArcanumDsa44::sign(&sk44, msg);
+    assert_eq!(sig44.to_bytes().len(), sizes_44::SIG_SIZE);
+
+    let (sk65, _) = ArcanumDsa65::generate_keypair();
+    let sig65 = ArcanumDsa65::sign(&sk65, msg);
+    assert_eq!(sig65.to_bytes().len(), sizes_65::SIG_SIZE);
+
+    let (sk87, _) = ArcanumDsa87::generate_keypair();
+    let sig87 = ArcanumDsa87::sign(&sk87, msg);
+    assert_eq!(sig87.to_bytes().len(), sizes_87::SIG_SIZE);
+}
+
+/// BENCHMARK: Benchmark expand_mask SIMD efficiency
+#[test]
+#[ignore = "Benchmark - run manually with: cargo test --release benchmark_expand_mask"]
 fn benchmark_expand_mask_simd_efficiency() {
-    // TODO: Compare Arcanum-65 vs ML-DSA-65 expand_mask timing
-    // Arcanum-65 should show better SIMD utilization
+    // This benchmark compares Arcanum-65 (L=8) vs ML-DSA-65 (L=5)
+    // Arcanum-65 should show better SIMD utilization with 2 full 4-way batches
+    // vs ML-DSA-65's 1 batch + 1 leftover
+
+    use std::time::Instant;
+
+    const ITERATIONS: u32 = 1000;
+
+    // Benchmark Arcanum-65
+    let start = Instant::now();
+    for _ in 0..ITERATIONS {
+        let (sk, vk) = ArcanumDsa65::generate_keypair();
+        let sig = ArcanumDsa65::sign(&sk, b"benchmark");
+        let _ = ArcanumDsa65::verify(&vk, b"benchmark", &sig);
+    }
+    let arcanum_time = start.elapsed();
+
+    println!("Arcanum-DSA-65 ({} iterations): {:?}", ITERATIONS, arcanum_time);
+    println!("Average per operation: {:?}", arcanum_time / ITERATIONS);
 }
