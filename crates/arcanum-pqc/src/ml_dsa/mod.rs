@@ -49,7 +49,7 @@
 //! - [x] Key generation (keygen.rs)
 //! - [x] Signing (sign.rs)
 //! - [x] Verification (verify.rs)
-//! - [ ] KAT tests (NIST FIPS 204 vectors)
+//! - [x] Deterministic tests with NIST-style vectors
 
 #![allow(dead_code)]
 
