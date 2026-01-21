@@ -47,13 +47,14 @@
 //! - [x] NTT implementation (forward/inverse, Montgomery arithmetic)
 //! - [x] Sampling functions (ExpandA, ExpandS, SampleInBall)
 //! - [x] Rounding functions (Power2Round, Decompose, MakeHint, UseHint)
-//! - [ ] Key generation
+//! - [x] Key generation (keygen.rs)
 //! - [ ] Signing
 //! - [ ] Verification
 //! - [ ] KAT tests
 
 #![allow(dead_code)]
 
+pub mod keygen;
 pub mod ntt;
 pub mod params;
 pub mod poly;
@@ -268,20 +269,41 @@ pub struct MlDsaNative<P: MlDsaParams> {
 
 impl<P: MlDsaParams> MlDsa<P> for MlDsaNative<P> {
     fn generate_keypair() -> (MlDsaSigningKey<P>, MlDsaVerifyingKey<P>) {
-        // TODO: Implement FIPS 204 Algorithm 1 (KeyGen)
+        // FIPS 204 Algorithm 1 (ML-DSA.KeyGen)
         //
         // 1. Sample random seed ξ ← {0,1}^256
-        // 2. (ρ, ρ', K) ← H(ξ)
-        // 3. A ← ExpandA(ρ)
-        // 4. (s₁, s₂) ← ExpandS(ρ')
-        // 5. t ← As₁ + s₂
-        // 6. (t₁, t₀) ← Power2Round(t)
-        // 7. pk ← (ρ, t₁)
-        // 8. tr ← H(pk)
-        // 9. sk ← (ρ, K, tr, s₁, s₂, t₀)
-        // 10. return (pk, sk)
+        let mut seed = [0u8; 32];
+        getrandom::getrandom(&mut seed).expect("Failed to generate random seed");
 
-        todo!("ML-DSA key generation not yet implemented - requires SHAKE primitives")
+        // 2-9. Generate keypair internally
+        let kp = keygen::generate_keypair_internal::<P>(&seed);
+
+        // 10. Pack keys for output
+        let pk_bytes = keygen::pack_pk::<P>(&kp.rho, &kp.t1);
+        let sk_bytes = keygen::pack_sk::<P>(
+            &kp.rho,
+            &kp.key,
+            &kp.tr,
+            &kp.s1,
+            &kp.s2,
+            &kp.t0,
+        );
+
+        let sk = MlDsaSigningKey {
+            rho: kp.rho,
+            key: kp.key,
+            tr: kp.tr,
+            bytes: sk_bytes,
+            _params: PhantomData,
+        };
+
+        let vk = MlDsaVerifyingKey {
+            rho: kp.rho,
+            bytes: pk_bytes,
+            _params: PhantomData,
+        };
+
+        (sk, vk)
     }
 
     fn sign(sk: &MlDsaSigningKey<P>, message: &[u8]) -> MlDsaSignature<P> {
@@ -379,5 +401,36 @@ mod api_tests {
         let bytes = vec![0u8; Params65::SK_SIZE];
         let sk = MlDsaSigningKey::<Params65>::from_bytes(&bytes).unwrap();
         assert_eq!(sk.to_bytes(), bytes);
+    }
+
+    #[test]
+    fn test_generate_keypair_44() {
+        let (sk, vk) = MlDsa44::generate_keypair();
+        assert_eq!(sk.to_bytes().len(), Params44::SK_SIZE);
+        assert_eq!(vk.to_bytes().len(), Params44::PK_SIZE);
+    }
+
+    #[test]
+    fn test_generate_keypair_65() {
+        let (sk, vk) = MlDsa65::generate_keypair();
+        assert_eq!(sk.to_bytes().len(), Params65::SK_SIZE);
+        assert_eq!(vk.to_bytes().len(), Params65::PK_SIZE);
+    }
+
+    #[test]
+    fn test_generate_keypair_87() {
+        let (sk, vk) = MlDsa87::generate_keypair();
+        assert_eq!(sk.to_bytes().len(), Params87::SK_SIZE);
+        assert_eq!(vk.to_bytes().len(), Params87::PK_SIZE);
+    }
+
+    #[test]
+    fn test_keypair_keys_are_different() {
+        // Two keypairs should be different (random)
+        let (sk1, vk1) = MlDsa65::generate_keypair();
+        let (sk2, vk2) = MlDsa65::generate_keypair();
+
+        assert_ne!(sk1.to_bytes(), sk2.to_bytes());
+        assert_ne!(vk1.to_bytes(), vk2.to_bytes());
     }
 }
