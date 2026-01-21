@@ -54,9 +54,15 @@ pub struct KeyPairInternal {
 /// Internal keypair structure with all components
 pub fn generate_keypair_internal<P: MlDsaParams>(seed: &[u8; 32]) -> KeyPairInternal {
     // Step 2: Expand seed to (ρ, ρ', K) using SHAKE256
-    // H(ξ) = SHAKE256(ξ, 128) produces 128 bytes = 32 + 64 + 32
+    // Per FIPS 204, input is: ξ || K || L (34 bytes)
+    // Output is: ρ (32) || ρ' (64) || K (32) = 128 bytes
+    let mut inbuf = [0u8; 34];
+    inbuf[..32].copy_from_slice(seed);
+    inbuf[32] = P::K as u8;
+    inbuf[33] = P::L as u8;
+
     let mut shake = Shake256::new();
-    shake.update(seed);
+    shake.update(&inbuf);
     let mut reader = shake.finalize_xof();
 
     let mut rho = [0u8; 32];
@@ -267,22 +273,28 @@ pub fn pack_sk<P: MlDsaParams>(
 fn pack_eta_poly<P: MlDsaParams>(bytes: &mut Vec<u8>, poly: &Poly) {
     if P::ETA == 2 {
         // η = 2: coefficients in [-2, 2], stored as [0, 4] in 3 bits
-        // Pack 8 coefficients in 3 bytes
+        // Pack 8 coefficients into 3 bytes (8 × 3 bits = 24 bits)
         for chunk in 0..(N / 8) {
-            let mut buf = [0u8; 3];
+            // Collect 8 coefficients, map [-2,2] to [4,0]
+            let mut vals = [0u32; 8];
             for i in 0..8 {
-                let c = (2 - poly.coeffs[8 * chunk + i]) as u8; // Map [-2,2] to [4,0]
-                let shift = (i * 3) % 8;
-                let byte_idx = (i * 3) / 8;
-
-                if byte_idx < 3 {
-                    buf[byte_idx] |= c << shift;
-                }
-                if shift > 5 && byte_idx + 1 < 3 {
-                    buf[byte_idx + 1] |= c >> (8 - shift);
-                }
+                vals[i] = (2 - poly.coeffs[8 * chunk + i]) as u32;
             }
-            bytes.extend_from_slice(&buf);
+
+            // Pack into 24 bits (3 bytes)
+            // Use u32 arithmetic to avoid overflow issues
+            let bits: u32 = vals[0]
+                | (vals[1] << 3)
+                | (vals[2] << 6)
+                | (vals[3] << 9)
+                | (vals[4] << 12)
+                | (vals[5] << 15)
+                | (vals[6] << 18)
+                | (vals[7] << 21);
+
+            bytes.push((bits & 0xFF) as u8);
+            bytes.push(((bits >> 8) & 0xFF) as u8);
+            bytes.push(((bits >> 16) & 0xFF) as u8);
         }
     } else if P::ETA == 4 {
         // η = 4: coefficients in [-4, 4], stored as [0, 8] in 4 bits
@@ -297,15 +309,16 @@ fn pack_eta_poly<P: MlDsaParams>(bytes: &mut Vec<u8>, poly: &Poly) {
 
 /// Pack a t₀ polynomial (13 bits per coefficient)
 fn pack_t0_poly(bytes: &mut Vec<u8>, poly: &Poly) {
-    // t₀ coefficients are in [-(2^12), 2^12)
-    // Map to [0, 2^13) by adding 2^12 = 4096
+    // t₀ coefficients are in [-(2^(d-1)), 2^(d-1)) = [-4096, 4096)
+    // Per FIPS 204, map to [0, 2^13 - 1] using: (2^(d-1) - 1) - t0
+    // This maps [-4096, 4095] to [8191, 0], fitting in 13 bits
     // Pack 8 coefficients into 13 bytes (8 × 13 bits = 104 bits)
-    const HALF: i32 = 1 << 12; // 4096
+    const HALF_MINUS_1: i32 = (1 << 12) - 1; // 4095
 
     for chunk in 0..(N / 8) {
         let mut vals = [0u32; 8];
         for i in 0..8 {
-            vals[i] = (HALF - poly.coeffs[8 * chunk + i]) as u32;
+            vals[i] = (HALF_MINUS_1 - poly.coeffs[8 * chunk + i]) as u32;
         }
 
         // Pack 8 × 13 bits = 104 bits = 13 bytes
@@ -414,7 +427,8 @@ fn unpack_eta_poly<P: MlDsaParams>(bytes: &[u8], poly: &mut Poly) {
 
 /// Unpack a t₀ polynomial (13 bits per coefficient)
 fn unpack_t0_poly(bytes: &[u8], poly: &mut Poly) {
-    const HALF: i32 = 1 << 12; // 4096
+    // Inverse of pack: t0 = (2^(d-1) - 1) - packed_val
+    const HALF_MINUS_1: i32 = (1 << 12) - 1; // 4095
 
     // Unpack 8 × 13 bits from 13 bytes
     for chunk in 0..(N / 8) {
@@ -429,14 +443,14 @@ fn unpack_t0_poly(bytes: &[u8], poly: &mut Poly) {
         let v6 = ((b[9] as u32) >> 6) | ((b[10] as u32) << 2) | ((b[11] as u32 & 0x07) << 10);
         let v7 = ((b[11] as u32) >> 3) | ((b[12] as u32) << 5);
 
-        poly.coeffs[8 * chunk] = HALF - (v0 as i32);
-        poly.coeffs[8 * chunk + 1] = HALF - (v1 as i32);
-        poly.coeffs[8 * chunk + 2] = HALF - (v2 as i32);
-        poly.coeffs[8 * chunk + 3] = HALF - (v3 as i32);
-        poly.coeffs[8 * chunk + 4] = HALF - (v4 as i32);
-        poly.coeffs[8 * chunk + 5] = HALF - (v5 as i32);
-        poly.coeffs[8 * chunk + 6] = HALF - (v6 as i32);
-        poly.coeffs[8 * chunk + 7] = HALF - (v7 as i32);
+        poly.coeffs[8 * chunk] = HALF_MINUS_1 - (v0 as i32);
+        poly.coeffs[8 * chunk + 1] = HALF_MINUS_1 - (v1 as i32);
+        poly.coeffs[8 * chunk + 2] = HALF_MINUS_1 - (v2 as i32);
+        poly.coeffs[8 * chunk + 3] = HALF_MINUS_1 - (v3 as i32);
+        poly.coeffs[8 * chunk + 4] = HALF_MINUS_1 - (v4 as i32);
+        poly.coeffs[8 * chunk + 5] = HALF_MINUS_1 - (v5 as i32);
+        poly.coeffs[8 * chunk + 6] = HALF_MINUS_1 - (v6 as i32);
+        poly.coeffs[8 * chunk + 7] = HALF_MINUS_1 - (v7 as i32);
     }
 }
 
