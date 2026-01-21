@@ -104,14 +104,30 @@ impl<P: MlDsaParams> MlDsaSigningKey<P> {
     pub const SIZE: usize = P::SK_SIZE;
 
     /// Create from raw bytes
+    ///
+    /// Parses the secret key according to FIPS 204 format:
+    /// SK = ρ || K || tr || s₁ || s₂ || t₀
     pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
         if bytes.len() != Self::SIZE {
             return None;
         }
+
+        // Extract ρ (32 bytes) - public seed for matrix A
+        let mut rho = [0u8; 32];
+        rho.copy_from_slice(&bytes[0..32]);
+
+        // Extract K (32 bytes) - key for signing randomness
+        let mut key = [0u8; 32];
+        key.copy_from_slice(&bytes[32..64]);
+
+        // Extract tr (64 bytes) - hash of public key
+        let mut tr = [0u8; 64];
+        tr.copy_from_slice(&bytes[64..128]);
+
         Some(Self {
-            rho: [0; 32], // TODO: Extract from bytes
-            key: [0; 32], // TODO: Extract from bytes
-            tr: [0; 64],  // TODO: Extract from bytes
+            rho,
+            key,
+            tr,
             bytes: bytes.to_vec(),
             _params: PhantomData,
         })
@@ -148,12 +164,20 @@ impl<P: MlDsaParams> MlDsaVerifyingKey<P> {
     pub const SIZE: usize = P::PK_SIZE;
 
     /// Create from raw bytes
+    ///
+    /// Parses the public key according to FIPS 204 format:
+    /// PK = ρ || t₁
     pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
         if bytes.len() != Self::SIZE {
             return None;
         }
+
+        // Extract ρ (32 bytes) - public seed for matrix A
+        let mut rho = [0u8; 32];
+        rho.copy_from_slice(&bytes[0..32]);
+
         Some(Self {
-            rho: [0; 32], // TODO: Extract from bytes
+            rho,
             bytes: bytes.to_vec(),
             _params: PhantomData,
         })
