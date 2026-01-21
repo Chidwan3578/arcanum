@@ -125,7 +125,8 @@ pub fn expand_a_sequential<P: MlDsaParams>(rho: &[u8; 32]) -> Vec<Vec<Poly>> {
 /// Pre-squeezes data from all 4 states together to maximize parallelism.
 ///
 /// # Safety
-/// Requires AVX2 support.
+///
+/// Requires AVX2 support. Caller must verify `is_x86_feature_detected!("avx2")`.
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]
 #[target_feature(enable = "avx2")]
 unsafe fn expand_a_x4<P: MlDsaParams>(rho: &[u8; 32]) -> Vec<Vec<Poly>> {
@@ -146,61 +147,43 @@ unsafe fn expand_a_x4<P: MlDsaParams>(rho: &[u8; 32]) -> Vec<Vec<Poly>> {
     while idx < indices.len() {
         let batch_size = (indices.len() - idx).min(4);
 
-        // Create 4-way SHAKE128
-        let mut shake_x4 = Shake128X4::new();
+        // SAFETY: All Shake128X4 operations require AVX2, which is guaranteed by
+        // the caller checking is_x86_feature_detected!("avx2") before calling.
+        unsafe {
+            // Create 4-way SHAKE128
+            let mut shake_x4 = Shake128X4::new();
 
-        // Absorb into each state
-        for b in 0..batch_size {
-            let (i, j) = indices[idx + b];
-            let mut seed = [0u8; 34];
-            seed[..32].copy_from_slice(rho);
-            seed[32] = j as u8;
-            seed[33] = i as u8;
-            shake_x4.absorb(b, &seed);
-        }
-
-        // Finalize all states
-        shake_x4.finalize();
-
-        // Pre-squeeze 840 bytes from each state (5 * 168 = 840 bytes = 5 SHAKE128 blocks)
-        // This gives ~560 candidate coefficients, enough for 256 with ~55% rejection margin
-        let mut bufs = [[0u8; 840]; 4];
-        let mut buf_pos = [0usize; 4];
-        let mut poly_idx = [0usize; 4];
-        let mut polys = [Poly::zero(), Poly::zero(), Poly::zero(), Poly::zero()];
-
-        // Squeeze all 4 states together in parallel
-        shake_x4.squeeze_blocks_x4(&mut bufs, 5, batch_size);
-
-        // Sample from pre-squeezed buffers
-        for b in 0..batch_size {
-            while poly_idx[b] < N && buf_pos[b] + 2 < 840 {
-                let d1 = (bufs[b][buf_pos[b]] as i32)
-                    | ((bufs[b][buf_pos[b] + 1] as i32 & 0x0F) << 8);
-                let d2 = ((bufs[b][buf_pos[b] + 1] as i32) >> 4)
-                    | ((bufs[b][buf_pos[b] + 2] as i32) << 4);
-                buf_pos[b] += 3;
-
-                if d1 < REJECTION_BOUND && poly_idx[b] < N {
-                    polys[b].coeffs[poly_idx[b]] = d1;
-                    poly_idx[b] += 1;
-                }
-                if d2 < REJECTION_BOUND && poly_idx[b] < N {
-                    polys[b].coeffs[poly_idx[b]] = d2;
-                    poly_idx[b] += 1;
-                }
+            // Absorb into each state
+            for b in 0..batch_size {
+                let (i, j) = indices[idx + b];
+                let mut seed = [0u8; 34];
+                seed[..32].copy_from_slice(rho);
+                seed[32] = j as u8;
+                seed[33] = i as u8;
+                shake_x4.absorb(b, &seed);
             }
 
-            // Rare case: need more data (very unlikely with 840 bytes)
-            while poly_idx[b] < N {
-                let mut extra = [0u8; 168];
-                shake_x4.squeeze_one_block(b, &mut extra);
+            // Finalize all states
+            shake_x4.finalize();
 
-                let mut pos = 0;
-                while poly_idx[b] < N && pos + 2 < 168 {
-                    let d1 = (extra[pos] as i32) | ((extra[pos + 1] as i32 & 0x0F) << 8);
-                    let d2 = ((extra[pos + 1] as i32) >> 4) | ((extra[pos + 2] as i32) << 4);
-                    pos += 3;
+            // Pre-squeeze 840 bytes from each state (5 * 168 = 840 bytes = 5 SHAKE128 blocks)
+            // This gives ~560 candidate coefficients, enough for 256 with ~55% rejection margin
+            let mut bufs = [[0u8; 840]; 4];
+            let mut buf_pos = [0usize; 4];
+            let mut poly_idx = [0usize; 4];
+            let mut polys = [Poly::zero(), Poly::zero(), Poly::zero(), Poly::zero()];
+
+            // Squeeze all 4 states together in parallel
+            shake_x4.squeeze_blocks_x4(&mut bufs, 5, batch_size);
+
+            // Sample from pre-squeezed buffers
+            for b in 0..batch_size {
+                while poly_idx[b] < N && buf_pos[b] + 2 < 840 {
+                    let d1 = (bufs[b][buf_pos[b]] as i32)
+                        | ((bufs[b][buf_pos[b] + 1] as i32 & 0x0F) << 8);
+                    let d2 = ((bufs[b][buf_pos[b] + 1] as i32) >> 4)
+                        | ((bufs[b][buf_pos[b] + 2] as i32) << 4);
+                    buf_pos[b] += 3;
 
                     if d1 < REJECTION_BOUND && poly_idx[b] < N {
                         polys[b].coeffs[poly_idx[b]] = d1;
@@ -211,14 +194,36 @@ unsafe fn expand_a_x4<P: MlDsaParams>(rho: &[u8; 32]) -> Vec<Vec<Poly>> {
                         poly_idx[b] += 1;
                     }
                 }
-            }
-        }
 
-        // Store results and apply NTT
-        for b in 0..batch_size {
-            let (i, j) = indices[idx + b];
-            a[i][j] = polys[b].clone();
-            a[i][j].ntt();
+                // Rare case: need more data (very unlikely with 840 bytes)
+                while poly_idx[b] < N {
+                    let mut extra = [0u8; 168];
+                    shake_x4.squeeze_one_block(b, &mut extra);
+
+                    let mut pos = 0;
+                    while poly_idx[b] < N && pos + 2 < 168 {
+                        let d1 = (extra[pos] as i32) | ((extra[pos + 1] as i32 & 0x0F) << 8);
+                        let d2 = ((extra[pos + 1] as i32) >> 4) | ((extra[pos + 2] as i32) << 4);
+                        pos += 3;
+
+                        if d1 < REJECTION_BOUND && poly_idx[b] < N {
+                            polys[b].coeffs[poly_idx[b]] = d1;
+                            poly_idx[b] += 1;
+                        }
+                        if d2 < REJECTION_BOUND && poly_idx[b] < N {
+                            polys[b].coeffs[poly_idx[b]] = d2;
+                            poly_idx[b] += 1;
+                        }
+                    }
+                }
+            }
+
+            // Store results and apply NTT
+            for b in 0..batch_size {
+                let (i, j) = indices[idx + b];
+                a[i][j] = polys[b].clone();
+                a[i][j].ntt();
+            }
         }
 
         idx += 4;
@@ -579,44 +584,49 @@ unsafe fn expand_mask_x4<P: MlDsaParams>(seed: &[u8], nonce: u16, gamma1: u32) -
         let base_nonce = nonce.checked_add((batch * 4) as u16)
             .expect("expand_mask_x4: nonce overflow");
 
-        // Initialize 4-way SHAKE256
-        let mut shake_x4 = Shake256X4::new();
+        // SAFETY: All operations below require AVX2, which is guaranteed by
+        // the caller checking is_x86_feature_detected!("avx2") before calling.
+        // The Shake256X4 methods are unsafe due to SIMD requirements.
+        unsafe {
+            // Initialize 4-way SHAKE256
+            let mut shake_x4 = Shake256X4::new();
 
-        // Absorb seed || nonce for each of the 4 states
-        for i in 0..4 {
-            let n = base_nonce + i as u16;
-            shake_x4.absorb(i, seed);
-            shake_x4.absorb(i, &n.to_le_bytes());
-        }
-
-        // Finalize all states
-        shake_x4.finalize();
-
-        // Squeeze and sample based on gamma1
-        if gamma1 == (1 << 17) {
-            // γ₁ = 2^17: need 576 bytes per polynomial (4.2 blocks of 136)
-            // Using 680 bytes (5 blocks) provides sufficient margin
-            let mut bufs = [[0u8; 680]; 4];
-            shake_x4.squeeze_blocks_x4(&mut bufs, 5, 4);
-
-            for i in 0..4 {
-                y.push(decode_gamma1_17(&bufs[i]));
-            }
-        } else if gamma1 == (1 << 19) {
-            // γ₁ = 2^19: need 640 bytes per polynomial (4.7 blocks of 136)
-            // Using 680 bytes (5 blocks) provides sufficient margin
-            let mut bufs = [[0u8; 680]; 4];
-            shake_x4.squeeze_blocks_x4(&mut bufs, 5, 4);
-
-            for i in 0..4 {
-                y.push(decode_gamma1_19(&bufs[i]));
-            }
-        } else {
-            // Unsupported gamma1 value - fall back to sequential
-            // This path should never be reached with valid parameters
+            // Absorb seed || nonce for each of the 4 states
             for i in 0..4 {
                 let n = base_nonce + i as u16;
-                y.push(sample_poly_gamma1(seed, n, gamma1));
+                shake_x4.absorb(i, seed);
+                shake_x4.absorb(i, &n.to_le_bytes());
+            }
+
+            // Finalize all states
+            shake_x4.finalize();
+
+            // Squeeze and sample based on gamma1
+            if gamma1 == (1 << 17) {
+                // γ₁ = 2^17: need 576 bytes per polynomial (4.2 blocks of 136)
+                // Using 680 bytes (5 blocks) provides sufficient margin
+                let mut bufs = [[0u8; 680]; 4];
+                shake_x4.squeeze_blocks_x4(&mut bufs, 5, 4);
+
+                for i in 0..4 {
+                    y.push(decode_gamma1_17(&bufs[i]));
+                }
+            } else if gamma1 == (1 << 19) {
+                // γ₁ = 2^19: need 640 bytes per polynomial (4.7 blocks of 136)
+                // Using 680 bytes (5 blocks) provides sufficient margin
+                let mut bufs = [[0u8; 680]; 4];
+                shake_x4.squeeze_blocks_x4(&mut bufs, 5, 4);
+
+                for i in 0..4 {
+                    y.push(decode_gamma1_19(&bufs[i]));
+                }
+            } else {
+                // Unsupported gamma1 value - fall back to sequential
+                // This path should never be reached with valid parameters
+                for i in 0..4 {
+                    let n = base_nonce + i as u16;
+                    y.push(sample_poly_gamma1(seed, n, gamma1));
+                }
             }
         }
     }
