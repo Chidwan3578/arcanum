@@ -121,6 +121,7 @@ impl<'a, C: Cipher> EncryptionBuilder<'a, C> {
     /// - `InvalidKeyLength` if the key has wrong length
     /// - `InvalidNonceLength` if the nonce has wrong length
     /// - `EncryptionFailed` if encryption fails
+    #[must_use = "encryption result must be checked for errors"]
     pub fn encrypt(self, plaintext: &[u8]) -> Result<Vec<u8>> {
         let key = self.key.ok_or(Error::MissingKey)?;
         let nonce = self.nonce.ok_or(Error::MissingNonce)?;
@@ -139,6 +140,7 @@ impl<'a, C: Cipher> EncryptionBuilder<'a, C> {
     /// - `InvalidKeyLength` if the key has wrong length
     /// - `InvalidNonceLength` if the nonce has wrong length
     /// - `DecryptionFailed` if decryption or authentication fails
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt(self, ciphertext: &[u8]) -> Result<Vec<u8>> {
         let key = self.key.ok_or(Error::MissingKey)?;
         let nonce = self.nonce.ok_or(Error::MissingNonce)?;

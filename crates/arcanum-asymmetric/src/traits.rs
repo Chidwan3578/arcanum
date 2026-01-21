@@ -61,7 +61,10 @@ pub trait IntegratedEncryption {
     type Ciphertext;
 
     /// Encrypt to a public key.
-    fn encrypt(recipient_public: &Self::EphemeralPublic, plaintext: &[u8]) -> Result<Self::Ciphertext>;
+    fn encrypt(
+        recipient_public: &Self::EphemeralPublic,
+        plaintext: &[u8],
+    ) -> Result<Self::Ciphertext>;
 
     /// Decrypt with a secret key.
     fn decrypt<S>(recipient_secret: &S, ciphertext: &Self::Ciphertext) -> Result<Vec<u8>>

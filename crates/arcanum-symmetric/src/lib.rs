@@ -10,7 +10,7 @@
 //!   and decryption are implemented in constant time to prevent timing attacks.
 //!
 //! - **Memory zeroization**: All secret key material is automatically zeroized
-//!   when dropped using the `zeroize` crate via [`SecretBytes`](arcanum_core::SecretBytes).
+//!   when dropped using the `zeroize` crate via `SecretBytes`.
 //!
 //! - **Authenticated encryption**: All AEAD ciphers provide both confidentiality
 //!   and integrity. Any tampering with ciphertext or AAD is detected on decryption.
@@ -109,6 +109,7 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+#![allow(unused_imports)]
 
 #[cfg(feature = "aes")]
 pub mod aes_ciphers;
@@ -123,24 +124,23 @@ pub mod types;
 
 pub use encrypted::{EncryptedData, EncryptedPayload};
 pub use traits::{
-    Cipher, StreamCipher,
-    MAX_PLAINTEXT_SIZE, MAX_AAD_SIZE,
-    validate_plaintext_size, validate_aad_size, validate_input_sizes,
+    Cipher, MAX_AAD_SIZE, MAX_PLAINTEXT_SIZE, StreamCipher, validate_aad_size,
+    validate_input_sizes, validate_plaintext_size,
 };
 
 #[cfg(feature = "aes")]
-pub use aes_ciphers::{Aes128Gcm, Aes256Gcm, Aes256GcmSiv, Aes256Ctr};
+pub use aes_ciphers::{Aes128Gcm, Aes256Ctr, Aes256Gcm, Aes256GcmSiv};
 
 #[cfg(feature = "chacha20")]
-pub use chacha_ciphers::{ChaCha20Poly1305Cipher, XChaCha20Poly1305Cipher, ChaCha20Stream};
+pub use chacha_ciphers::{ChaCha20Poly1305Cipher, ChaCha20Stream, XChaCha20Poly1305Cipher};
 
 // Re-export builder traits
 pub use builder::{CipherExt, EncryptionBuilder};
 
 // Re-export type aliases
 pub use types::{
-    Aes128Key, Aes256Key, AesCtrIv, AesGcmNonce, AuthTag, ChaChaKey, ChaChaNonce,
-    CryptoResult, GcmNonce, GcmTag, Poly1305Tag, XChaChaNonce,
+    Aes128Key, Aes256Key, AesCtrIv, AesGcmNonce, AuthTag, ChaChaKey, ChaChaNonce, CryptoResult,
+    GcmNonce, GcmTag, Poly1305Tag, XChaChaNonce,
 };
 
 /// Prelude for convenient imports.

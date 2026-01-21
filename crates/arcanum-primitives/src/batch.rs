@@ -98,28 +98,19 @@ pub trait BatchHasher: Sized {
 
 /// SHA-256 round constants
 const K256: [u32; 64] = [
-    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
-    0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
-    0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
-    0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
-    0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-    0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
-    0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
-    0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
-    0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 ];
 
 /// SHA-256 initial hash values
 const H256_INIT: [u32; 8] = [
-    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-    0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 ];
 
 /// 4-way parallel SHA-256 hasher.
@@ -223,7 +214,10 @@ impl BatchSha256x4 {
         for i in 16..64 {
             let s0 = w[i - 15].rotate_right(7) ^ w[i - 15].rotate_right(18) ^ (w[i - 15] >> 3);
             let s1 = w[i - 2].rotate_right(17) ^ w[i - 2].rotate_right(19) ^ (w[i - 2] >> 10);
-            w[i] = w[i - 16].wrapping_add(s0).wrapping_add(w[i - 7]).wrapping_add(s1);
+            w[i] = w[i - 16]
+                .wrapping_add(s0)
+                .wrapping_add(w[i - 7])
+                .wrapping_add(s1);
         }
 
         // Working variables for this lane
@@ -240,7 +234,11 @@ impl BatchSha256x4 {
         for i in 0..64 {
             let s1 = e.rotate_right(6) ^ e.rotate_right(11) ^ e.rotate_right(25);
             let ch = (e & f) ^ ((!e) & g);
-            let temp1 = h.wrapping_add(s1).wrapping_add(ch).wrapping_add(K256[i]).wrapping_add(w[i]);
+            let temp1 = h
+                .wrapping_add(s1)
+                .wrapping_add(ch)
+                .wrapping_add(K256[i])
+                .wrapping_add(w[i]);
             let s0 = a.rotate_right(2) ^ a.rotate_right(13) ^ a.rotate_right(22);
             let maj = (a & b) ^ (a & c) ^ (b & c);
             let temp2 = s0.wrapping_add(maj);
@@ -495,7 +493,10 @@ impl BatchSha256x4 {
     #[cfg(all(target_arch = "x86_64", feature = "simd"))]
     #[inline]
     #[target_feature(enable = "sse2")]
-    unsafe fn compress_4_blocks_simd(h: &mut [core::arch::x86_64::__m128i; 8], blocks: &[[u8; 64]; 4]) {
+    unsafe fn compress_4_blocks_simd(
+        h: &mut [core::arch::x86_64::__m128i; 8],
+        blocks: &[[u8; 64]; 4],
+    ) {
         use core::arch::x86_64::*;
 
         // Load and transpose message schedules
@@ -531,10 +532,7 @@ impl BatchSha256x4 {
                 _mm_srli_epi32(x, 10),
             );
 
-            w[i] = _mm_add_epi32(
-                _mm_add_epi32(w[i - 16], s0),
-                _mm_add_epi32(w[i - 7], s1),
-            );
+            w[i] = _mm_add_epi32(_mm_add_epi32(w[i - 16], s0), _mm_add_epi32(w[i - 7], s1));
         }
 
         // Working variables
@@ -653,7 +651,7 @@ pub mod simd {
     #[cfg(target_arch = "x86_64")]
     use core::arch::x86_64::*;
 
-    use super::{K256, H256_INIT};
+    use super::{H256_INIT, K256};
 
     /// Check if SSE2 is available (always true on x86_64).
     #[inline]
@@ -697,24 +695,21 @@ pub mod simd {
 
             // Load first 16 words from each block
             for i in 0..16 {
-                let w0 = u32::from_be_bytes(blocks[0][i*4..i*4+4].try_into().unwrap());
-                let w1 = u32::from_be_bytes(blocks[1][i*4..i*4+4].try_into().unwrap());
-                let w2 = u32::from_be_bytes(blocks[2][i*4..i*4+4].try_into().unwrap());
-                let w3 = u32::from_be_bytes(blocks[3][i*4..i*4+4].try_into().unwrap());
+                let w0 = u32::from_be_bytes(blocks[0][i * 4..i * 4 + 4].try_into().unwrap());
+                let w1 = u32::from_be_bytes(blocks[1][i * 4..i * 4 + 4].try_into().unwrap());
+                let w2 = u32::from_be_bytes(blocks[2][i * 4..i * 4 + 4].try_into().unwrap());
+                let w3 = u32::from_be_bytes(blocks[3][i * 4..i * 4 + 4].try_into().unwrap());
                 w[i] = _mm_set_epi32(w3 as i32, w2 as i32, w1 as i32, w0 as i32);
             }
 
             // Extend message schedule (w[16..64])
             for i in 16..64 {
                 // sigma0(w[i-15])
-                let s0 = simd_sigma0(w[i-15]);
+                let s0 = simd_sigma0(w[i - 15]);
                 // sigma1(w[i-2])
-                let s1 = simd_sigma1(w[i-2]);
+                let s1 = simd_sigma1(w[i - 2]);
                 // w[i] = w[i-16] + s0 + w[i-7] + s1
-                w[i] = _mm_add_epi32(
-                    _mm_add_epi32(w[i-16], s0),
-                    _mm_add_epi32(w[i-7], s1)
-                );
+                w[i] = _mm_add_epi32(_mm_add_epi32(w[i - 16], s0), _mm_add_epi32(w[i - 7], s1));
             }
 
             // Working variables
@@ -735,15 +730,12 @@ pub mod simd {
                 let s1 = simd_big_sigma1(e);
 
                 // ch = (e & f) ^ (~e & g)
-                let ch = _mm_xor_si128(
-                    _mm_and_si128(e, f),
-                    _mm_andnot_si128(e, g)
-                );
+                let ch = _mm_xor_si128(_mm_and_si128(e, f), _mm_andnot_si128(e, g));
 
                 // temp1 = h + S1 + ch + k + w[i]
                 let temp1 = _mm_add_epi32(
                     _mm_add_epi32(_mm_add_epi32(h, s1), ch),
-                    _mm_add_epi32(k, w[i])
+                    _mm_add_epi32(k, w[i]),
                 );
 
                 // S0 = (a >>> 2) ^ (a >>> 13) ^ (a >>> 22)
@@ -751,11 +743,8 @@ pub mod simd {
 
                 // maj = (a & b) ^ (a & c) ^ (b & c)
                 let maj = _mm_xor_si128(
-                    _mm_xor_si128(
-                        _mm_and_si128(a, b),
-                        _mm_and_si128(a, c)
-                    ),
-                    _mm_and_si128(b, c)
+                    _mm_xor_si128(_mm_and_si128(a, b), _mm_and_si128(a, c)),
+                    _mm_and_si128(b, c),
                 );
 
                 // temp2 = S0 + maj
@@ -798,7 +787,7 @@ pub mod simd {
                 // Store as big-endian bytes
                 for lane in 0..4 {
                     let bytes = (tmp[lane] as u32).to_be_bytes();
-                    output[lane][i*4..i*4+4].copy_from_slice(&bytes);
+                    output[lane][i * 4..i * 4 + 4].copy_from_slice(&bytes);
                 }
             }
 
@@ -914,16 +903,26 @@ impl BatchSha256x8 {
         use core::arch::x86_64::*;
 
         let lens: [usize; 8] = [
-            messages[0].len(), messages[1].len(), messages[2].len(), messages[3].len(),
-            messages[4].len(), messages[5].len(), messages[6].len(), messages[7].len(),
+            messages[0].len(),
+            messages[1].len(),
+            messages[2].len(),
+            messages[3].len(),
+            messages[4].len(),
+            messages[5].len(),
+            messages[6].len(),
+            messages[7].len(),
         ];
 
         // Calculate blocks needed for each message
         let blocks_needed: [usize; 8] = [
-            Self::blocks_for_len(lens[0]), Self::blocks_for_len(lens[1]),
-            Self::blocks_for_len(lens[2]), Self::blocks_for_len(lens[3]),
-            Self::blocks_for_len(lens[4]), Self::blocks_for_len(lens[5]),
-            Self::blocks_for_len(lens[6]), Self::blocks_for_len(lens[7]),
+            Self::blocks_for_len(lens[0]),
+            Self::blocks_for_len(lens[1]),
+            Self::blocks_for_len(lens[2]),
+            Self::blocks_for_len(lens[3]),
+            Self::blocks_for_len(lens[4]),
+            Self::blocks_for_len(lens[5]),
+            Self::blocks_for_len(lens[6]),
+            Self::blocks_for_len(lens[7]),
         ];
 
         let max_blocks = blocks_needed.iter().copied().max().unwrap_or(1);
@@ -1020,13 +1019,20 @@ impl BatchSha256x8 {
     fn blocks_for_len(len: usize) -> usize {
         let data_blocks = len / 64;
         let remaining = len % 64;
-        if remaining < 56 { data_blocks + 1 } else { data_blocks + 2 }
+        if remaining < 56 {
+            data_blocks + 1
+        } else {
+            data_blocks + 2
+        }
     }
 
     /// AVX2 compress 8 blocks in parallel.
     #[target_feature(enable = "avx2")]
     #[inline]
-    unsafe fn compress_8_blocks_avx2(h: &mut [core::arch::x86_64::__m256i; 8], blocks: &[[u8; 64]; 8]) {
+    unsafe fn compress_8_blocks_avx2(
+        h: &mut [core::arch::x86_64::__m256i; 8],
+        blocks: &[[u8; 64]; 8],
+    ) {
         use core::arch::x86_64::*;
 
         // Load and transpose message schedules (8 lanes)
@@ -1035,14 +1041,14 @@ impl BatchSha256x8 {
         for i in 0..16 {
             // Load word i from all 8 blocks (AVX2 uses _mm256_set_epi32 with lanes in reverse order)
             w[i] = _mm256_set_epi32(
-                u32::from_be_bytes(blocks[7][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[6][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[5][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[4][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[3][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[2][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[1][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[0][i*4..i*4+4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[7][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[6][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[5][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[4][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[3][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[2][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[1][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[0][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
             );
         }
 
@@ -1098,10 +1104,7 @@ impl BatchSha256x8 {
             );
 
             // ch = (e & f) ^ (~e & g)
-            let ch = _mm256_xor_si256(
-                _mm256_and_si256(e, f),
-                _mm256_andnot_si256(e, g),
-            );
+            let ch = _mm256_xor_si256(_mm256_and_si256(e, f), _mm256_andnot_si256(e, g));
 
             // temp1 = h + S1 + ch + k + w[i]
             let temp1 = _mm256_add_epi32(
@@ -1189,12 +1192,12 @@ impl BatchSha256x16 {
     fn hash_parallel_fallback(messages: [&[u8]; 16]) -> [[u8; 32]; 16] {
         let h0 = BatchSha256x4::hash_parallel([messages[0], messages[1], messages[2], messages[3]]);
         let h1 = BatchSha256x4::hash_parallel([messages[4], messages[5], messages[6], messages[7]]);
-        let h2 = BatchSha256x4::hash_parallel([messages[8], messages[9], messages[10], messages[11]]);
-        let h3 = BatchSha256x4::hash_parallel([messages[12], messages[13], messages[14], messages[15]]);
+        let h2 =
+            BatchSha256x4::hash_parallel([messages[8], messages[9], messages[10], messages[11]]);
+        let h3 =
+            BatchSha256x4::hash_parallel([messages[12], messages[13], messages[14], messages[15]]);
         [
-            h0[0], h0[1], h0[2], h0[3],
-            h1[0], h1[1], h1[2], h1[3],
-            h2[0], h2[1], h2[2], h2[3],
+            h0[0], h0[1], h0[2], h0[3], h1[0], h1[1], h1[2], h1[3], h2[0], h2[1], h2[2], h2[3],
             h3[0], h3[1], h3[2], h3[3],
         ]
     }
@@ -1205,22 +1208,42 @@ impl BatchSha256x16 {
         use core::arch::x86_64::*;
 
         let lens: [usize; 16] = [
-            messages[0].len(), messages[1].len(), messages[2].len(), messages[3].len(),
-            messages[4].len(), messages[5].len(), messages[6].len(), messages[7].len(),
-            messages[8].len(), messages[9].len(), messages[10].len(), messages[11].len(),
-            messages[12].len(), messages[13].len(), messages[14].len(), messages[15].len(),
+            messages[0].len(),
+            messages[1].len(),
+            messages[2].len(),
+            messages[3].len(),
+            messages[4].len(),
+            messages[5].len(),
+            messages[6].len(),
+            messages[7].len(),
+            messages[8].len(),
+            messages[9].len(),
+            messages[10].len(),
+            messages[11].len(),
+            messages[12].len(),
+            messages[13].len(),
+            messages[14].len(),
+            messages[15].len(),
         ];
 
         // Calculate blocks needed for each message
         let blocks_needed: [usize; 16] = [
-            Self::blocks_for_len(lens[0]), Self::blocks_for_len(lens[1]),
-            Self::blocks_for_len(lens[2]), Self::blocks_for_len(lens[3]),
-            Self::blocks_for_len(lens[4]), Self::blocks_for_len(lens[5]),
-            Self::blocks_for_len(lens[6]), Self::blocks_for_len(lens[7]),
-            Self::blocks_for_len(lens[8]), Self::blocks_for_len(lens[9]),
-            Self::blocks_for_len(lens[10]), Self::blocks_for_len(lens[11]),
-            Self::blocks_for_len(lens[12]), Self::blocks_for_len(lens[13]),
-            Self::blocks_for_len(lens[14]), Self::blocks_for_len(lens[15]),
+            Self::blocks_for_len(lens[0]),
+            Self::blocks_for_len(lens[1]),
+            Self::blocks_for_len(lens[2]),
+            Self::blocks_for_len(lens[3]),
+            Self::blocks_for_len(lens[4]),
+            Self::blocks_for_len(lens[5]),
+            Self::blocks_for_len(lens[6]),
+            Self::blocks_for_len(lens[7]),
+            Self::blocks_for_len(lens[8]),
+            Self::blocks_for_len(lens[9]),
+            Self::blocks_for_len(lens[10]),
+            Self::blocks_for_len(lens[11]),
+            Self::blocks_for_len(lens[12]),
+            Self::blocks_for_len(lens[13]),
+            Self::blocks_for_len(lens[14]),
+            Self::blocks_for_len(lens[15]),
         ];
 
         let max_blocks = blocks_needed.iter().copied().max().unwrap_or(1);
@@ -1317,13 +1340,20 @@ impl BatchSha256x16 {
     fn blocks_for_len(len: usize) -> usize {
         let data_blocks = len / 64;
         let remaining = len % 64;
-        if remaining < 56 { data_blocks + 1 } else { data_blocks + 2 }
+        if remaining < 56 {
+            data_blocks + 1
+        } else {
+            data_blocks + 2
+        }
     }
 
     /// AVX-512 compress 16 blocks in parallel.
     #[target_feature(enable = "avx512f")]
     #[inline]
-    unsafe fn compress_16_blocks_avx512(h: &mut [core::arch::x86_64::__m512i; 8], blocks: &[[u8; 64]; 16]) {
+    unsafe fn compress_16_blocks_avx512(
+        h: &mut [core::arch::x86_64::__m512i; 8],
+        blocks: &[[u8; 64]; 16],
+    ) {
         use core::arch::x86_64::*;
 
         // Load and transpose message schedules (16 lanes)
@@ -1332,22 +1362,22 @@ impl BatchSha256x16 {
         for i in 0..16 {
             // Load word i from all 16 blocks
             w[i] = _mm512_set_epi32(
-                u32::from_be_bytes(blocks[15][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[14][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[13][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[12][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[11][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[10][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[9][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[8][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[7][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[6][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[5][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[4][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[3][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[2][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[1][i*4..i*4+4].try_into().unwrap()) as i32,
-                u32::from_be_bytes(blocks[0][i*4..i*4+4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[15][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[14][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[13][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[12][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[11][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[10][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[9][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[8][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[7][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[6][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[5][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[4][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[3][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[2][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[1][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
+                u32::from_be_bytes(blocks[0][i * 4..i * 4 + 4].try_into().unwrap()) as i32,
             );
         }
 
@@ -1403,10 +1433,7 @@ impl BatchSha256x16 {
             );
 
             // ch = (e & f) ^ (~e & g)
-            let ch = _mm512_xor_si512(
-                _mm512_and_si512(e, f),
-                _mm512_andnot_si512(e, g),
-            );
+            let ch = _mm512_xor_si512(_mm512_and_si512(e, f), _mm512_andnot_si512(e, g));
 
             // temp1 = h + S1 + ch + k + w[i]
             let temp1 = _mm512_add_epi32(
@@ -1530,12 +1557,7 @@ mod tests {
 
     #[test]
     fn test_batch_sha256x4_basic() {
-        let messages: [&[u8]; 4] = [
-            b"hello",
-            b"world",
-            b"foo",
-            b"bar",
-        ];
+        let messages: [&[u8]; 4] = [b"hello", b"world", b"foo", b"bar"];
 
         let batch_hashes = BatchSha256x4::hash_parallel(messages);
 
@@ -1559,12 +1581,7 @@ mod tests {
 
     #[test]
     fn test_batch_sha256x4_varied_lengths() {
-        let messages: [&[u8]; 4] = [
-            b"a",
-            b"ab",
-            b"abc",
-            b"abcd",
-        ];
+        let messages: [&[u8]; 4] = [b"a", b"ab", b"abc", b"abcd"];
 
         let batch_hashes = BatchSha256x4::hash_parallel(messages);
 
@@ -1624,9 +1641,7 @@ mod tests {
     #[test]
     fn test_merkle_root() {
         // Test with 4 leaves
-        let leaves: Vec<[u8; 32]> = (0..4u8)
-            .map(|i| crate::sha2::Sha256::hash(&[i]))
-            .collect();
+        let leaves: Vec<[u8; 32]> = (0..4u8).map(|i| crate::sha2::Sha256::hash(&[i])).collect();
 
         let root = merkle_root_sha256(&leaves);
 
@@ -1656,10 +1671,8 @@ mod tests {
         use super::BatchSha256x16;
 
         let messages: [&[u8]; 16] = [
-            b"hello", b"world", b"foo", b"bar",
-            b"test1", b"test2", b"test3", b"test4",
-            b"msg5", b"msg6", b"msg7", b"msg8",
-            b"data9", b"data10", b"data11", b"data12",
+            b"hello", b"world", b"foo", b"bar", b"test1", b"test2", b"test3", b"test4", b"msg5",
+            b"msg6", b"msg7", b"msg8", b"data9", b"data10", b"data11", b"data12",
         ];
 
         let batch_hashes = BatchSha256x16::hash_parallel(messages);
@@ -1694,9 +1707,7 @@ mod tests {
         let msg16 = vec![0x55u8; 4096];
 
         let messages: [&[u8]; 16] = [
-            &msg1, &msg2, &msg3, &msg4,
-            &msg5, &msg6, &msg7, &msg8,
-            &msg9, &msg10, &msg11, &msg12,
+            &msg1, &msg2, &msg3, &msg4, &msg5, &msg6, &msg7, &msg8, &msg9, &msg10, &msg11, &msg12,
             &msg13, &msg14, &msg15, &msg16,
         ];
 
@@ -1715,8 +1726,7 @@ mod tests {
         use super::BatchSha256x8;
 
         let messages: [&[u8]; 8] = [
-            b"hello", b"world", b"foo", b"bar",
-            b"test1", b"test2", b"test3", b"test4",
+            b"hello", b"world", b"foo", b"bar", b"test1", b"test2", b"test3", b"test4",
         ];
 
         let batch_hashes = BatchSha256x8::hash_parallel(messages);
@@ -1742,10 +1752,7 @@ mod tests {
         let msg7 = vec![0x78u8; 1];
         let msg8 = vec![0x9Au8; 0];
 
-        let messages: [&[u8]; 8] = [
-            &msg1, &msg2, &msg3, &msg4,
-            &msg5, &msg6, &msg7, &msg8,
-        ];
+        let messages: [&[u8]; 8] = [&msg1, &msg2, &msg3, &msg4, &msg5, &msg6, &msg7, &msg8];
 
         let batch_hashes = BatchSha256x8::hash_parallel(messages);
 
@@ -1769,10 +1776,7 @@ mod tests {
         let msg7 = vec![0x78u8; 2500];
         let msg8 = vec![0x9Au8; 3500];
 
-        let messages: [&[u8]; 8] = [
-            &msg1, &msg2, &msg3, &msg4,
-            &msg5, &msg6, &msg7, &msg8,
-        ];
+        let messages: [&[u8]; 8] = [&msg1, &msg2, &msg3, &msg4, &msg5, &msg6, &msg7, &msg8];
 
         let batch_hashes = BatchSha256x8::hash_parallel(messages);
 
@@ -1817,7 +1821,10 @@ mod tests {
 
             // Compare to reference implementation
             let reference = crate::sha2::Sha256::hash(&block);
-            assert_eq!(simd_hashes[0], reference, "SIMD hash doesn't match reference");
+            assert_eq!(
+                simd_hashes[0], reference,
+                "SIMD hash doesn't match reference"
+            );
         }
 
         #[test]

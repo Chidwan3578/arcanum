@@ -221,9 +221,7 @@ mod tests {
 
     #[test]
     fn test_post_quantum_requirement() {
-        let policy = Policy::builder()
-            .require_post_quantum(true)
-            .build();
+        let policy = Policy::builder().require_post_quantum(true).build();
 
         assert!(!policy.allows(AlgorithmId::Aes256Gcm)); // Classical
         assert!(policy.allows(AlgorithmId::MlKem768)); // PQC

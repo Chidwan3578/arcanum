@@ -5,7 +5,6 @@
 //! implementation that satisfies the trait bounds.
 
 use crate::error::Result;
-use crate::key::{PublicKey, SecretKey};
 use async_trait::async_trait;
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -159,9 +158,7 @@ pub trait Signer {
 /// Trait for batch signature verification.
 pub trait BatchVerifier: Signer {
     /// Verify multiple signatures in batch (more efficient than individual verification).
-    fn verify_batch(
-        items: &[(&Self::PublicKey, &[u8], &Self::Signature)],
-    ) -> Result<bool>;
+    fn verify_batch(items: &[(&Self::PublicKey, &[u8], &Self::Signature)]) -> Result<bool>;
 }
 
 /// Trait for deterministic signatures (RFC 6979).
@@ -317,11 +314,7 @@ pub trait SecretSharing {
     type Share;
 
     /// Split a secret into shares.
-    fn split(
-        secret: &[u8],
-        threshold: usize,
-        total_shares: usize,
-    ) -> Result<Vec<Self::Share>>;
+    fn split(secret: &[u8], threshold: usize, total_shares: usize) -> Result<Vec<Self::Share>>;
 
     /// Reconstruct secret from shares.
     fn reconstruct(shares: &[Self::Share]) -> Result<Vec<u8>>;
@@ -350,10 +343,7 @@ pub trait ThresholdSigner {
     ) -> Result<Vec<Self::KeyShare>>;
 
     /// Generate a signature share.
-    fn sign_share(
-        key_share: &Self::KeyShare,
-        message: &[u8],
-    ) -> Result<Self::SignatureShare>;
+    fn sign_share(key_share: &Self::KeyShare, message: &[u8]) -> Result<Self::SignatureShare>;
 
     /// Combine signature shares into final signature.
     fn combine_signatures(
@@ -453,6 +443,7 @@ pub trait PostQuantumHybrid {
     type PqPrivateKey;
 
     /// Generate hybrid key pair.
+    #[allow(clippy::type_complexity)]
     fn generate_keypair() -> Result<(
         (Self::ClassicalPrivateKey, Self::PqPrivateKey),
         (Self::ClassicalPublicKey, Self::PqPublicKey),

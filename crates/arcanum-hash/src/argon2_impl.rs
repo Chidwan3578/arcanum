@@ -12,8 +12,8 @@
 use crate::traits::PasswordHash;
 use arcanum_core::error::{Error, Result};
 use argon2::{
-    password_hash::{PasswordHasher, PasswordVerifier, SaltString},
     Algorithm, Argon2 as Argon2Inner, Params, Version,
+    password_hash::{PasswordHasher, PasswordVerifier, SaltString},
 };
 use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
@@ -137,8 +137,8 @@ impl PasswordHash for Argon2 {
     }
 
     fn verify_password(password: &[u8], hash: &str) -> Result<bool> {
-        let parsed_hash = argon2::PasswordHash::new(hash)
-            .map_err(|e| Error::ParseError(e.to_string()))?;
+        let parsed_hash =
+            argon2::PasswordHash::new(hash).map_err(|e| Error::ParseError(e.to_string()))?;
 
         let argon2 = Argon2Inner::default();
 

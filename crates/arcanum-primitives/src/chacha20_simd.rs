@@ -36,12 +36,7 @@ pub mod sse2 {
 
     /// Quarter round on 4 parallel states using SSE2.
     #[inline(always)]
-    unsafe fn quarter_round_4x(
-        a: &mut __m128i,
-        b: &mut __m128i,
-        c: &mut __m128i,
-        d: &mut __m128i,
-    ) {
+    unsafe fn quarter_round_4x(a: &mut __m128i, b: &mut __m128i, c: &mut __m128i, d: &mut __m128i) {
         // a += b; d ^= a; d <<<= 16
         *a = _mm_add_epi32(*a, *b);
         *d = _mm_xor_si128(*d, *a);
@@ -67,11 +62,7 @@ pub mod sse2 {
     ///
     /// Returns 256 bytes (4 x 64-byte blocks).
     #[target_feature(enable = "sse2")]
-    pub unsafe fn chacha20_blocks_4x(
-        key: &[u8; 32],
-        counter: u32,
-        nonce: &[u8; 12],
-    ) -> [u8; 256] {
+    pub unsafe fn chacha20_blocks_4x(key: &[u8; 32], counter: u32, nonce: &[u8; 12]) -> [u8; 256] {
         // Load key as u32s
         let key_ptr = key.as_ptr() as *const u32;
         let k0 = *key_ptr.add(0);
@@ -267,12 +258,7 @@ pub mod avx2 {
 
     /// Quarter round on 8 parallel states using AVX2.
     #[inline(always)]
-    unsafe fn quarter_round_8x(
-        a: &mut __m256i,
-        b: &mut __m256i,
-        c: &mut __m256i,
-        d: &mut __m256i,
-    ) {
+    unsafe fn quarter_round_8x(a: &mut __m256i, b: &mut __m256i, c: &mut __m256i, d: &mut __m256i) {
         // a += b; d ^= a; d <<<= 16
         *a = _mm256_add_epi32(*a, *b);
         *d = _mm256_xor_si256(*d, *a);
@@ -298,11 +284,7 @@ pub mod avx2 {
     ///
     /// Returns 512 bytes (8 x 64-byte blocks).
     #[target_feature(enable = "avx2")]
-    pub unsafe fn chacha20_blocks_8x(
-        key: &[u8; 32],
-        counter: u32,
-        nonce: &[u8; 12],
-    ) -> [u8; 512] {
+    pub unsafe fn chacha20_blocks_8x(key: &[u8; 32], counter: u32, nonce: &[u8; 12]) -> [u8; 512] {
         // Load key as u32s
         let key_ptr = key.as_ptr() as *const u32;
         let k0 = *key_ptr.add(0);
@@ -935,14 +917,14 @@ mod tests {
             "4c616469657320616e642047656e746c656d656e206f662074686520636c617373\
              206f66202739393a204966204920636f756c64206f6666657220796f75206f6e6c\
              79206f6e652074697020666f7220746865206675747572652c2073756e73637265\
-             656e20776f756c642062652069742e"
+             656e20776f756c642062652069742e",
         );
 
         let expected = hex_to_bytes(
             "6e2e359a2568f98041ba0728dd0d6981e97e7aec1d4360c20a27afccfd9fae0b\
              f91b65c5524733ab8f593dabcd62b3571639d624e65152ab8f530c359f0861d8\
              07ca0dbf500d6a6156a38e088a22b65e52bc514d16ccf806818ce91ab7793736\
-             5af90bbf74a35be6b40b8eedf2785e42874d"
+             5af90bbf74a35be6b40b8eedf2785e42874d",
         );
 
         let mut ciphertext = plaintext.clone();
@@ -1086,7 +1068,11 @@ mod tests {
             // AVX-512
             unsafe { avx512::apply_keystream_avx512(&key, &nonce, 0, &mut data_avx512) };
 
-            assert_eq!(data_scalar, data_avx512, "AVX-512 mismatch at size {}", size);
+            assert_eq!(
+                data_scalar, data_avx512,
+                "AVX-512 mismatch at size {}",
+                size
+            );
         }
     }
 

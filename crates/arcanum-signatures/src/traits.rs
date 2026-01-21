@@ -65,9 +65,8 @@ pub trait VerifyingKey: Clone + Send + Sync + PartialEq + Eq {
     where
         Self: Sized,
     {
-        let bytes = hex::decode(s).map_err(|e| {
-            arcanum_core::error::Error::ParseError(e.to_string())
-        })?;
+        let bytes =
+            hex::decode(s).map_err(|e| arcanum_core::error::Error::ParseError(e.to_string()))?;
         Self::from_bytes(&bytes)
     }
 }
@@ -93,9 +92,8 @@ pub trait Signature: Clone + Send + Sync {
     where
         Self: Sized,
     {
-        let bytes = hex::decode(s).map_err(|e| {
-            arcanum_core::error::Error::ParseError(e.to_string())
-        })?;
+        let bytes =
+            hex::decode(s).map_err(|e| arcanum_core::error::Error::ParseError(e.to_string()))?;
         Self::from_bytes(&bytes)
     }
 }
@@ -110,7 +108,5 @@ pub trait BatchVerifier {
     /// Verify multiple signatures in batch.
     ///
     /// This is more efficient than verifying each signature individually.
-    fn verify_batch(
-        items: &[(&Self::VerifyingKey, &[u8], &Self::Signature)],
-    ) -> Result<()>;
+    fn verify_batch(items: &[(&Self::VerifyingKey, &[u8], &Self::Signature)]) -> Result<()>;
 }

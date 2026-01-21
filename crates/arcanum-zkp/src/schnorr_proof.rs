@@ -9,10 +9,10 @@
 //! - **Equality Proof**: Prove two commitments hide the same value
 //! - **Representation Proof**: Prove knowledge of representation
 
-use crate::curve::{Scalar, RistrettoPoint, CompressedRistretto, RISTRETTO_BASEPOINT_POINT};
+use crate::curve::{CompressedRistretto, RISTRETTO_BASEPOINT_POINT, RistrettoPoint, Scalar};
 use arcanum_core::error::{Error, Result};
 use rand::RngCore;
-use sha2::{Sha512, Digest};
+use sha2::{Digest, Sha512};
 use zeroize::Zeroize;
 
 /// Schnorr proof of discrete log knowledge.
@@ -51,7 +51,10 @@ impl DiscreteLogProof {
         // Zeroize sensitive data
         k_bytes.zeroize();
 
-        Self { commitment, response }
+        Self {
+            commitment,
+            response,
+        }
     }
 
     /// Verify the proof.
@@ -59,7 +62,9 @@ impl DiscreteLogProof {
         let g = RISTRETTO_BASEPOINT_POINT;
 
         // Decompress commitment
-        let r = self.commitment.decompress()
+        let r = self
+            .commitment
+            .decompress()
             .ok_or(Error::InvalidParameter("invalid commitment".to_string()))?;
 
         // Recompute challenge
@@ -92,7 +97,9 @@ impl DiscreteLogProof {
     /// Deserialize from bytes.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != 64 {
-            return Err(Error::InvalidParameter("proof must be 64 bytes".to_string()));
+            return Err(Error::InvalidParameter(
+                "proof must be 64 bytes".to_string(),
+            ));
         }
 
         let commitment_bytes: [u8; 32] = bytes[..32].try_into().unwrap();
@@ -102,9 +109,14 @@ impl DiscreteLogProof {
             .map_err(|_| Error::InvalidParameter("invalid commitment bytes".to_string()))?;
         let response = Scalar::from_canonical_bytes(response_bytes)
             .into_option()
-            .ok_or(Error::InvalidParameter("invalid response scalar".to_string()))?;
+            .ok_or(Error::InvalidParameter(
+                "invalid response scalar".to_string(),
+            ))?;
 
-        Ok(Self { commitment, response })
+        Ok(Self {
+            commitment,
+            response,
+        })
     }
 }
 
@@ -171,9 +183,13 @@ impl EqualityProof {
         public1: &RistrettoPoint,
         public2: &RistrettoPoint,
     ) -> Result<bool> {
-        let r1 = self.commitment1.decompress()
+        let r1 = self
+            .commitment1
+            .decompress()
             .ok_or(Error::InvalidParameter("invalid commitment1".to_string()))?;
-        let r2 = self.commitment2.decompress()
+        let r2 = self
+            .commitment2
+            .decompress()
             .ok_or(Error::InvalidParameter("invalid commitment2".to_string()))?;
 
         let c = Self::challenge(generator1, generator2, public1, public2, &r1, &r2);
@@ -281,9 +297,7 @@ impl SchnorrProofBuilder {
         let k = Scalar::from_bytes_mod_order_wide(&k_bytes);
 
         // Compute commitments R_i = k * G_i
-        let rs: Vec<RistrettoPoint> = self.generators.iter()
-            .map(|g| k * g)
-            .collect();
+        let rs: Vec<RistrettoPoint> = self.generators.iter().map(|g| k * g).collect();
 
         // Compute challenge
         let c = self.challenge(&rs);
@@ -302,17 +316,29 @@ impl SchnorrProofBuilder {
     /// Verify a proof.
     pub fn verify(&self, proof: &SchnorrProof) -> Result<bool> {
         if proof.commitments.len() != self.generators.len() {
-            return Err(Error::InvalidParameter("commitment count mismatch".to_string()));
+            return Err(Error::InvalidParameter(
+                "commitment count mismatch".to_string(),
+            ));
         }
 
-        let rs: Vec<RistrettoPoint> = proof.commitments.iter()
-            .map(|c| c.decompress().ok_or(Error::InvalidParameter("invalid commitment".to_string())))
+        let rs: Vec<RistrettoPoint> = proof
+            .commitments
+            .iter()
+            .map(|c| {
+                c.decompress()
+                    .ok_or(Error::InvalidParameter("invalid commitment".to_string()))
+            })
             .collect::<Result<Vec<_>>>()?;
 
         let c = self.challenge(&rs);
 
         // Verify each statement: s * G_i = R_i + c * Y_i
-        for (i, (g, y)) in self.generators.iter().zip(self.public_keys.iter()).enumerate() {
+        for (i, (g, y)) in self
+            .generators
+            .iter()
+            .zip(self.public_keys.iter())
+            .enumerate()
+        {
             let lhs = proof.response * g;
             let rhs = rs[i] + c * y;
             if lhs != rhs {

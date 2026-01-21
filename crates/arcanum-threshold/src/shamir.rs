@@ -33,6 +33,11 @@ impl Share {
         &self.value
     }
 
+    /// Get mutable access to the share value.
+    pub fn value_mut(&mut self) -> &mut [u8] {
+        &mut self.value
+    }
+
     /// Serialize to bytes.
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(1 + self.value.len());
@@ -67,6 +72,7 @@ impl ShamirScheme {
     ///
     /// Any t shares can reconstruct the secret, but t-1 shares
     /// reveal no information about the secret.
+    #[must_use = "secret sharing result must be checked for errors"]
     pub fn split(secret: &[u8], threshold: usize, total: usize) -> Result<Vec<Share>> {
         if threshold == 0 || threshold > total {
             return Err(ThresholdError::InvalidThreshold { threshold, total });
@@ -90,7 +96,7 @@ impl ShamirScheme {
         for (byte_idx, &secret_byte) in secret.iter().enumerate() {
             // Coefficient 0 is the secret byte
             coeffs[0] = secret_byte;
-            
+
             // Random coefficients for degree 1 to threshold-1
             rng.fill_bytes(&mut coeffs[1..]);
 
@@ -109,6 +115,7 @@ impl ShamirScheme {
     /// Combine shares to reconstruct the secret.
     ///
     /// Requires at least threshold shares.
+    #[must_use = "secret reconstruction result must be checked for errors"]
     pub fn combine(shares: &[Share]) -> Result<Vec<u8>> {
         if shares.is_empty() {
             return Err(ThresholdError::InsufficientShares {
@@ -264,13 +271,13 @@ mod tests {
     fn test_split_and_combine() {
         let secret = b"Hello, Shamir!";
         let shares = ShamirScheme::split(secret, 3, 5).unwrap();
-        
+
         assert_eq!(shares.len(), 5);
-        
+
         // Combine with exactly threshold shares
         let recovered = ShamirScheme::combine(&shares[..3]).unwrap();
         assert_eq!(secret.as_slice(), recovered.as_slice());
-        
+
         // Combine with more than threshold
         let recovered = ShamirScheme::combine(&shares).unwrap();
         assert_eq!(secret.as_slice(), recovered.as_slice());
@@ -280,12 +287,15 @@ mod tests {
     fn test_different_share_subsets() {
         let secret = b"test secret";
         let shares = ShamirScheme::split(secret, 3, 5).unwrap();
-        
+
         // Any 3 shares should work
-        let r1 = ShamirScheme::combine(&[shares[0].clone(), shares[1].clone(), shares[2].clone()]).unwrap();
-        let r2 = ShamirScheme::combine(&[shares[0].clone(), shares[2].clone(), shares[4].clone()]).unwrap();
-        let r3 = ShamirScheme::combine(&[shares[1].clone(), shares[3].clone(), shares[4].clone()]).unwrap();
-        
+        let r1 = ShamirScheme::combine(&[shares[0].clone(), shares[1].clone(), shares[2].clone()])
+            .unwrap();
+        let r2 = ShamirScheme::combine(&[shares[0].clone(), shares[2].clone(), shares[4].clone()])
+            .unwrap();
+        let r3 = ShamirScheme::combine(&[shares[1].clone(), shares[3].clone(), shares[4].clone()])
+            .unwrap();
+
         assert_eq!(secret.as_slice(), r1.as_slice());
         assert_eq!(secret.as_slice(), r2.as_slice());
         assert_eq!(secret.as_slice(), r3.as_slice());
@@ -295,7 +305,7 @@ mod tests {
     fn test_threshold_2_of_3() {
         let secret = b"2-of-3";
         let shares = ShamirScheme::split(secret, 2, 3).unwrap();
-        
+
         let recovered = ShamirScheme::combine(&shares[..2]).unwrap();
         assert_eq!(secret.as_slice(), recovered.as_slice());
     }
@@ -304,7 +314,7 @@ mod tests {
     fn test_threshold_1_of_n() {
         let secret = b"no security";
         let shares = ShamirScheme::split(secret, 1, 5).unwrap();
-        
+
         // Single share is enough
         let recovered = ShamirScheme::combine(&shares[..1]).unwrap();
         assert_eq!(secret.as_slice(), recovered.as_slice());
@@ -313,7 +323,7 @@ mod tests {
     #[test]
     fn test_invalid_threshold() {
         let secret = b"test";
-        
+
         assert!(ShamirScheme::split(secret, 0, 5).is_err());
         assert!(ShamirScheme::split(secret, 6, 5).is_err());
     }
@@ -322,7 +332,7 @@ mod tests {
     fn test_duplicate_indices() {
         let share1 = Share::new(1, vec![1, 2, 3]);
         let share2 = Share::new(1, vec![4, 5, 6]); // Duplicate index
-        
+
         assert!(ShamirScheme::combine(&[share1, share2]).is_err());
     }
 
@@ -331,7 +341,7 @@ mod tests {
         let share = Share::new(42, vec![1, 2, 3, 4, 5]);
         let bytes = share.to_bytes();
         let restored = Share::from_bytes(&bytes).unwrap();
-        
+
         assert_eq!(share.index, restored.index);
         assert_eq!(share.value, restored.value);
     }
@@ -341,7 +351,7 @@ mod tests {
         // Test identity
         assert_eq!(gf256_mul(1, 42), 42);
         assert_eq!(gf256_mul(42, 1), 42);
-        
+
         // Test inverse
         for a in 1..=255u8 {
             let inv = gf256_inv(a);

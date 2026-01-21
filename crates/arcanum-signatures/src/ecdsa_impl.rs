@@ -59,7 +59,9 @@ impl traits::SigningKey for P256SigningKey {
 
     fn sign_prehashed(&self, hash: &[u8]) -> Result<Self::Signature> {
         use ecdsa::signature::hazmat::PrehashSigner;
-        let sig = self.inner.sign_prehash(hash)
+        let sig = self
+            .inner
+            .sign_prehash(hash)
             .map_err(|_| Error::SigningFailed)?;
         Ok(P256Signature { inner: sig })
     }
@@ -83,7 +85,10 @@ mod p256_verifying_key_serde {
     use p256::elliptic_curve::sec1::ToEncodedPoint;
     use serde::{Deserializer, Serializer};
 
-    pub fn serialize<S>(key: &p256::ecdsa::VerifyingKey, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    pub fn serialize<S>(
+        key: &p256::ecdsa::VerifyingKey,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -95,7 +100,9 @@ mod p256_verifying_key_serde {
         }
     }
 
-    pub fn deserialize<'de, D>(deserializer: D) -> std::result::Result<p256::ecdsa::VerifyingKey, D::Error>
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> std::result::Result<p256::ecdsa::VerifyingKey, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -106,8 +113,7 @@ mod p256_verifying_key_serde {
             <Vec<u8>>::deserialize(deserializer)?
         };
 
-        p256::ecdsa::VerifyingKey::from_sec1_bytes(&bytes)
-            .map_err(serde::de::Error::custom)
+        p256::ecdsa::VerifyingKey::from_sec1_bytes(&bytes).map_err(serde::de::Error::custom)
     }
 }
 
@@ -162,7 +168,10 @@ mod p256_signature_serde {
     use ecdsa::signature::SignatureEncoding;
     use serde::{Deserializer, Serializer};
 
-    pub fn serialize<S>(sig: &p256::ecdsa::Signature, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    pub fn serialize<S>(
+        sig: &p256::ecdsa::Signature,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -174,7 +183,9 @@ mod p256_signature_serde {
         }
     }
 
-    pub fn deserialize<'de, D>(deserializer: D) -> std::result::Result<p256::ecdsa::Signature, D::Error>
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> std::result::Result<p256::ecdsa::Signature, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -185,8 +196,7 @@ mod p256_signature_serde {
             <Vec<u8>>::deserialize(deserializer)?
         };
 
-        p256::ecdsa::Signature::from_slice(&bytes)
-            .map_err(serde::de::Error::custom)
+        p256::ecdsa::Signature::from_slice(&bytes).map_err(serde::de::Error::custom)
     }
 }
 
@@ -194,8 +204,8 @@ impl traits::Signature for P256Signature {
     const SIZE: usize = 64;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        let inner = p256::ecdsa::Signature::from_slice(bytes)
-            .map_err(|_| Error::InvalidSignature)?;
+        let inner =
+            p256::ecdsa::Signature::from_slice(bytes).map_err(|_| Error::InvalidSignature)?;
         Ok(Self { inner })
     }
 
@@ -258,7 +268,9 @@ impl traits::SigningKey for P384SigningKey {
 
     fn sign_prehashed(&self, hash: &[u8]) -> Result<Self::Signature> {
         use ecdsa::signature::hazmat::PrehashSigner;
-        let sig = self.inner.sign_prehash(hash)
+        let sig = self
+            .inner
+            .sign_prehash(hash)
             .map_err(|_| Error::SigningFailed)?;
         Ok(P384Signature { inner: sig })
     }
@@ -325,8 +337,8 @@ impl traits::Signature for P384Signature {
     const SIZE: usize = 96;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        let inner = p384::ecdsa::Signature::from_slice(bytes)
-            .map_err(|_| Error::InvalidSignature)?;
+        let inner =
+            p384::ecdsa::Signature::from_slice(bytes).map_err(|_| Error::InvalidSignature)?;
         Ok(Self { inner })
     }
 
@@ -389,7 +401,9 @@ impl traits::SigningKey for Secp256k1SigningKey {
 
     fn sign_prehashed(&self, hash: &[u8]) -> Result<Self::Signature> {
         use ecdsa::signature::hazmat::PrehashSigner;
-        let sig = self.inner.sign_prehash(hash)
+        let sig = self
+            .inner
+            .sign_prehash(hash)
             .map_err(|_| Error::SigningFailed)?;
         Ok(Secp256k1Signature { inner: sig })
     }
@@ -413,7 +427,10 @@ mod secp256k1_verifying_key_serde {
     use k256::elliptic_curve::sec1::ToEncodedPoint;
     use serde::{Deserializer, Serializer};
 
-    pub fn serialize<S>(key: &k256::ecdsa::VerifyingKey, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    pub fn serialize<S>(
+        key: &k256::ecdsa::VerifyingKey,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -425,7 +442,9 @@ mod secp256k1_verifying_key_serde {
         }
     }
 
-    pub fn deserialize<'de, D>(deserializer: D) -> std::result::Result<k256::ecdsa::VerifyingKey, D::Error>
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> std::result::Result<k256::ecdsa::VerifyingKey, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -436,8 +455,7 @@ mod secp256k1_verifying_key_serde {
             <Vec<u8>>::deserialize(deserializer)?
         };
 
-        k256::ecdsa::VerifyingKey::from_sec1_bytes(&bytes)
-            .map_err(serde::de::Error::custom)
+        k256::ecdsa::VerifyingKey::from_sec1_bytes(&bytes).map_err(serde::de::Error::custom)
     }
 }
 
@@ -492,7 +510,10 @@ mod secp256k1_signature_serde {
     use ecdsa::signature::SignatureEncoding;
     use serde::{Deserializer, Serializer};
 
-    pub fn serialize<S>(sig: &k256::ecdsa::Signature, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    pub fn serialize<S>(
+        sig: &k256::ecdsa::Signature,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -504,7 +525,9 @@ mod secp256k1_signature_serde {
         }
     }
 
-    pub fn deserialize<'de, D>(deserializer: D) -> std::result::Result<k256::ecdsa::Signature, D::Error>
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> std::result::Result<k256::ecdsa::Signature, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -515,8 +538,7 @@ mod secp256k1_signature_serde {
             <Vec<u8>>::deserialize(deserializer)?
         };
 
-        k256::ecdsa::Signature::from_slice(&bytes)
-            .map_err(serde::de::Error::custom)
+        k256::ecdsa::Signature::from_slice(&bytes).map_err(serde::de::Error::custom)
     }
 }
 
@@ -524,8 +546,8 @@ impl traits::Signature for Secp256k1Signature {
     const SIZE: usize = 64;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        let inner = k256::ecdsa::Signature::from_slice(bytes)
-            .map_err(|_| Error::InvalidSignature)?;
+        let inner =
+            k256::ecdsa::Signature::from_slice(bytes).map_err(|_| Error::InvalidSignature)?;
         Ok(Self { inner })
     }
 
@@ -545,7 +567,7 @@ impl std::fmt::Debug for Secp256k1Signature {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::{SigningKey, VerifyingKey, Signature};
+    use crate::traits::{Signature, SigningKey, VerifyingKey};
 
     macro_rules! test_ecdsa_curve {
         ($signing_key:ty, $name:ident) => {
@@ -581,7 +603,8 @@ mod tests {
                     let verifying_key = signing_key.verifying_key();
 
                     let bytes = verifying_key.to_bytes();
-                    let restored = <<$signing_key as SigningKey>::VerifyingKey>::from_bytes(&bytes).unwrap();
+                    let restored =
+                        <<$signing_key as SigningKey>::VerifyingKey>::from_bytes(&bytes).unwrap();
 
                     assert_eq!(verifying_key, restored);
                 }
@@ -593,7 +616,8 @@ mod tests {
                     let signature = signing_key.sign(message);
 
                     let bytes = signature.to_bytes();
-                    let restored = <<$signing_key as SigningKey>::Signature>::from_bytes(&bytes).unwrap();
+                    let restored =
+                        <<$signing_key as SigningKey>::Signature>::from_bytes(&bytes).unwrap();
 
                     let verifying_key = signing_key.verifying_key();
                     assert!(verifying_key.verify(message, &restored).is_ok());

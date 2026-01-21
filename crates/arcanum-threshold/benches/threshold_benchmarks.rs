@@ -5,7 +5,7 @@
 //! - FROST threshold signatures (2-round signing)
 //! - Distributed Key Generation (DKG)
 
-use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Shamir Secret Sharing Benchmarks
@@ -34,7 +34,7 @@ fn bench_shamir(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("split", format!("{}of{}", t, n)),
             &(*t, *n),
-            |b, &(t, n)| b.iter(|| ShamirScheme::split(&secret, t, n))
+            |b, &(t, n)| b.iter(|| ShamirScheme::split(&secret, t, n)),
         );
     }
 
@@ -62,24 +62,18 @@ fn bench_shamir(c: &mut Criterion) {
 #[cfg(feature = "frost")]
 fn bench_frost(c: &mut Criterion) {
     use arcanum_threshold::frost::{
-        trusted_dealer_keygen, FrostSigner, FrostVerifier, SigningPackage,
-        GroupVerifyingKey, PublicKeyPackage,
+        FrostSigner, FrostVerifier, GroupVerifyingKey, PublicKeyPackage, SigningPackage,
+        trusted_dealer_keygen,
     };
 
     let mut group = c.benchmark_group("FROST");
 
     // Benchmark key generation
-    group.bench_function("keygen-2of3", |b| {
-        b.iter(|| trusted_dealer_keygen(2, 3))
-    });
+    group.bench_function("keygen-2of3", |b| b.iter(|| trusted_dealer_keygen(2, 3)));
 
-    group.bench_function("keygen-3of5", |b| {
-        b.iter(|| trusted_dealer_keygen(3, 5))
-    });
+    group.bench_function("keygen-3of5", |b| b.iter(|| trusted_dealer_keygen(3, 5)));
 
-    group.bench_function("keygen-5of10", |b| {
-        b.iter(|| trusted_dealer_keygen(5, 10))
-    });
+    group.bench_function("keygen-5of10", |b| b.iter(|| trusted_dealer_keygen(5, 10)));
 
     // Setup for signing benchmarks
     let (shares, pubkey_package) = trusted_dealer_keygen(2, 3).unwrap();
@@ -96,9 +90,7 @@ fn bench_frost(c: &mut Criterion) {
         .collect();
 
     // Benchmark round 1 (commitment generation)
-    group.bench_function("round1", |b| {
-        b.iter(|| signers[0].round1())
-    });
+    group.bench_function("round1", |b| b.iter(|| signers[0].round1()));
 
     // Prepare for round 2 benchmark
     let mut all_nonces = Vec::new();
@@ -119,7 +111,11 @@ fn bench_frost(c: &mut Criterion) {
     let signature_shares: Vec<_> = signers
         .iter()
         .enumerate()
-        .map(|(i, signer)| signer.round2(message, &all_nonces[i], &signing_package).unwrap())
+        .map(|(i, signer)| {
+            signer
+                .round2(message, &all_nonces[i], &signing_package)
+                .unwrap()
+        })
         .collect();
 
     // Setup verifier
@@ -133,7 +129,9 @@ fn bench_frost(c: &mut Criterion) {
     });
 
     // Benchmark verification
-    let signature = verifier.aggregate(&signing_package, &signature_shares, &pkg).unwrap();
+    let signature = verifier
+        .aggregate(&signing_package, &signature_shares, &pkg)
+        .unwrap();
     group.bench_function("verify", |b| {
         b.iter(|| verifier.verify(message, &signature))
     });
@@ -161,12 +159,11 @@ fn bench_frost(c: &mut Criterion) {
                 .collect();
 
             // Aggregate
-            let pubkey_pkg = PublicKeyPackage::from_frost(
-                trusted_dealer_keygen(2, 3).unwrap().1
-            );
+            let pubkey_pkg = PublicKeyPackage::from_frost(trusted_dealer_keygen(2, 3).unwrap().1);
             let group_key = GroupVerifyingKey::from_frost(
-                trusted_dealer_keygen(2, 3).unwrap().1.verifying_key()
-            ).unwrap();
+                trusted_dealer_keygen(2, 3).unwrap().1.verifying_key(),
+            )
+            .unwrap();
             let verifier = FrostVerifier::new(&group_key).unwrap();
             let _ = verifier.aggregate(&pkg, &shares, &pubkey_pkg);
         })
@@ -203,7 +200,7 @@ fn bench_dkg(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("full_dkg", format!("{}of{}", t, n)),
             &(*t as u16, *n as u16),
-            |b, &(t, n)| b.iter(|| run_dkg(t, n))
+            |b, &(t, n)| b.iter(|| run_dkg(t, n)),
         );
     }
 

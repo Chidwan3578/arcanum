@@ -12,14 +12,17 @@
 //! - Post-quantum: ML-KEM-768 (192-bit security)
 //! - Combined secret derived via HKDF
 
-use crate::kem::{MlKem768, MlKem768Ciphertext, MlKem768DecapsulationKey, MlKem768EncapsulationKey, MlKem768SharedSecret};
+use crate::kem::{
+    MlKem768, MlKem768Ciphertext, MlKem768DecapsulationKey, MlKem768EncapsulationKey,
+    MlKem768SharedSecret,
+};
 use crate::traits::KeyEncapsulation;
 use arcanum_core::error::{Error, Result};
+use hkdf::Hkdf;
 use rand::rngs::OsRng;
+use sha2::Sha256;
 use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey, StaticSecret};
 use zeroize::{Zeroize, ZeroizeOnDrop};
-use sha2::Sha256;
-use hkdf::Hkdf;
 
 /// X25519-ML-KEM-768 hybrid decapsulation key.
 #[derive(ZeroizeOnDrop)]
@@ -78,8 +81,11 @@ impl X25519MlKem768EncapsulationKey {
 
 impl std::fmt::Debug for X25519MlKem768EncapsulationKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "X25519MlKem768EncapsulationKey({}...)",
-            hex::encode(&self.x25519_public.as_bytes()[..8]))
+        write!(
+            f,
+            "X25519MlKem768EncapsulationKey({}...)",
+            hex::encode(&self.x25519_public.as_bytes()[..8])
+        )
     }
 }
 
@@ -171,7 +177,10 @@ impl X25519MlKem768 {
     const HKDF_INFO: &'static [u8] = b"X25519-ML-KEM-768 shared secret v1";
 
     /// Generate a hybrid key pair.
-    pub fn generate_keypair() -> (X25519MlKem768DecapsulationKey, X25519MlKem768EncapsulationKey) {
+    pub fn generate_keypair() -> (
+        X25519MlKem768DecapsulationKey,
+        X25519MlKem768EncapsulationKey,
+    ) {
         // Generate X25519 key pair
         let x25519_secret = StaticSecret::random_from_rng(&mut OsRng);
         let x25519_public = X25519PublicKey::from(&x25519_secret);
@@ -204,10 +213,7 @@ impl X25519MlKem768 {
         let (ml_kem_ct, ml_kem_ss) = MlKem768::encapsulate(&ek.ml_kem_ek);
 
         // Combine shared secrets using HKDF
-        let combined_secret = Self::combine_secrets(
-            x25519_shared.as_bytes(),
-            ml_kem_ss.as_bytes(),
-        );
+        let combined_secret = Self::combine_secrets(x25519_shared.as_bytes(), ml_kem_ss.as_bytes());
 
         (
             X25519MlKem768Ciphertext {
@@ -232,10 +238,7 @@ impl X25519MlKem768 {
         let ml_kem_ss = MlKem768::decapsulate(&dk.ml_kem_dk, &ciphertext.ml_kem_ct)?;
 
         // Combine shared secrets using HKDF
-        let combined_secret = Self::combine_secrets(
-            x25519_shared.as_bytes(),
-            ml_kem_ss.as_bytes(),
-        );
+        let combined_secret = Self::combine_secrets(x25519_shared.as_bytes(), ml_kem_ss.as_bytes());
 
         Ok(X25519MlKem768SharedSecret {
             bytes: combined_secret,

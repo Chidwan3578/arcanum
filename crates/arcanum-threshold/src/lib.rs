@@ -22,6 +22,16 @@
 //! - **Pedersen DKG**: Two-round DKG with information-theoretic security
 //! - **FROST DKG**: Integrated key generation for FROST signing
 //!
+//! ## Proactive Refresh
+//!
+//! Limit the window of compromise with periodic share refresh:
+//!
+//! - **Centralized refresh**: Dealer refreshes all shares at once
+//! - **Distributed refresh**: Participants cooperatively refresh without dealer
+//!
+//! After refresh, old shares are incompatible with new shares, preventing
+//! attackers from combining shares collected over different time periods.
+//!
 //! ## Example
 //!
 //! ```ignore
@@ -38,6 +48,11 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+#![allow(
+    clippy::needless_range_loop,
+    clippy::needless_borrow,
+    clippy::needless_borrows_for_generic_args
+)]
 
 mod error;
 
@@ -50,10 +65,13 @@ pub mod frost;
 #[cfg(feature = "dkg")]
 pub mod dkg;
 
-pub use error::{ThresholdError, Result};
+#[cfg(feature = "proactive")]
+pub mod proactive;
+
+pub use error::{Result, ThresholdError};
 
 #[cfg(feature = "shamir")]
-pub use shamir::{Share, ShamirScheme};
+pub use shamir::{ShamirScheme, Share};
 
 #[cfg(feature = "frost")]
 pub use frost::{FrostSigner, FrostVerifier, SigningShare, VerifyingShare};
@@ -61,18 +79,24 @@ pub use frost::{FrostSigner, FrostVerifier, SigningShare, VerifyingShare};
 #[cfg(feature = "dkg")]
 pub use dkg::{DkgParticipant, DkgRound1, DkgRound2};
 
+#[cfg(feature = "proactive")]
+pub use proactive::{ProactiveRefresh, RefreshShares};
+
 /// Prelude for convenient imports.
 pub mod prelude {
-    pub use crate::error::{ThresholdError, Result};
+    pub use crate::error::{Result, ThresholdError};
 
     #[cfg(feature = "shamir")]
-    pub use crate::shamir::{Share, ShamirScheme};
+    pub use crate::shamir::{ShamirScheme, Share};
 
     #[cfg(feature = "frost")]
     pub use crate::frost::{FrostSigner, FrostVerifier};
 
     #[cfg(feature = "dkg")]
     pub use crate::dkg::{DkgParticipant, DkgRound1, DkgRound2};
+
+    #[cfg(feature = "proactive")]
+    pub use crate::proactive::{ProactiveRefresh, RefreshShares};
 }
 
 /// Re-export identifier type for participants.

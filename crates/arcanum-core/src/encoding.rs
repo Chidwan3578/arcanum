@@ -79,6 +79,7 @@ impl Base64 {
     }
 
     /// Calculate encoded length for given input length.
+    #[allow(clippy::manual_div_ceil)] // Not div_ceil: formula is ceil(n/3) * 4
     pub fn encoded_len(input_len: usize) -> usize {
         // Standard base64: (input_len + 2) / 3 * 4
         ((input_len + 2) / 3) * 4
@@ -169,7 +170,9 @@ impl Base58 {
         let expected = hash(&hash(data).as_bytes()[..]);
 
         if checksum != &expected.as_bytes()[..4] {
-            return Err(Error::EncodingError("Base58Check: invalid checksum".to_string()));
+            return Err(Error::EncodingError(
+                "Base58Check: invalid checksum".to_string(),
+            ));
         }
 
         Ok(data.to_vec())
@@ -187,14 +190,12 @@ impl Bech32 {
     /// Encode with Bech32.
     pub fn encode(hrp: &str, data: &[u8]) -> Result<String> {
         let hrp = bech32::Hrp::parse(hrp).map_err(|e| Error::EncodingError(e.to_string()))?;
-        bech32::encode::<bech32::Bech32>(hrp, data)
-            .map_err(|e| Error::EncodingError(e.to_string()))
+        bech32::encode::<bech32::Bech32>(hrp, data).map_err(|e| Error::EncodingError(e.to_string()))
     }
 
     /// Decode Bech32.
     pub fn decode(s: &str) -> Result<(String, Vec<u8>)> {
-        let (hrp, data) =
-            bech32::decode(s).map_err(|e| Error::EncodingError(e.to_string()))?;
+        let (hrp, data) = bech32::decode(s).map_err(|e| Error::EncodingError(e.to_string()))?;
         Ok((hrp.to_string(), data))
     }
 
@@ -283,8 +284,8 @@ impl Multibase {
 
     /// Encode with a specific base.
     pub fn encode_with_base(base: char, data: &[u8]) -> Result<String> {
-        let base = multibase::Base::from_code(base)
-            .map_err(|e| Error::EncodingError(e.to_string()))?;
+        let base =
+            multibase::Base::from_code(base).map_err(|e| Error::EncodingError(e.to_string()))?;
         Ok(multibase::encode(base, data))
     }
 

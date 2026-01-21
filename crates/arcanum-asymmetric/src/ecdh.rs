@@ -36,8 +36,7 @@ impl P256SecretKey {
 
     /// Create from bytes.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        let inner = p256::SecretKey::from_slice(bytes)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner = p256::SecretKey::from_slice(bytes).map_err(|_| Error::InvalidKeyFormat)?;
         Ok(Self { inner })
     }
 
@@ -54,6 +53,7 @@ impl P256SecretKey {
     }
 
     /// Perform ECDH key agreement.
+    #[must_use = "key agreement result must be checked for errors"]
     pub fn diffie_hellman(&self, peer_public: &P256PublicKey) -> Result<P256SharedSecret> {
         use p256::ecdh::diffie_hellman;
         let shared = diffie_hellman(
@@ -81,8 +81,7 @@ pub struct P256PublicKey {
 impl P256PublicKey {
     /// Create from SEC1-encoded bytes (compressed or uncompressed).
     pub fn from_sec1_bytes(bytes: &[u8]) -> Result<Self> {
-        let inner = p256::PublicKey::from_sec1_bytes(bytes)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner = p256::PublicKey::from_sec1_bytes(bytes).map_err(|_| Error::InvalidKeyFormat)?;
         Ok(Self { inner })
     }
 
@@ -103,8 +102,7 @@ impl P256PublicKey {
 
     /// Decode from hex.
     pub fn from_hex(hex_str: &str) -> Result<Self> {
-        let bytes = hex::decode(hex_str)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let bytes = hex::decode(hex_str).map_err(|_| Error::InvalidKeyFormat)?;
         Self::from_sec1_bytes(&bytes)
     }
 }
@@ -186,8 +184,7 @@ impl P384SecretKey {
 
     /// Create from bytes.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        let inner = p384::SecretKey::from_slice(bytes)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner = p384::SecretKey::from_slice(bytes).map_err(|_| Error::InvalidKeyFormat)?;
         Ok(Self { inner })
     }
 
@@ -204,6 +201,7 @@ impl P384SecretKey {
     }
 
     /// Perform ECDH key agreement.
+    #[must_use = "key agreement result must be checked for errors"]
     pub fn diffie_hellman(&self, peer_public: &P384PublicKey) -> Result<P384SharedSecret> {
         use p384::ecdh::diffie_hellman;
         let shared = diffie_hellman(
@@ -231,8 +229,7 @@ pub struct P384PublicKey {
 impl P384PublicKey {
     /// Create from SEC1-encoded bytes.
     pub fn from_sec1_bytes(bytes: &[u8]) -> Result<Self> {
-        let inner = p384::PublicKey::from_sec1_bytes(bytes)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner = p384::PublicKey::from_sec1_bytes(bytes).map_err(|_| Error::InvalidKeyFormat)?;
         Ok(Self { inner })
     }
 
@@ -329,8 +326,7 @@ impl Secp256k1SecretKey {
 
     /// Create from bytes.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        let inner = k256::SecretKey::from_slice(bytes)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner = k256::SecretKey::from_slice(bytes).map_err(|_| Error::InvalidKeyFormat)?;
         Ok(Self { inner })
     }
 
@@ -347,7 +343,11 @@ impl Secp256k1SecretKey {
     }
 
     /// Perform ECDH key agreement.
-    pub fn diffie_hellman(&self, peer_public: &Secp256k1PublicKey) -> Result<Secp256k1SharedSecret> {
+    #[must_use = "key agreement result must be checked for errors"]
+    pub fn diffie_hellman(
+        &self,
+        peer_public: &Secp256k1PublicKey,
+    ) -> Result<Secp256k1SharedSecret> {
         use k256::ecdh::diffie_hellman;
         let shared = diffie_hellman(
             self.inner.to_nonzero_scalar(),
@@ -374,8 +374,7 @@ pub struct Secp256k1PublicKey {
 impl Secp256k1PublicKey {
     /// Create from SEC1-encoded bytes.
     pub fn from_sec1_bytes(bytes: &[u8]) -> Result<Self> {
-        let inner = k256::PublicKey::from_sec1_bytes(bytes)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner = k256::PublicKey::from_sec1_bytes(bytes).map_err(|_| Error::InvalidKeyFormat)?;
         Ok(Self { inner })
     }
 
@@ -397,7 +396,7 @@ impl Secp256k1PublicKey {
     /// Get Ethereum-style address (last 20 bytes of keccak256 of uncompressed pubkey).
     #[cfg(feature = "ethereum")]
     pub fn to_ethereum_address(&self) -> [u8; 20] {
-        use sha3::{Keccak256, Digest};
+        use sha3::{Digest, Keccak256};
         let uncompressed = self.to_sec1_bytes_uncompressed();
         // Skip the 0x04 prefix
         let hash = Keccak256::digest(&uncompressed[1..]);

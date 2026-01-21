@@ -4,6 +4,7 @@ use thiserror::Error;
 
 /// Errors that can occur during HoloCrypt operations.
 #[derive(Debug, Error)]
+#[allow(missing_docs)]
 pub enum HoloCryptError {
     /// Sealing (encryption + commitment + signature) failed.
     #[error("Failed to seal container: {reason}")]

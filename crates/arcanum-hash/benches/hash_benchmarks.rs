@@ -5,9 +5,9 @@
 //! - ring (BoringSSL wrapper)
 //! - blake3 crate (reference implementation)
 
-use criterion::{
-    black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput,
-};
+#![allow(dead_code)]
+
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 // Data sizes for benchmarking (covering various use cases)
 const SIZES: &[usize] = &[64, 256, 1024, 4096, 16384, 65536, 1048576];
@@ -17,7 +17,7 @@ const SIZES: &[usize] = &[64, 256, 1024, 4096, 16384, 65536, 1048576];
 // ═══════════════════════════════════════════════════════════════════════════════
 
 mod arcanum_sha256 {
-    use arcanum_hash::{Sha256, Hasher};
+    use arcanum_hash::{Hasher, Sha256};
 
     pub fn hash(data: &[u8]) -> Vec<u8> {
         let mut hasher = Sha256::new();
@@ -35,7 +35,7 @@ mod arcanum_sha256 {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 mod arcanum_sha512 {
-    use arcanum_hash::{Sha512, Hasher};
+    use arcanum_hash::{Hasher, Sha512};
 
     pub fn hash(data: &[u8]) -> Vec<u8> {
         let mut hasher = Sha512::new();
@@ -69,7 +69,7 @@ mod arcanum_blake3 {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 mod rustcrypto_sha256 {
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
 
     pub fn hash(data: &[u8]) -> Vec<u8> {
         let mut hasher = Sha256::new();
@@ -79,7 +79,7 @@ mod rustcrypto_sha256 {
 }
 
 mod rustcrypto_sha512 {
-    use sha2::{Sha512, Digest};
+    use sha2::{Digest, Sha512};
 
     pub fn hash(data: &[u8]) -> Vec<u8> {
         let mut hasher = Sha512::new();
@@ -110,7 +110,7 @@ mod blake3_direct {
 
 #[cfg(feature = "bench-ring")]
 mod ring_sha256 {
-    use ring::digest::{digest, SHA256};
+    use ring::digest::{SHA256, digest};
 
     pub fn hash(data: &[u8]) -> Vec<u8> {
         digest(&SHA256, data).as_ref().to_vec()
@@ -119,7 +119,7 @@ mod ring_sha256 {
 
 #[cfg(feature = "bench-ring")]
 mod ring_sha512 {
-    use ring::digest::{digest, SHA512};
+    use ring::digest::{SHA512, digest};
 
     pub fn hash(data: &[u8]) -> Vec<u8> {
         digest(&SHA512, data).as_ref().to_vec()
@@ -138,32 +138,20 @@ fn bench_sha256(c: &mut Criterion) {
         group.throughput(Throughput::Bytes(*size as u64));
 
         // Arcanum
-        group.bench_with_input(
-            BenchmarkId::new("Arcanum", size),
-            size,
-            |b, _| {
-                b.iter(|| arcanum_sha256::hash(black_box(&data)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("Arcanum", size), size, |b, _| {
+            b.iter(|| arcanum_sha256::hash(black_box(&data)))
+        });
 
         // RustCrypto (direct)
-        group.bench_with_input(
-            BenchmarkId::new("RustCrypto", size),
-            size,
-            |b, _| {
-                b.iter(|| rustcrypto_sha256::hash(black_box(&data)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("RustCrypto", size), size, |b, _| {
+            b.iter(|| rustcrypto_sha256::hash(black_box(&data)))
+        });
 
         // ring
         #[cfg(feature = "bench-ring")]
-        group.bench_with_input(
-            BenchmarkId::new("ring", size),
-            size,
-            |b, _| {
-                b.iter(|| ring_sha256::hash(black_box(&data)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("ring", size), size, |b, _| {
+            b.iter(|| ring_sha256::hash(black_box(&data)))
+        });
     }
 
     group.finish();
@@ -177,32 +165,20 @@ fn bench_sha512(c: &mut Criterion) {
         group.throughput(Throughput::Bytes(*size as u64));
 
         // Arcanum
-        group.bench_with_input(
-            BenchmarkId::new("Arcanum", size),
-            size,
-            |b, _| {
-                b.iter(|| arcanum_sha512::hash(black_box(&data)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("Arcanum", size), size, |b, _| {
+            b.iter(|| arcanum_sha512::hash(black_box(&data)))
+        });
 
         // RustCrypto (direct)
-        group.bench_with_input(
-            BenchmarkId::new("RustCrypto", size),
-            size,
-            |b, _| {
-                b.iter(|| rustcrypto_sha512::hash(black_box(&data)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("RustCrypto", size), size, |b, _| {
+            b.iter(|| rustcrypto_sha512::hash(black_box(&data)))
+        });
 
         // ring
         #[cfg(feature = "bench-ring")]
-        group.bench_with_input(
-            BenchmarkId::new("ring", size),
-            size,
-            |b, _| {
-                b.iter(|| ring_sha512::hash(black_box(&data)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("ring", size), size, |b, _| {
+            b.iter(|| ring_sha512::hash(black_box(&data)))
+        });
     }
 
     group.finish();
@@ -216,22 +192,14 @@ fn bench_blake3(c: &mut Criterion) {
         group.throughput(Throughput::Bytes(*size as u64));
 
         // Arcanum
-        group.bench_with_input(
-            BenchmarkId::new("Arcanum", size),
-            size,
-            |b, _| {
-                b.iter(|| arcanum_blake3::hash(black_box(&data)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("Arcanum", size), size, |b, _| {
+            b.iter(|| arcanum_blake3::hash(black_box(&data)))
+        });
 
         // blake3 crate (direct)
-        group.bench_with_input(
-            BenchmarkId::new("blake3-crate", size),
-            size,
-            |b, _| {
-                b.iter(|| blake3_direct::hash(black_box(&data)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("blake3-crate", size), size, |b, _| {
+            b.iter(|| blake3_direct::hash(black_box(&data)))
+        });
     }
 
     group.finish();

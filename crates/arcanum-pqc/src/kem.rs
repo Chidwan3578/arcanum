@@ -13,8 +13,8 @@ use crate::traits::KeyEncapsulation;
 use arcanum_core::error::{Error, Result};
 use kem::{Decapsulate, Encapsulate};
 use ml_kem::{
-    kem::{DecapsulationKey, EncapsulationKey},
     EncodedSizeUser, KemCore, MlKem512Params, MlKem768Params, MlKem1024Params,
+    kem::{DecapsulationKey, EncapsulationKey},
 };
 use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
@@ -192,12 +192,10 @@ pub struct MlKem768SharedSecret {
 impl MlKem768SharedSecret {
     /// Create from bytes.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        let arr: [u8; 32] = bytes
-            .try_into()
-            .map_err(|_| Error::InvalidKeyLength {
-                expected: 32,
-                actual: bytes.len(),
-            })?;
+        let arr: [u8; 32] = bytes.try_into().map_err(|_| Error::InvalidKeyLength {
+            expected: 32,
+            actual: bytes.len(),
+        })?;
         Ok(Self { bytes: arr })
     }
 
@@ -256,9 +254,7 @@ impl KeyEncapsulation for MlKem768 {
         let inner_ek = ek.inner();
         let (ct, ss) = inner_ek.encapsulate(&mut OsRng).unwrap();
         (
-            MlKem768Ciphertext {
-                bytes: ct.to_vec(),
-            },
+            MlKem768Ciphertext { bytes: ct.to_vec() },
             MlKem768SharedSecret {
                 bytes: ss.as_slice().try_into().unwrap(),
             },
@@ -314,9 +310,7 @@ impl MlKem512 {
 
     /// Encapsulate to produce ciphertext and shared secret.
     pub fn encapsulate(ek_bytes: &[u8]) -> Result<(Vec<u8>, [u8; 32])> {
-        let arr: [u8; 800] = ek_bytes
-            .try_into()
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let arr: [u8; 800] = ek_bytes.try_into().map_err(|_| Error::InvalidKeyFormat)?;
         let ek = EncapsulationKey::<MlKem512Params>::from_bytes(&arr.into());
 
         let (ct, ss) = ek
@@ -328,14 +322,10 @@ impl MlKem512 {
 
     /// Decapsulate to recover shared secret.
     pub fn decapsulate(dk_bytes: &[u8], ct_bytes: &[u8]) -> Result<[u8; 32]> {
-        let dk_arr: [u8; 1632] = dk_bytes
-            .try_into()
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let dk_arr: [u8; 1632] = dk_bytes.try_into().map_err(|_| Error::InvalidKeyFormat)?;
         let dk = DecapsulationKey::<MlKem512Params>::from_bytes(&dk_arr.into());
 
-        let ct_arr: [u8; 768] = ct_bytes
-            .try_into()
-            .map_err(|_| Error::InvalidCiphertext)?;
+        let ct_arr: [u8; 768] = ct_bytes.try_into().map_err(|_| Error::InvalidCiphertext)?;
         let ct: ml_kem::Ciphertext<MlKem512Inner> = ct_arr.into();
 
         let ss = dk.decapsulate(&ct).map_err(|_| Error::DecryptionFailed)?;
@@ -371,9 +361,7 @@ impl MlKem1024 {
 
     /// Encapsulate to produce ciphertext and shared secret.
     pub fn encapsulate(ek_bytes: &[u8]) -> Result<(Vec<u8>, [u8; 32])> {
-        let arr: [u8; 1568] = ek_bytes
-            .try_into()
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let arr: [u8; 1568] = ek_bytes.try_into().map_err(|_| Error::InvalidKeyFormat)?;
         let ek = EncapsulationKey::<MlKem1024Params>::from_bytes(&arr.into());
 
         let (ct, ss) = ek
@@ -385,14 +373,10 @@ impl MlKem1024 {
 
     /// Decapsulate to recover shared secret.
     pub fn decapsulate(dk_bytes: &[u8], ct_bytes: &[u8]) -> Result<[u8; 32]> {
-        let dk_arr: [u8; 3168] = dk_bytes
-            .try_into()
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let dk_arr: [u8; 3168] = dk_bytes.try_into().map_err(|_| Error::InvalidKeyFormat)?;
         let dk = DecapsulationKey::<MlKem1024Params>::from_bytes(&dk_arr.into());
 
-        let ct_arr: [u8; 1568] = ct_bytes
-            .try_into()
-            .map_err(|_| Error::InvalidCiphertext)?;
+        let ct_arr: [u8; 1568] = ct_bytes.try_into().map_err(|_| Error::InvalidCiphertext)?;
         let ct: ml_kem::Ciphertext<MlKem1024Inner> = ct_arr.into();
 
         let ss = dk.decapsulate(&ct).map_err(|_| Error::DecryptionFailed)?;

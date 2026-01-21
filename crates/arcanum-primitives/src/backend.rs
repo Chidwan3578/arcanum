@@ -87,7 +87,10 @@ impl Backend for SimdBackend {
             false
         }
 
-        #[cfg(all(feature = "std", not(any(target_arch = "x86_64", target_arch = "aarch64"))))]
+        #[cfg(all(
+            feature = "std",
+            not(any(target_arch = "x86_64", target_arch = "aarch64"))
+        ))]
         {
             false
         }
@@ -132,7 +135,10 @@ impl Backend for HardwareBackend {
             false
         }
 
-        #[cfg(all(feature = "std", not(any(target_arch = "x86_64", target_arch = "aarch64"))))]
+        #[cfg(all(
+            feature = "std",
+            not(any(target_arch = "x86_64", target_arch = "aarch64"))
+        ))]
         {
             false
         }

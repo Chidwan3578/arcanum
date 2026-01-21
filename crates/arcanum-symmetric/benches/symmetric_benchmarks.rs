@@ -5,9 +5,9 @@
 //! - ring (BoringSSL wrapper)
 //! - sodiumoxide (libsodium bindings)
 
-use criterion::{
-    black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput,
-};
+#![allow(clippy::redundant_closure)]
+
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 // Message sizes for benchmarking (covering various use cases)
 const SIZES: &[usize] = &[64, 256, 1024, 4096, 16384, 65536];
@@ -118,7 +118,7 @@ mod rustcrypto_chacha {
 
 #[cfg(feature = "bench-ring")]
 mod ring_aes {
-    use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, AES_256_GCM};
+    use ring::aead::{AES_256_GCM, Aad, LessSafeKey, Nonce, UnboundKey};
     use ring::rand::{SecureRandom, SystemRandom};
 
     pub fn keygen() -> (Vec<u8>, [u8; 12]) {
@@ -145,16 +145,14 @@ mod ring_aes {
         let key = LessSafeKey::new(unbound_key);
         let nonce = Nonce::assume_unique_for_key(*nonce);
         let mut in_out = ciphertext.to_vec();
-        let plaintext = key
-            .open_in_place(nonce, Aad::empty(), &mut in_out)
-            .unwrap();
+        let plaintext = key.open_in_place(nonce, Aad::empty(), &mut in_out).unwrap();
         plaintext.to_vec()
     }
 }
 
 #[cfg(feature = "bench-ring")]
 mod ring_chacha {
-    use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, CHACHA20_POLY1305};
+    use ring::aead::{Aad, CHACHA20_POLY1305, LessSafeKey, Nonce, UnboundKey};
     use ring::rand::{SecureRandom, SystemRandom};
 
     pub fn keygen() -> (Vec<u8>, [u8; 12]) {
@@ -181,9 +179,7 @@ mod ring_chacha {
         let key = LessSafeKey::new(unbound_key);
         let nonce = Nonce::assume_unique_for_key(*nonce);
         let mut in_out = ciphertext.to_vec();
-        let plaintext = key
-            .open_in_place(nonce, Aad::empty(), &mut in_out)
-            .unwrap();
+        let plaintext = key.open_in_place(nonce, Aad::empty(), &mut in_out).unwrap();
         plaintext.to_vec()
     }
 }
@@ -203,21 +199,17 @@ fn bench_aes256_gcm(c: &mut Criterion) {
         let (key, nonce) = arcanum_aes::keygen();
         let ciphertext = arcanum_aes::encrypt(&key, &nonce, &plaintext);
 
-        group.bench_with_input(
-            BenchmarkId::new("Arcanum/encrypt", size),
-            size,
-            |b, _| {
-                b.iter(|| arcanum_aes::encrypt(black_box(&key), black_box(&nonce), black_box(&plaintext)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("Arcanum/encrypt", size), size, |b, _| {
+            b.iter(|| {
+                arcanum_aes::encrypt(black_box(&key), black_box(&nonce), black_box(&plaintext))
+            })
+        });
 
-        group.bench_with_input(
-            BenchmarkId::new("Arcanum/decrypt", size),
-            size,
-            |b, _| {
-                b.iter(|| arcanum_aes::decrypt(black_box(&key), black_box(&nonce), black_box(&ciphertext)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("Arcanum/decrypt", size), size, |b, _| {
+            b.iter(|| {
+                arcanum_aes::decrypt(black_box(&key), black_box(&nonce), black_box(&ciphertext))
+            })
+        });
 
         // RustCrypto (direct)
         let (rc_key, rc_nonce) = rustcrypto_aes::keygen();
@@ -227,7 +219,13 @@ fn bench_aes256_gcm(c: &mut Criterion) {
             BenchmarkId::new("RustCrypto/encrypt", size),
             size,
             |b, _| {
-                b.iter(|| rustcrypto_aes::encrypt(black_box(&rc_key), black_box(&rc_nonce), black_box(&plaintext)))
+                b.iter(|| {
+                    rustcrypto_aes::encrypt(
+                        black_box(&rc_key),
+                        black_box(&rc_nonce),
+                        black_box(&plaintext),
+                    )
+                })
             },
         );
 
@@ -235,7 +233,13 @@ fn bench_aes256_gcm(c: &mut Criterion) {
             BenchmarkId::new("RustCrypto/decrypt", size),
             size,
             |b, _| {
-                b.iter(|| rustcrypto_aes::decrypt(black_box(&rc_key), black_box(&rc_nonce), black_box(&rc_ciphertext)))
+                b.iter(|| {
+                    rustcrypto_aes::decrypt(
+                        black_box(&rc_key),
+                        black_box(&rc_nonce),
+                        black_box(&rc_ciphertext),
+                    )
+                })
             },
         );
 
@@ -245,21 +249,25 @@ fn bench_aes256_gcm(c: &mut Criterion) {
             let (ring_key, ring_nonce) = ring_aes::keygen();
             let ring_ciphertext = ring_aes::encrypt(&ring_key, &ring_nonce, &plaintext);
 
-            group.bench_with_input(
-                BenchmarkId::new("ring/encrypt", size),
-                size,
-                |b, _| {
-                    b.iter(|| ring_aes::encrypt(black_box(&ring_key), black_box(&ring_nonce), black_box(&plaintext)))
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("ring/encrypt", size), size, |b, _| {
+                b.iter(|| {
+                    ring_aes::encrypt(
+                        black_box(&ring_key),
+                        black_box(&ring_nonce),
+                        black_box(&plaintext),
+                    )
+                })
+            });
 
-            group.bench_with_input(
-                BenchmarkId::new("ring/decrypt", size),
-                size,
-                |b, _| {
-                    b.iter(|| ring_aes::decrypt(black_box(&ring_key), black_box(&ring_nonce), black_box(&ring_ciphertext)))
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("ring/decrypt", size), size, |b, _| {
+                b.iter(|| {
+                    ring_aes::decrypt(
+                        black_box(&ring_key),
+                        black_box(&ring_nonce),
+                        black_box(&ring_ciphertext),
+                    )
+                })
+            });
         }
     }
 
@@ -277,21 +285,17 @@ fn bench_chacha20_poly1305(c: &mut Criterion) {
         let (key, nonce) = arcanum_chacha::keygen();
         let ciphertext = arcanum_chacha::encrypt(&key, &nonce, &plaintext);
 
-        group.bench_with_input(
-            BenchmarkId::new("Arcanum/encrypt", size),
-            size,
-            |b, _| {
-                b.iter(|| arcanum_chacha::encrypt(black_box(&key), black_box(&nonce), black_box(&plaintext)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("Arcanum/encrypt", size), size, |b, _| {
+            b.iter(|| {
+                arcanum_chacha::encrypt(black_box(&key), black_box(&nonce), black_box(&plaintext))
+            })
+        });
 
-        group.bench_with_input(
-            BenchmarkId::new("Arcanum/decrypt", size),
-            size,
-            |b, _| {
-                b.iter(|| arcanum_chacha::decrypt(black_box(&key), black_box(&nonce), black_box(&ciphertext)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("Arcanum/decrypt", size), size, |b, _| {
+            b.iter(|| {
+                arcanum_chacha::decrypt(black_box(&key), black_box(&nonce), black_box(&ciphertext))
+            })
+        });
 
         // RustCrypto (direct)
         let (rc_key, rc_nonce) = rustcrypto_chacha::keygen();
@@ -301,7 +305,13 @@ fn bench_chacha20_poly1305(c: &mut Criterion) {
             BenchmarkId::new("RustCrypto/encrypt", size),
             size,
             |b, _| {
-                b.iter(|| rustcrypto_chacha::encrypt(black_box(&rc_key), black_box(&rc_nonce), black_box(&plaintext)))
+                b.iter(|| {
+                    rustcrypto_chacha::encrypt(
+                        black_box(&rc_key),
+                        black_box(&rc_nonce),
+                        black_box(&plaintext),
+                    )
+                })
             },
         );
 
@@ -309,7 +319,13 @@ fn bench_chacha20_poly1305(c: &mut Criterion) {
             BenchmarkId::new("RustCrypto/decrypt", size),
             size,
             |b, _| {
-                b.iter(|| rustcrypto_chacha::decrypt(black_box(&rc_key), black_box(&rc_nonce), black_box(&rc_ciphertext)))
+                b.iter(|| {
+                    rustcrypto_chacha::decrypt(
+                        black_box(&rc_key),
+                        black_box(&rc_nonce),
+                        black_box(&rc_ciphertext),
+                    )
+                })
             },
         );
 
@@ -319,21 +335,25 @@ fn bench_chacha20_poly1305(c: &mut Criterion) {
             let (ring_key, ring_nonce) = ring_chacha::keygen();
             let ring_ciphertext = ring_chacha::encrypt(&ring_key, &ring_nonce, &plaintext);
 
-            group.bench_with_input(
-                BenchmarkId::new("ring/encrypt", size),
-                size,
-                |b, _| {
-                    b.iter(|| ring_chacha::encrypt(black_box(&ring_key), black_box(&ring_nonce), black_box(&plaintext)))
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("ring/encrypt", size), size, |b, _| {
+                b.iter(|| {
+                    ring_chacha::encrypt(
+                        black_box(&ring_key),
+                        black_box(&ring_nonce),
+                        black_box(&plaintext),
+                    )
+                })
+            });
 
-            group.bench_with_input(
-                BenchmarkId::new("ring/decrypt", size),
-                size,
-                |b, _| {
-                    b.iter(|| ring_chacha::decrypt(black_box(&ring_key), black_box(&ring_nonce), black_box(&ring_ciphertext)))
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("ring/decrypt", size), size, |b, _| {
+                b.iter(|| {
+                    ring_chacha::decrypt(
+                        black_box(&ring_key),
+                        black_box(&ring_nonce),
+                        black_box(&ring_ciphertext),
+                    )
+                })
+            });
         }
     }
 
@@ -343,9 +363,7 @@ fn bench_chacha20_poly1305(c: &mut Criterion) {
 fn bench_keygen(c: &mut Criterion) {
     let mut group = c.benchmark_group("KeyGeneration");
 
-    group.bench_function("Arcanum/AES-256-GCM", |b| {
-        b.iter(|| arcanum_aes::keygen())
-    });
+    group.bench_function("Arcanum/AES-256-GCM", |b| b.iter(|| arcanum_aes::keygen()));
 
     group.bench_function("Arcanum/ChaCha20-Poly1305", |b| {
         b.iter(|| arcanum_chacha::keygen())
@@ -361,9 +379,7 @@ fn bench_keygen(c: &mut Criterion) {
 
     #[cfg(feature = "bench-ring")]
     {
-        group.bench_function("ring/AES-256-GCM", |b| {
-            b.iter(|| ring_aes::keygen())
-        });
+        group.bench_function("ring/AES-256-GCM", |b| b.iter(|| ring_aes::keygen()));
 
         group.bench_function("ring/ChaCha20-Poly1305", |b| {
             b.iter(|| ring_chacha::keygen())
@@ -382,37 +398,73 @@ fn bench_algorithm_comparison(c: &mut Criterion) {
     // Arcanum AES-256-GCM
     let (aes_key, aes_nonce) = arcanum_aes::keygen();
     group.bench_function("Arcanum/AES-256-GCM", |b| {
-        b.iter(|| arcanum_aes::encrypt(black_box(&aes_key), black_box(&aes_nonce), black_box(&plaintext)))
+        b.iter(|| {
+            arcanum_aes::encrypt(
+                black_box(&aes_key),
+                black_box(&aes_nonce),
+                black_box(&plaintext),
+            )
+        })
     });
 
     // Arcanum ChaCha20-Poly1305
     let (chacha_key, chacha_nonce) = arcanum_chacha::keygen();
     group.bench_function("Arcanum/ChaCha20-Poly1305", |b| {
-        b.iter(|| arcanum_chacha::encrypt(black_box(&chacha_key), black_box(&chacha_nonce), black_box(&plaintext)))
+        b.iter(|| {
+            arcanum_chacha::encrypt(
+                black_box(&chacha_key),
+                black_box(&chacha_nonce),
+                black_box(&plaintext),
+            )
+        })
     });
 
     // RustCrypto AES-256-GCM
     let (rc_aes_key, rc_aes_nonce) = rustcrypto_aes::keygen();
     group.bench_function("RustCrypto/AES-256-GCM", |b| {
-        b.iter(|| rustcrypto_aes::encrypt(black_box(&rc_aes_key), black_box(&rc_aes_nonce), black_box(&plaintext)))
+        b.iter(|| {
+            rustcrypto_aes::encrypt(
+                black_box(&rc_aes_key),
+                black_box(&rc_aes_nonce),
+                black_box(&plaintext),
+            )
+        })
     });
 
     // RustCrypto ChaCha20-Poly1305
     let (rc_chacha_key, rc_chacha_nonce) = rustcrypto_chacha::keygen();
     group.bench_function("RustCrypto/ChaCha20-Poly1305", |b| {
-        b.iter(|| rustcrypto_chacha::encrypt(black_box(&rc_chacha_key), black_box(&rc_chacha_nonce), black_box(&plaintext)))
+        b.iter(|| {
+            rustcrypto_chacha::encrypt(
+                black_box(&rc_chacha_key),
+                black_box(&rc_chacha_nonce),
+                black_box(&plaintext),
+            )
+        })
     });
 
     #[cfg(feature = "bench-ring")]
     {
         let (ring_aes_key, ring_aes_nonce) = ring_aes::keygen();
         group.bench_function("ring/AES-256-GCM", |b| {
-            b.iter(|| ring_aes::encrypt(black_box(&ring_aes_key), black_box(&ring_aes_nonce), black_box(&plaintext)))
+            b.iter(|| {
+                ring_aes::encrypt(
+                    black_box(&ring_aes_key),
+                    black_box(&ring_aes_nonce),
+                    black_box(&plaintext),
+                )
+            })
         });
 
         let (ring_chacha_key, ring_chacha_nonce) = ring_chacha::keygen();
         group.bench_function("ring/ChaCha20-Poly1305", |b| {
-            b.iter(|| ring_chacha::encrypt(black_box(&ring_chacha_key), black_box(&ring_chacha_nonce), black_box(&plaintext)))
+            b.iter(|| {
+                ring_chacha::encrypt(
+                    black_box(&ring_chacha_key),
+                    black_box(&ring_chacha_nonce),
+                    black_box(&plaintext),
+                )
+            })
         });
     }
 

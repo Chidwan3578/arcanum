@@ -19,25 +19,23 @@ blake3 = []
 chacha20 = []
 poly1305 = []
 chacha20poly1305 = ["chacha20", "poly1305"]
+shake = []  # SHAKE128/SHAKE256 (Keccak-based XOF) - required for ML-DSA
 
 # SIMD acceleration (auto-detected at runtime)
 # Enables SSE2/AVX2 on x86_64 for ChaCha20
 simd = ["std"]
 
+# CUDA acceleration for batch hashing (requires nvcc and CUDA runtime)
+# Build: nvcc -O3 -arch=sm_89 -shared -fPIC blake3_cuda.cu -o libblake3_cuda.so
+cuda = ["std"]
+
 # Multi-threaded parallel hashing
 rayon = ["dep:rayon", "std"]
-
-# For benchmarking against other implementations
-bench-comparison = ["sha2-crate", "blake3-crate"]
 
 [dependencies]
 zeroize = { version = "1.8", default-features = false, features = ["derive"] }
 subtle = { version = "2.5", default-features = false }
 rayon = { version = "1.10", optional = true }
-
-# Optional: for benchmark comparisons only
-sha2-crate = { package = "sha2", version = "0.10", optional = true }
-blake3-crate = { package = "blake3", version = "1.5", optional = true }
 
 [dev-dependencies]
 hex = "0.4"

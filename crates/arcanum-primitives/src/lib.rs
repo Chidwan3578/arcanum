@@ -17,6 +17,7 @@
 //! ### Hash Functions
 //! - SHA-256, SHA-384, SHA-512 (FIPS 180-4 compliant)
 //! - BLAKE3 (keyed hashing supported)
+//! - SHAKE128, SHAKE256 (FIPS 202 XOF - for ML-DSA)
 //!
 //! ### Stream Ciphers
 //! - ChaCha20 (RFC 8439)
@@ -30,16 +31,41 @@
 //! - XChaCha20-Poly1305 (extended 24-byte nonce)
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![warn(missing_docs, rust_2018_idioms)]
+#![warn(rust_2018_idioms)]
+// Allow various lints in SIMD modules - code is conditionally compiled per architecture
+#![allow(dead_code, unused_imports, unused_variables, unused_mut, missing_docs)]
+#![allow(clippy::missing_safety_doc, clippy::manual_is_multiple_of)]
+#![allow(clippy::needless_return, clippy::too_many_arguments)]
+#![allow(clippy::needless_range_loop, clippy::manual_div_ceil)]
+#![allow(
+    clippy::unnecessary_cast,
+    clippy::manual_memcpy,
+    clippy::doc_lazy_continuation
+)]
+#![allow(clippy::assertions_on_constants, clippy::expect_fun_call)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-pub mod ct;
 pub mod backend;
+pub mod ct;
 
 #[cfg(feature = "sha2")]
 pub mod sha2;
+
+// SHAKE128/SHAKE256 (Keccak-based XOF) - required for ML-DSA
+#[cfg(feature = "shake")]
+pub mod shake;
+
+// SIMD-accelerated Keccak permutation for SHAKE
+#[cfg(all(feature = "shake", feature = "simd", target_arch = "x86_64"))]
+#[allow(unsafe_code)]
+pub mod keccak_avx2;
+
+// 4-way parallel Keccak for batch operations (ML-DSA ExpandA)
+#[cfg(all(feature = "shake", feature = "simd", target_arch = "x86_64"))]
+#[allow(unsafe_code)]
+pub mod keccak_x4;
 
 // SIMD-accelerated SHA-2 (SHA-NI)
 #[cfg(all(feature = "sha2", feature = "simd"))]
@@ -79,6 +105,12 @@ pub mod blake3_ultra;
 #[allow(unsafe_code)]
 pub mod blake3_monolithic;
 
+// CUDA-accelerated BLAKE3 for batch hashing on NVIDIA GPUs
+// Optimized for RTX 4500 Ada Lovelace (sm_89) and similar architectures
+#[cfg(feature = "cuda")]
+#[allow(unsafe_code)]
+pub mod blake3_cuda_ffi;
+
 #[cfg(feature = "chacha20")]
 pub mod chacha20;
 
@@ -107,16 +139,19 @@ pub mod fused;
 pub mod batch;
 
 // Re-exports
-pub use ct::{CtBool, CtEq, CtSelect};
 pub use backend::{Backend, NativeBackend};
+pub use ct::{CtBool, CtEq, CtSelect};
 
 /// Prelude for convenient imports
 pub mod prelude {
-    pub use crate::ct::{CtBool, CtEq, CtSelect};
     pub use crate::backend::Backend;
+    pub use crate::ct::{CtBool, CtEq, CtSelect};
 
     #[cfg(feature = "sha2")]
     pub use crate::sha2::{Sha256, Sha384, Sha512};
+
+    #[cfg(feature = "shake")]
+    pub use crate::shake::{Shake128, Shake128Reader, Shake256, Shake256Reader};
 
     #[cfg(feature = "blake3")]
     pub use crate::blake3::Blake3;

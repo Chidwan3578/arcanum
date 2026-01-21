@@ -470,19 +470,39 @@ unsafe fn xor_keystream_avx512_nt(data: &mut [u8], keystream: &[u8]) {
     }
 }
 
-/// Check if we should use non-temporal stores based on message size.
-/// Currently disabled due to performance regression at threshold boundary.
+/// Check if we should use non-temporal stores based on message size and alignment.
+///
+/// Non-temporal (streaming) stores bypass the CPU cache, which is beneficial for
+/// large buffers that won't fit in cache anyway. However, they require proper
+/// alignment to be efficient.
+///
+/// # Requirements
+///
+/// Returns `true` only if:
+/// 1. Buffer size exceeds `NT_STORE_THRESHOLD` (256 KB)
+/// 2. Buffer is 64-byte aligned (optimal for AVX-512) or 32-byte aligned (AVX2)
+///
+/// If the buffer is large but unaligned, we skip NT stores entirely rather than
+/// paying the overhead of alignment checking in the inner loop.
 #[inline]
-fn use_non_temporal(_total_size: usize) -> bool {
-    // NT stores disabled - alignment issues cause 2x slowdown at 256KB threshold
-    // TODO: investigate root cause and re-enable
-    false
-    // total_size >= NT_STORE_THRESHOLD
+fn use_non_temporal(buffer: &[u8]) -> bool {
+    // Size check: only use NT stores for buffers larger than L2 cache
+    if buffer.len() < NT_STORE_THRESHOLD {
+        return false;
+    }
+
+    // Alignment check: NT stores require aligned memory for efficiency
+    // Check for 64-byte alignment (AVX-512) or fall back to 32-byte (AVX2)
+    let ptr = buffer.as_ptr() as usize;
+    ptr % 64 == 0 || ptr % 32 == 0
 }
 
 // Use SIMD-accelerated Poly1305 when available
 #[cfg(all(feature = "simd", feature = "std"))]
 use crate::poly1305_simd::Poly1305Simd as Poly1305;
+
+#[cfg(all(feature = "simd", feature = "std"))]
+use crate::poly1305_simd::Poly1305Simd512;
 
 #[cfg(not(all(feature = "simd", feature = "std")))]
 use crate::poly1305::Poly1305;
@@ -590,7 +610,15 @@ impl FusedChaCha20Poly1305 {
         aad: &[u8],
         buffer: &mut [u8],
     ) -> [u8; TAG_SIZE] {
-        // Initialize Poly1305 with derived key
+        // Use AVX-512 optimized path when available and beneficial
+        #[cfg(all(target_arch = "x86_64", feature = "simd", feature = "std"))]
+        {
+            if has_avx512f() && buffer.len() >= 1024 {
+                return self.encrypt_avx512(nonce, aad, buffer);
+            }
+        }
+
+        // Initialize Poly1305 with derived key (AVX2/scalar path)
         let poly_key = self.poly_key(nonce);
         let mut poly = Poly1305::new(&poly_key);
 
@@ -606,7 +634,7 @@ impl FusedChaCha20Poly1305 {
         let mut offset = 0;
 
         // Use non-temporal stores for large messages to avoid cache pollution
-        let use_nt = use_non_temporal(buffer.len());
+        let use_nt = use_non_temporal(buffer);
 
         // Use SIMD-accelerated keystream generation when available
         #[cfg(all(target_arch = "x86_64", feature = "simd", feature = "std"))]
@@ -671,9 +699,8 @@ impl FusedChaCha20Poly1305 {
                 unsafe { prefetch_ahead(buffer, offset, 256) };
 
                 // Generate 4 keystream blocks in parallel using SSE2
-                let keystream = unsafe {
-                    chacha20_simd::sse2::chacha20_blocks_4x(&self.key, counter, nonce)
-                };
+                let keystream =
+                    unsafe { chacha20_simd::sse2::chacha20_blocks_4x(&self.key, counter, nonce) };
                 counter = counter.wrapping_add(4);
 
                 // XOR 256 bytes
@@ -745,6 +772,110 @@ impl FusedChaCha20Poly1305 {
         poly.finalize()
     }
 
+    /// AVX-512 optimized encrypt using Poly1305Simd512.
+    ///
+    /// Uses 16-way AVX-512 Poly1305 to match the 16-way ChaCha20 keystream generation.
+    #[cfg(all(target_arch = "x86_64", feature = "simd", feature = "std"))]
+    fn encrypt_avx512(
+        &self,
+        nonce: &[u8; NONCE_SIZE],
+        aad: &[u8],
+        buffer: &mut [u8],
+    ) -> [u8; TAG_SIZE] {
+        let poly_key = self.poly_key(nonce);
+        let mut poly = Poly1305Simd512::new(&poly_key);
+
+        // Process AAD
+        poly.update(aad);
+        let aad_padding = pad16(aad.len());
+        if aad_padding > 0 {
+            poly.update(&[0u8; 16][..aad_padding]);
+        }
+
+        let mut counter: u32 = 1;
+        let mut offset = 0;
+        let use_nt = use_non_temporal(buffer);
+
+        // AVX-512 path: 16 blocks (1024 bytes) at a time
+        while offset + 1024 <= buffer.len() {
+            unsafe { prefetch_ahead(buffer, offset, 1024) };
+
+            let keystream =
+                unsafe { chacha20_simd::avx512::chacha20_blocks_16x(&self.key, counter, nonce) };
+            counter = counter.wrapping_add(16);
+
+            let chunk = &mut buffer[offset..offset + 1024];
+            if use_nt {
+                unsafe { xor_keystream_avx512_nt(chunk, &keystream) };
+            } else {
+                unsafe { xor_keystream_avx512(chunk, &keystream) };
+            }
+
+            poly.update(chunk);
+            offset += 1024;
+        }
+
+        // Handle remaining 512+ bytes with AVX2
+        if has_avx2() && offset + 512 <= buffer.len() {
+            unsafe { prefetch_ahead(buffer, offset, 512) };
+
+            let keystream =
+                unsafe { chacha20_simd::avx2::chacha20_blocks_8x(&self.key, counter, nonce) };
+            counter = counter.wrapping_add(8);
+
+            let chunk = &mut buffer[offset..offset + 512];
+            if use_nt {
+                unsafe { xor_keystream_avx2_nt(chunk, &keystream) };
+            } else {
+                unsafe { xor_keystream_avx2(chunk, &keystream) };
+            }
+
+            poly.update(chunk);
+            offset += 512;
+        }
+
+        // Handle remaining 256+ bytes with SSE2
+        while offset + 256 <= buffer.len() {
+            unsafe { prefetch_ahead(buffer, offset, 256) };
+
+            let keystream =
+                unsafe { chacha20_simd::sse2::chacha20_blocks_4x(&self.key, counter, nonce) };
+            counter = counter.wrapping_add(4);
+
+            let chunk = &mut buffer[offset..offset + 256];
+            xor_keystream(chunk, &keystream);
+            poly.update(chunk);
+            offset += 256;
+        }
+
+        // Handle remaining bytes one block at a time
+        while offset < buffer.len() {
+            let keystream = chacha20_block(&self.key, counter, nonce);
+            counter = counter.wrapping_add(1);
+
+            let remaining = buffer.len() - offset;
+            let process_len = remaining.min(BLOCK_SIZE);
+            let chunk = &mut buffer[offset..offset + process_len];
+
+            xor_keystream(chunk, &keystream[..process_len]);
+            poly.update(chunk);
+            offset += process_len;
+        }
+
+        // Finalize Poly1305
+        let ct_padding = pad16(buffer.len());
+        if ct_padding > 0 {
+            poly.update(&[0u8; 16][..ct_padding]);
+        }
+
+        let aad_len = (aad.len() as u64).to_le_bytes();
+        let ct_len = (buffer.len() as u64).to_le_bytes();
+        poly.update(&aad_len);
+        poly.update(&ct_len);
+
+        poly.finalize()
+    }
+
     /// Decrypt ciphertext in place after verifying the authentication tag.
     ///
     /// Note: Decryption cannot be fused as easily because we must verify
@@ -775,7 +906,7 @@ impl FusedChaCha20Poly1305 {
         let mut offset = 0;
 
         // Use non-temporal stores for large messages to avoid cache pollution
-        let use_nt = use_non_temporal(buffer.len());
+        let use_nt = use_non_temporal(buffer);
 
         // Use SIMD-accelerated keystream generation when available
         #[cfg(all(target_arch = "x86_64", feature = "simd", feature = "std"))]
@@ -829,9 +960,8 @@ impl FusedChaCha20Poly1305 {
                 // Prefetch next chunk while processing current
                 unsafe { prefetch_ahead(buffer, offset, 256) };
 
-                let keystream = unsafe {
-                    chacha20_simd::sse2::chacha20_blocks_4x(&self.key, counter, nonce)
-                };
+                let keystream =
+                    unsafe { chacha20_simd::sse2::chacha20_blocks_4x(&self.key, counter, nonce) };
                 counter = counter.wrapping_add(4);
 
                 let chunk = &mut buffer[offset..offset + 256];
@@ -865,6 +995,14 @@ impl FusedChaCha20Poly1305 {
         aad: &[u8],
         ciphertext: &[u8],
     ) -> [u8; TAG_SIZE] {
+        // Use AVX-512 optimized path when available and beneficial
+        #[cfg(all(target_arch = "x86_64", feature = "simd", feature = "std"))]
+        {
+            if has_avx512f() && ciphertext.len() >= 1024 {
+                return self.compute_tag_decrypt_avx512(nonce, aad, ciphertext);
+            }
+        }
+
         let poly_key = self.poly_key(nonce);
         let mut poly = Poly1305::new(&poly_key);
 
@@ -891,9 +1029,48 @@ impl FusedChaCha20Poly1305 {
         poly.finalize()
     }
 
+    /// AVX-512 optimized tag computation for decryption verification.
+    #[cfg(all(target_arch = "x86_64", feature = "simd", feature = "std"))]
+    fn compute_tag_decrypt_avx512(
+        &self,
+        nonce: &[u8; NONCE_SIZE],
+        aad: &[u8],
+        ciphertext: &[u8],
+    ) -> [u8; TAG_SIZE] {
+        let poly_key = self.poly_key(nonce);
+        let mut poly = Poly1305Simd512::new(&poly_key);
+
+        // AAD
+        poly.update(aad);
+        let aad_padding = pad16(aad.len());
+        if aad_padding > 0 {
+            poly.update(&[0u8; 16][..aad_padding]);
+        }
+
+        // Ciphertext
+        poly.update(ciphertext);
+        let ct_padding = pad16(ciphertext.len());
+        if ct_padding > 0 {
+            poly.update(&[0u8; 16][..ct_padding]);
+        }
+
+        // Lengths
+        let aad_len = (aad.len() as u64).to_le_bytes();
+        let ct_len = (ciphertext.len() as u64).to_le_bytes();
+        poly.update(&aad_len);
+        poly.update(&ct_len);
+
+        poly.finalize()
+    }
+
     /// Encrypt with detached tag allocation.
     #[cfg(feature = "alloc")]
-    pub fn seal(&self, nonce: &[u8; NONCE_SIZE], aad: &[u8], plaintext: &[u8]) -> alloc::vec::Vec<u8> {
+    pub fn seal(
+        &self,
+        nonce: &[u8; NONCE_SIZE],
+        aad: &[u8],
+        plaintext: &[u8],
+    ) -> alloc::vec::Vec<u8> {
         let mut output = alloc::vec::Vec::with_capacity(plaintext.len() + TAG_SIZE);
         output.extend_from_slice(plaintext);
         let tag = self.encrypt(nonce, aad, &mut output);
@@ -997,7 +1174,12 @@ impl FusedXChaCha20Poly1305 {
 
     /// Encrypt and return ciphertext + tag.
     #[cfg(feature = "alloc")]
-    pub fn seal(&self, nonce: &[u8; XCHACHA_NONCE_SIZE], aad: &[u8], plaintext: &[u8]) -> alloc::vec::Vec<u8> {
+    pub fn seal(
+        &self,
+        nonce: &[u8; XCHACHA_NONCE_SIZE],
+        aad: &[u8],
+        plaintext: &[u8],
+    ) -> alloc::vec::Vec<u8> {
         let (subkey, chacha_nonce) = self.derive_subkey_and_nonce(nonce);
         let inner = FusedChaCha20Poly1305::new(&subkey);
         inner.seal(&chacha_nonce, aad, plaintext)
@@ -1058,8 +1240,12 @@ mod tests {
         assert_eq!(fused_tag, standard_tag, "Tag mismatch");
 
         // Verify both can decrypt
-        standard.decrypt(&nonce, aad, &mut standard_ct, &standard_tag).unwrap();
-        fused.decrypt(&nonce, aad, &mut fused_ct, &fused_tag).unwrap();
+        standard
+            .decrypt(&nonce, aad, &mut standard_ct, &standard_tag)
+            .unwrap();
+        fused
+            .decrypt(&nonce, aad, &mut fused_ct, &fused_tag)
+            .unwrap();
 
         assert_eq!(standard_ct.as_slice(), plaintext.as_slice());
         assert_eq!(fused_ct.as_slice(), plaintext.as_slice());
@@ -1082,7 +1268,7 @@ mod tests {
             "d31a8d34648e60db7b86afbc53ef7ec2a4aded51296e08fea9e2b5a736ee62d6\
              3dbea45e8ca9671282fafb69da92728b1a71de0a9e060b2905d6a5b67ecd3b36\
              92ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc\
-             3ff4def08e4b7a9de576d26586cec64b6116"
+             3ff4def08e4b7a9de576d26586cec64b6116",
         );
 
         let expected_tag = hex_to_bytes("1ae10b594f09e26a7e902ecbd0600691");
@@ -1117,13 +1303,16 @@ mod tests {
 
         let fused = FusedChaCha20Poly1305::new(&key);
 
-        for len in [0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 100, 256, 1000, 4096, 8192] {
+        for len in [
+            0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 100, 256, 1000, 4096, 8192,
+        ] {
             let plaintext = vec![0xAB; len];
 
             let mut ciphertext = plaintext.clone();
             let tag = fused.encrypt(&nonce, aad, &mut ciphertext);
 
-            fused.decrypt(&nonce, aad, &mut ciphertext, &tag)
+            fused
+                .decrypt(&nonce, aad, &mut ciphertext, &tag)
                 .expect(&format!("Decryption failed for length {}", len));
 
             assert_eq!(ciphertext, plaintext, "Roundtrip failed for length {}", len);

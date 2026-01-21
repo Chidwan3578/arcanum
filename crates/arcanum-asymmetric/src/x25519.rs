@@ -159,8 +159,7 @@ impl X25519PublicKey {
 
     /// Decode from hex.
     pub fn from_hex(hex_str: &str) -> Result<Self> {
-        let bytes = hex::decode(hex_str)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let bytes = hex::decode(hex_str).map_err(|_| Error::InvalidKeyFormat)?;
         if bytes.len() != 32 {
             return Err(Error::InvalidKeyLength {
                 expected: 32,
@@ -174,7 +173,11 @@ impl X25519PublicKey {
 
 impl std::fmt::Debug for X25519PublicKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "X25519PublicKey({}...)", &hex::encode(&self.to_bytes()[..8]))
+        write!(
+            f,
+            "X25519PublicKey({}...)",
+            &hex::encode(&self.to_bytes()[..8])
+        )
     }
 }
 
@@ -205,8 +208,15 @@ impl X25519SharedSecret {
     ///
     /// Returns true if the shared secret is all zeros, which indicates
     /// the peer provided a malicious low-order public key.
+    ///
+    /// # Security
+    ///
+    /// This check is performed in constant time to prevent timing attacks
+    /// that could leak information about the shared secret.
     pub fn is_low_order(&self) -> bool {
-        self.bytes.iter().all(|&b| b == 0)
+        use subtle::ConstantTimeEq;
+        let zero = [0u8; 32];
+        self.bytes.ct_eq(&zero).into()
     }
 
     /// Derive a key using HKDF.

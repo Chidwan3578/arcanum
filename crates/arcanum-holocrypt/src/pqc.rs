@@ -28,18 +28,18 @@ use crate::errors::{HoloCryptError, HoloCryptResult};
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "pqc")]
-use arcanum_pqc::{MlKem768, KeyEncapsulation};
+use arcanum_pqc::{KeyEncapsulation, MlKem768};
 
 #[cfg(all(feature = "pqc", feature = "encryption"))]
 use arcanum_symmetric::{ChaCha20Poly1305Cipher, Cipher};
 
 #[cfg(all(feature = "pqc", feature = "merkle"))]
-use arcanum_hash::{Hasher, Sha256, Blake3};
+use arcanum_hash::{Blake3, Hasher, Sha256};
 
 // Re-export key types
 #[cfg(feature = "pqc")]
 pub use arcanum_pqc::kem::{
-    MlKem768DecapsulationKey, MlKem768EncapsulationKey, MlKem768Ciphertext,
+    MlKem768Ciphertext, MlKem768DecapsulationKey, MlKem768EncapsulationKey,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -147,8 +147,9 @@ impl PqcEnvelope {
             &nonce,
             content_key,
             Some(b"holocrypt-pqc-wrap"),
-        ).map_err(|e| HoloCryptError::CryptoError {
-            reason: format!("key wrapping failed: {:?}", e),
+        )
+        .map_err(|_| HoloCryptError::CryptoError {
+            reason: "key wrapping failed".into(),
         })?;
 
         Ok(Self {
@@ -161,20 +162,18 @@ impl PqcEnvelope {
 
     /// Unwrap a symmetric key using the recipient's private key.
     #[cfg(all(feature = "encryption", feature = "merkle"))]
-    pub fn unwrap(
-        &self,
-        recipient_key: &MlKem768DecapsulationKey,
-    ) -> HoloCryptResult<[u8; 32]> {
+    pub fn unwrap(&self, recipient_key: &MlKem768DecapsulationKey) -> HoloCryptResult<[u8; 32]> {
         // Reconstruct ciphertext
-        let ct = MlKem768Ciphertext::from_bytes(&self.kem_ciphertext)
-            .map_err(|e| HoloCryptError::CryptoError {
-                reason: format!("invalid KEM ciphertext: {:?}", e),
-            })?;
+        let ct = MlKem768Ciphertext::from_bytes(&self.kem_ciphertext).map_err(|_| {
+            HoloCryptError::CryptoError {
+                reason: "invalid KEM ciphertext".into(),
+            }
+        })?;
 
         // Decapsulate to get shared secret
-        let ss = MlKem768::decapsulate(recipient_key, &ct)
-            .map_err(|e| HoloCryptError::CryptoError {
-                reason: format!("decapsulation failed: {:?}", e),
+        let ss =
+            MlKem768::decapsulate(recipient_key, &ct).map_err(|_| HoloCryptError::CryptoError {
+                reason: "decapsulation failed".into(),
             })?;
 
         // Derive wrapping key
@@ -186,8 +185,9 @@ impl PqcEnvelope {
             &self.nonce,
             &self.wrapped_key,
             Some(b"holocrypt-pqc-wrap"),
-        ).map_err(|e| HoloCryptError::CryptoError {
-            reason: format!("key unwrapping failed: {:?}", e),
+        )
+        .map_err(|_| HoloCryptError::CryptoError {
+            reason: "key unwrapping failed".into(),
         })?;
 
         if content_key.len() != 32 {
@@ -263,11 +263,8 @@ pub struct PqcContainer<T> {
 impl<T: Serialize + for<'de> Deserialize<'de>> PqcContainer<T> {
     /// Seal data with PQC envelope encryption.
     #[cfg(all(feature = "encryption", feature = "merkle", feature = "signatures"))]
-    pub fn seal(
-        data: &T,
-        recipient_key: &MlKem768EncapsulationKey,
-    ) -> HoloCryptResult<Self> {
-        use arcanum_signatures::{ed25519::Ed25519SigningKey, SigningKey, VerifyingKey, Signature};
+    pub fn seal(data: &T, recipient_key: &MlKem768EncapsulationKey) -> HoloCryptResult<Self> {
+        use arcanum_signatures::{Signature, SigningKey, VerifyingKey, ed25519::Ed25519SigningKey};
 
         // Generate signing keypair
         let signing_key = Ed25519SigningKey::generate();
@@ -296,8 +293,9 @@ impl<T: Serialize + for<'de> Deserialize<'de>> PqcContainer<T> {
             &data_nonce,
             &plaintext,
             Some(&commitment),
-        ).map_err(|e| HoloCryptError::CryptoError {
-            reason: format!("encryption failed: {:?}", e),
+        )
+        .map_err(|_| HoloCryptError::CryptoError {
+            reason: "encryption failed".into(),
         })?;
 
         // Wrap content key with PQC envelope
@@ -321,21 +319,25 @@ impl<T: Serialize + for<'de> Deserialize<'de>> PqcContainer<T> {
 
     /// Unseal data using PQC decapsulation key.
     #[cfg(all(feature = "encryption", feature = "merkle", feature = "signatures"))]
-    pub fn unseal(
-        &self,
-        recipient_key: &MlKem768DecapsulationKey,
-    ) -> HoloCryptResult<T> {
-        use arcanum_signatures::{ed25519::{Ed25519VerifyingKey, Ed25519Signature}, VerifyingKey, Signature};
+    pub fn unseal(&self, recipient_key: &MlKem768DecapsulationKey) -> HoloCryptResult<T> {
+        use arcanum_signatures::{
+            Signature, VerifyingKey,
+            ed25519::{Ed25519Signature, Ed25519VerifyingKey},
+        };
 
         // Verify signature
-        let sign_data = Self::compute_sign_data(&self.sealed_data, &self.commitment, &self.merkle_root);
-        let verifying_key = Ed25519VerifyingKey::from_bytes(&self.verifying_key_bytes)
-            .map_err(|_| HoloCryptError::CryptoError {
-                reason: "invalid verifying key".into(),
+        let sign_data =
+            Self::compute_sign_data(&self.sealed_data, &self.commitment, &self.merkle_root);
+        let verifying_key =
+            Ed25519VerifyingKey::from_bytes(&self.verifying_key_bytes).map_err(|_| {
+                HoloCryptError::CryptoError {
+                    reason: "invalid verifying key".into(),
+                }
             })?;
         let sig = Ed25519Signature::from_bytes(&self.signature)
             .map_err(|_| HoloCryptError::SignatureInvalid)?;
-        verifying_key.verify(&sign_data, &sig)
+        verifying_key
+            .verify(&sign_data, &sig)
             .map_err(|_| HoloCryptError::SignatureInvalid)?;
 
         // Unwrap content key from PQC envelope
@@ -347,7 +349,8 @@ impl<T: Serialize + for<'de> Deserialize<'de>> PqcContainer<T> {
             &self.data_nonce,
             &self.sealed_data,
             Some(&self.commitment),
-        ).map_err(|_| HoloCryptError::UnsealFailed {
+        )
+        .map_err(|_| HoloCryptError::UnsealFailed {
             reason: "decryption failed - wrong key or tampered data".into(),
         })?;
 
@@ -375,16 +378,23 @@ impl<T: Serialize + for<'de> Deserialize<'de>> PqcContainer<T> {
     #[cfg(feature = "signatures")]
     #[must_use = "verification result must be checked"]
     pub fn verify_structure(&self) -> HoloCryptResult<()> {
-        use arcanum_signatures::{ed25519::{Ed25519VerifyingKey, Ed25519Signature}, VerifyingKey, Signature};
+        use arcanum_signatures::{
+            Signature, VerifyingKey,
+            ed25519::{Ed25519Signature, Ed25519VerifyingKey},
+        };
 
-        let sign_data = Self::compute_sign_data(&self.sealed_data, &self.commitment, &self.merkle_root);
-        let verifying_key = Ed25519VerifyingKey::from_bytes(&self.verifying_key_bytes)
-            .map_err(|_| HoloCryptError::CryptoError {
-                reason: "invalid verifying key".into(),
+        let sign_data =
+            Self::compute_sign_data(&self.sealed_data, &self.commitment, &self.merkle_root);
+        let verifying_key =
+            Ed25519VerifyingKey::from_bytes(&self.verifying_key_bytes).map_err(|_| {
+                HoloCryptError::CryptoError {
+                    reason: "invalid verifying key".into(),
+                }
             })?;
         let sig = Ed25519Signature::from_bytes(&self.signature)
             .map_err(|_| HoloCryptError::SignatureInvalid)?;
-        verifying_key.verify(&sign_data, &sig)
+        verifying_key
+            .verify(&sign_data, &sig)
             .map_err(|_| HoloCryptError::SignatureInvalid)?;
 
         Ok(())
@@ -483,7 +493,12 @@ impl WrappedKey {
 }
 
 #[cfg(test)]
-#[cfg(all(feature = "pqc", feature = "encryption", feature = "merkle", feature = "signatures"))]
+#[cfg(all(
+    feature = "pqc",
+    feature = "encryption",
+    feature = "merkle",
+    feature = "signatures"
+))]
 mod tests {
     use super::*;
 
@@ -548,14 +563,9 @@ mod tests {
             values: vec![1, 2, 3, 4, 5],
         };
 
-        let container = PqcContainer::seal(
-            &data,
-            pqc_keypair.encapsulation_key(),
-        ).unwrap();
+        let container = PqcContainer::seal(&data, pqc_keypair.encapsulation_key()).unwrap();
 
-        let decrypted: TestData = container.unseal(
-            pqc_keypair.decapsulation_key(),
-        ).unwrap();
+        let decrypted: TestData = container.unseal(pqc_keypair.decapsulation_key()).unwrap();
 
         assert_eq!(data, decrypted);
     }
@@ -570,10 +580,7 @@ mod tests {
             values: vec![],
         };
 
-        let container = PqcContainer::seal(
-            &data,
-            pqc_keypair.encapsulation_key(),
-        ).unwrap();
+        let container = PqcContainer::seal(&data, pqc_keypair.encapsulation_key()).unwrap();
 
         // Should verify without decryption
         assert!(container.verify_structure().is_ok());
@@ -590,15 +597,10 @@ mod tests {
             values: vec![1, 2, 3],
         };
 
-        let container = PqcContainer::seal(
-            &data,
-            pqc_keypair1.encapsulation_key(),
-        ).unwrap();
+        let container = PqcContainer::seal(&data, pqc_keypair1.encapsulation_key()).unwrap();
 
         // Wrong PQC key should fail
-        let result: Result<TestData, _> = container.unseal(
-            pqc_keypair2.decapsulation_key(),
-        );
+        let result: Result<TestData, _> = container.unseal(pqc_keypair2.decapsulation_key());
         assert!(result.is_err());
     }
 
@@ -623,17 +625,12 @@ mod tests {
             values: vec![10, 20, 30],
         };
 
-        let container = PqcContainer::seal(
-            &data,
-            pqc_keypair.encapsulation_key(),
-        ).unwrap();
+        let container = PqcContainer::seal(&data, pqc_keypair.encapsulation_key()).unwrap();
 
         let bytes = container.to_bytes();
         let restored: PqcContainer<TestData> = PqcContainer::from_bytes(&bytes).unwrap();
 
-        let decrypted: TestData = restored.unseal(
-            pqc_keypair.decapsulation_key(),
-        ).unwrap();
+        let decrypted: TestData = restored.unseal(pqc_keypair.decapsulation_key()).unwrap();
 
         assert_eq!(data, decrypted);
     }

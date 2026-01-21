@@ -4,6 +4,7 @@ use thiserror::Error;
 
 /// Errors that can occur during verification.
 #[derive(Debug, Error)]
+#[allow(missing_docs)] // Error variant fields are self-documenting
 pub enum VerifyError {
     /// Timing leak detected.
     #[error("Timing leak detected: t-value {t_value:.2} exceeds threshold {threshold:.2}")]

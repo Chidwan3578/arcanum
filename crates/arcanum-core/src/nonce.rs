@@ -109,13 +109,13 @@ impl<const N: usize> AsRef<[u8]> for Nonce<N> {
 
 impl<const N: usize> std::fmt::Debug for Nonce<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Nonce<{}>({})", N, hex::encode(&self.bytes))
+        write!(f, "Nonce<{}>({})", N, hex::encode(self.bytes))
     }
 }
 
 impl<const N: usize> std::fmt::Display for Nonce<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", hex::encode(&self.bytes))
+        write!(f, "{}", hex::encode(self.bytes))
     }
 }
 
@@ -310,8 +310,8 @@ impl<const N: usize> NonceTracker<N> {
     ///
     /// Panics if `max_entries` is 0.
     pub fn new(max_entries: usize) -> Self {
-        let max_entries = NonZeroUsize::new(max_entries)
-            .expect("NonceTracker capacity must be greater than 0");
+        let max_entries =
+            NonZeroUsize::new(max_entries).expect("NonceTracker capacity must be greater than 0");
         Self {
             cache: Mutex::new(LruCache::new(max_entries)),
             max_entries,
@@ -325,6 +325,7 @@ impl<const N: usize> NonceTracker<N> {
     ///
     /// When at capacity, the least recently checked nonce is automatically
     /// evicted to make room.
+    #[must_use = "nonce reuse check must be verified - reuse is catastrophic"]
     pub fn check(&self, nonce: &Nonce<N>) -> Result<()> {
         let mut cache = self.cache.lock();
 
@@ -348,6 +349,7 @@ impl<const N: usize> NonceTracker<N> {
     /// Use this variant when you want successful checks to refresh
     /// the nonce's position in the LRU cache (preventing eviction
     /// of frequently-used channels).
+    #[must_use = "nonce reuse check must be verified - reuse is catastrophic"]
     pub fn check_and_touch(&self, nonce: &Nonce<N>) -> Result<()> {
         let mut cache = self.cache.lock();
 

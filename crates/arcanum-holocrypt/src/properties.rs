@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use arcanum_zkp::{RangeProof, SchnorrProof, SchnorrProofBuilder};
 
 #[cfg(feature = "merkle")]
-use arcanum_hash::{Hasher, Blake3};
+use arcanum_hash::{Blake3, Hasher};
 
 /// Properties that can be proven about sealed data.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -188,15 +188,17 @@ impl PropertyProof {
         let n_bits = n_bits.next_power_of_two().max(8);
 
         let proof_bytes = &self.proof_data[..self.proof_data.len() - 16];
-        let range_proof = RangeProof::from_bytes(proof_bytes, n_bits).map_err(|e| {
+        let range_proof = RangeProof::from_bytes(proof_bytes, n_bits).map_err(|_| {
             HoloCryptError::ZkProofInvalid {
-                reason: format!("invalid range proof: {:?}", e),
+                reason: "invalid range proof format".into(),
             }
         })?;
 
-        range_proof.verify(n_bits).map_err(|e| HoloCryptError::ZkProofInvalid {
-            reason: format!("range proof verification failed: {:?}", e),
-        })?;
+        range_proof
+            .verify(n_bits)
+            .map_err(|_| HoloCryptError::ZkProofInvalid {
+                reason: "range proof verification failed".into(),
+            })?;
 
         Ok(())
     }
@@ -332,7 +334,7 @@ impl PropertyProofBuilder {
         // Generate range proof for adjusted value
         let range_proof = RangeProof::prove(adjusted, n_bits).map_err(|e| {
             HoloCryptError::PropertyProofFailed {
-                reason: format!("range proof generation failed: {:?}", e),
+                reason: "range proof generation failed".into(),
             }
         })?;
 
@@ -380,11 +382,10 @@ impl PropertyProofBuilder {
         let diff = value - threshold - 1;
         let n_bits = 64;
 
-        let range_proof = RangeProof::prove(diff, n_bits).map_err(|e| {
-            HoloCryptError::PropertyProofFailed {
-                reason: format!("range proof generation failed: {:?}", e),
-            }
-        })?;
+        let range_proof =
+            RangeProof::prove(diff, n_bits).map_err(|e| HoloCryptError::PropertyProofFailed {
+                reason: "range proof generation failed".into(),
+            })?;
 
         let mut proof_data = range_proof.to_bytes();
         proof_data.extend_from_slice(&threshold.to_le_bytes());
@@ -413,11 +414,10 @@ impl PropertyProofBuilder {
         let diff = threshold - value - 1;
         let n_bits = 64;
 
-        let range_proof = RangeProof::prove(diff, n_bits).map_err(|e| {
-            HoloCryptError::PropertyProofFailed {
-                reason: format!("range proof generation failed: {:?}", e),
-            }
-        })?;
+        let range_proof =
+            RangeProof::prove(diff, n_bits).map_err(|e| HoloCryptError::PropertyProofFailed {
+                reason: "range proof generation failed".into(),
+            })?;
 
         let mut proof_data = range_proof.to_bytes();
         proof_data.extend_from_slice(&threshold.to_le_bytes());
@@ -442,11 +442,10 @@ impl PropertyProofBuilder {
         }
 
         // Prove value - 1 >= 0 (equivalent to value >= 1)
-        let range_proof = RangeProof::prove(value - 1, 64).map_err(|e| {
-            HoloCryptError::PropertyProofFailed {
-                reason: format!("range proof generation failed: {:?}", e),
-            }
-        })?;
+        let range_proof =
+            RangeProof::prove(value - 1, 64).map_err(|e| HoloCryptError::PropertyProofFailed {
+                reason: "range proof generation failed".into(),
+            })?;
 
         Ok(PropertyProof {
             property: Property::NonZero,

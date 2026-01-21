@@ -84,17 +84,24 @@ impl Cipher for ChaCha20Poly1305Cipher {
         validate_key_nonce::<Self>(key, nonce)?;
         validate_input_sizes(plaintext, associated_data)?;
 
-        let cipher = chacha20poly1305::ChaCha20Poly1305::new_from_slice(key)
-            .map_err(|_| Error::InvalidKeyLength {
+        let cipher = chacha20poly1305::ChaCha20Poly1305::new_from_slice(key).map_err(|_| {
+            Error::InvalidKeyLength {
                 expected: Self::KEY_SIZE,
                 actual: key.len(),
-            })?;
+            }
+        })?;
 
         let nonce = chacha20poly1305::Nonce::from_slice(nonce);
 
         let ciphertext = match associated_data {
             Some(aad) => cipher
-                .encrypt(nonce, Payload { msg: plaintext, aad })
+                .encrypt(
+                    nonce,
+                    Payload {
+                        msg: plaintext,
+                        aad,
+                    },
+                )
                 .map_err(|_| Error::EncryptionFailed)?,
             None => cipher
                 .encrypt(nonce, plaintext)
@@ -154,17 +161,24 @@ impl Cipher for ChaCha20Poly1305Cipher {
             });
         }
 
-        let cipher = chacha20poly1305::ChaCha20Poly1305::new_from_slice(key)
-            .map_err(|_| Error::InvalidKeyLength {
+        let cipher = chacha20poly1305::ChaCha20Poly1305::new_from_slice(key).map_err(|_| {
+            Error::InvalidKeyLength {
                 expected: Self::KEY_SIZE,
                 actual: key.len(),
-            })?;
+            }
+        })?;
 
         let nonce = chacha20poly1305::Nonce::from_slice(nonce);
 
         let plaintext = match associated_data {
             Some(aad) => cipher
-                .decrypt(nonce, Payload { msg: ciphertext, aad })
+                .decrypt(
+                    nonce,
+                    Payload {
+                        msg: ciphertext,
+                        aad,
+                    },
+                )
                 .map_err(|_| Error::DecryptionFailed)?,
             None => cipher
                 .decrypt(nonce, ciphertext)
@@ -211,11 +225,12 @@ impl Cipher for ChaCha20Poly1305Cipher {
         validate_key_nonce::<Self>(key, nonce)?;
         validate_input_sizes(buffer, Some(associated_data))?;
 
-        let cipher = chacha20poly1305::ChaCha20Poly1305::new_from_slice(key)
-            .map_err(|_| Error::InvalidKeyLength {
+        let cipher = chacha20poly1305::ChaCha20Poly1305::new_from_slice(key).map_err(|_| {
+            Error::InvalidKeyLength {
                 expected: Self::KEY_SIZE,
                 actual: key.len(),
-            })?;
+            }
+        })?;
 
         let nonce = chacha20poly1305::Nonce::from_slice(nonce);
 
@@ -271,11 +286,12 @@ impl Cipher for ChaCha20Poly1305Cipher {
     ) -> Result<()> {
         validate_key_nonce::<Self>(key, nonce)?;
 
-        let cipher = chacha20poly1305::ChaCha20Poly1305::new_from_slice(key)
-            .map_err(|_| Error::InvalidKeyLength {
+        let cipher = chacha20poly1305::ChaCha20Poly1305::new_from_slice(key).map_err(|_| {
+            Error::InvalidKeyLength {
                 expected: Self::KEY_SIZE,
                 actual: key.len(),
-            })?;
+            }
+        })?;
 
         let nonce = chacha20poly1305::Nonce::from_slice(nonce);
 
@@ -352,17 +368,24 @@ impl Cipher for XChaCha20Poly1305Cipher {
         validate_key_nonce::<Self>(key, nonce)?;
         validate_input_sizes(plaintext, associated_data)?;
 
-        let cipher = chacha20poly1305::XChaCha20Poly1305::new_from_slice(key)
-            .map_err(|_| Error::InvalidKeyLength {
+        let cipher = chacha20poly1305::XChaCha20Poly1305::new_from_slice(key).map_err(|_| {
+            Error::InvalidKeyLength {
                 expected: Self::KEY_SIZE,
                 actual: key.len(),
-            })?;
+            }
+        })?;
 
         let nonce = chacha20poly1305::XNonce::from_slice(nonce);
 
         let ciphertext = match associated_data {
             Some(aad) => cipher
-                .encrypt(nonce, Payload { msg: plaintext, aad })
+                .encrypt(
+                    nonce,
+                    Payload {
+                        msg: plaintext,
+                        aad,
+                    },
+                )
                 .map_err(|_| Error::EncryptionFailed)?,
             None => cipher
                 .encrypt(nonce, plaintext)
@@ -422,17 +445,24 @@ impl Cipher for XChaCha20Poly1305Cipher {
             });
         }
 
-        let cipher = chacha20poly1305::XChaCha20Poly1305::new_from_slice(key)
-            .map_err(|_| Error::InvalidKeyLength {
+        let cipher = chacha20poly1305::XChaCha20Poly1305::new_from_slice(key).map_err(|_| {
+            Error::InvalidKeyLength {
                 expected: Self::KEY_SIZE,
                 actual: key.len(),
-            })?;
+            }
+        })?;
 
         let nonce = chacha20poly1305::XNonce::from_slice(nonce);
 
         let plaintext = match associated_data {
             Some(aad) => cipher
-                .decrypt(nonce, Payload { msg: ciphertext, aad })
+                .decrypt(
+                    nonce,
+                    Payload {
+                        msg: ciphertext,
+                        aad,
+                    },
+                )
                 .map_err(|_| Error::DecryptionFailed)?,
             None => cipher
                 .decrypt(nonce, ciphertext)
@@ -479,11 +509,12 @@ impl Cipher for XChaCha20Poly1305Cipher {
         validate_key_nonce::<Self>(key, nonce)?;
         validate_input_sizes(buffer, Some(associated_data))?;
 
-        let cipher = chacha20poly1305::XChaCha20Poly1305::new_from_slice(key)
-            .map_err(|_| Error::InvalidKeyLength {
+        let cipher = chacha20poly1305::XChaCha20Poly1305::new_from_slice(key).map_err(|_| {
+            Error::InvalidKeyLength {
                 expected: Self::KEY_SIZE,
                 actual: key.len(),
-            })?;
+            }
+        })?;
 
         let nonce = chacha20poly1305::XNonce::from_slice(nonce);
 
@@ -539,11 +570,12 @@ impl Cipher for XChaCha20Poly1305Cipher {
     ) -> Result<()> {
         validate_key_nonce::<Self>(key, nonce)?;
 
-        let cipher = chacha20poly1305::XChaCha20Poly1305::new_from_slice(key)
-            .map_err(|_| Error::InvalidKeyLength {
+        let cipher = chacha20poly1305::XChaCha20Poly1305::new_from_slice(key).map_err(|_| {
+            Error::InvalidKeyLength {
                 expected: Self::KEY_SIZE,
                 actual: key.len(),
-            })?;
+            }
+        })?;
 
         let nonce = chacha20poly1305::XNonce::from_slice(nonce);
 
@@ -589,13 +621,17 @@ impl StreamCipher for ChaCha20Stream {
         }
 
         use cipher::KeyIvInit;
-        let cipher = chacha20::ChaCha20::new_from_slices(key, nonce)
-            .map_err(|_| Error::InvalidKeyLength {
+        let cipher = chacha20::ChaCha20::new_from_slices(key, nonce).map_err(|_| {
+            Error::InvalidKeyLength {
                 expected: Self::KEY_SIZE,
                 actual: key.len(),
-            })?;
+            }
+        })?;
 
-        Ok(Self { cipher, position: 0 })
+        Ok(Self {
+            cipher,
+            position: 0,
+        })
     }
 
     fn apply_keystream(&mut self, data: &mut [u8]) {
@@ -753,14 +789,12 @@ mod tests {
     fn test_backend_compatibility() {
         // Fixed key and nonce for deterministic test
         let key = [
-            0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
-            0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f,
-            0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
-            0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
+            0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d,
+            0x8e, 0x8f, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9a, 0x9b,
+            0x9c, 0x9d, 0x9e, 0x9f,
         ];
         let nonce = [
-            0x07, 0x00, 0x00, 0x00, 0x40, 0x41, 0x42, 0x43,
-            0x44, 0x45, 0x46, 0x47,
+            0x07, 0x00, 0x00, 0x00, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
         ];
         let plaintext = b"The quick brown fox jumps over the lazy dog";
         let aad = b"Additional data";
@@ -774,7 +808,13 @@ mod tests {
         let rustcrypto_cipher = chacha20poly1305::ChaCha20Poly1305::new(&key.into());
         let rustcrypto_nonce = chacha20poly1305::Nonce::from_slice(&nonce);
         let rustcrypto_ciphertext = rustcrypto_cipher
-            .encrypt(rustcrypto_nonce, Payload { msg: plaintext.as_slice(), aad })
+            .encrypt(
+                rustcrypto_nonce,
+                Payload {
+                    msg: plaintext.as_slice(),
+                    aad,
+                },
+            )
             .unwrap();
 
         // Both should produce identical ciphertext
@@ -782,12 +822,20 @@ mod tests {
 
         // Cross-decrypt: native ciphertext with RustCrypto
         let decrypted = rustcrypto_cipher
-            .decrypt(rustcrypto_nonce, Payload { msg: &native_ciphertext, aad })
+            .decrypt(
+                rustcrypto_nonce,
+                Payload {
+                    msg: &native_ciphertext,
+                    aad,
+                },
+            )
             .unwrap();
         assert_eq!(decrypted, plaintext);
 
         // Cross-decrypt: RustCrypto ciphertext with native
-        let decrypted = native_cipher.open(&nonce, aad, &rustcrypto_ciphertext).unwrap();
+        let decrypted = native_cipher
+            .open(&nonce, aad, &rustcrypto_ciphertext)
+            .unwrap();
         assert_eq!(decrypted, plaintext);
     }
 
@@ -797,15 +845,13 @@ mod tests {
     fn test_xchacha_backend_compatibility() {
         // Fixed key and 24-byte nonce for deterministic test
         let key = [
-            0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
-            0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f,
-            0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
-            0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
+            0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d,
+            0x8e, 0x8f, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9a, 0x9b,
+            0x9c, 0x9d, 0x9e, 0x9f,
         ];
         let nonce = [
-            0x07, 0x00, 0x00, 0x00, 0x40, 0x41, 0x42, 0x43,
-            0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b,
-            0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53,
+            0x07, 0x00, 0x00, 0x00, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49,
+            0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53,
         ];
         let plaintext = b"The quick brown fox jumps over the lazy dog";
         let aad = b"Additional data";
@@ -819,7 +865,13 @@ mod tests {
         let rustcrypto_cipher = chacha20poly1305::XChaCha20Poly1305::new(&key.into());
         let rustcrypto_nonce = chacha20poly1305::XNonce::from_slice(&nonce);
         let rustcrypto_ciphertext = rustcrypto_cipher
-            .encrypt(rustcrypto_nonce, Payload { msg: plaintext.as_slice(), aad })
+            .encrypt(
+                rustcrypto_nonce,
+                Payload {
+                    msg: plaintext.as_slice(),
+                    aad,
+                },
+            )
             .unwrap();
 
         // Both should produce identical ciphertext
@@ -827,12 +879,20 @@ mod tests {
 
         // Cross-decrypt: native ciphertext with RustCrypto
         let decrypted = rustcrypto_cipher
-            .decrypt(rustcrypto_nonce, Payload { msg: &native_ciphertext, aad })
+            .decrypt(
+                rustcrypto_nonce,
+                Payload {
+                    msg: &native_ciphertext,
+                    aad,
+                },
+            )
             .unwrap();
         assert_eq!(decrypted, plaintext);
 
         // Cross-decrypt: RustCrypto ciphertext with native
-        let decrypted = native_cipher.open(&nonce, aad, &rustcrypto_ciphertext).unwrap();
+        let decrypted = native_cipher
+            .open(&nonce, aad, &rustcrypto_ciphertext)
+            .unwrap();
         assert_eq!(decrypted, plaintext);
     }
 

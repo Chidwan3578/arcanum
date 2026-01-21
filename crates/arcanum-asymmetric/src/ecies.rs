@@ -18,15 +18,15 @@
 //! - **ECIES-secp256k1**: Bitcoin curve (compatible with Ethereum)
 
 use crate::ecdh::{
-    P256SecretKey, P256PublicKey, P384SecretKey, P384PublicKey,
-    Secp256k1SecretKey, Secp256k1PublicKey,
+    P256PublicKey, P256SecretKey, P384PublicKey, P384SecretKey, Secp256k1PublicKey,
+    Secp256k1SecretKey,
 };
-use arcanum_core::error::{Error, Result};
-use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
 use aes_gcm::aead::Aead;
+use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
+use arcanum_core::error::{Error, Result};
 use hkdf::Hkdf;
-use sha2::Sha256;
 use rand::RngCore;
+use sha2::Sha256;
 use zeroize::Zeroize;
 
 /// ECIES ciphertext containing ephemeral public key and encrypted data.
@@ -105,10 +105,7 @@ impl EciesP256 {
     const HKDF_INFO: &'static [u8] = b"ECIES-P256-AES256-GCM";
 
     /// Encrypt a message to a recipient's public key.
-    pub fn encrypt(
-        recipient_public: &P256PublicKey,
-        plaintext: &[u8],
-    ) -> Result<EciesCiphertext> {
+    pub fn encrypt(recipient_public: &P256PublicKey, plaintext: &[u8]) -> Result<EciesCiphertext> {
         // Generate ephemeral key pair
         let ephemeral_secret = P256SecretKey::generate();
         let ephemeral_public = ephemeral_secret.public_key();
@@ -124,8 +121,8 @@ impl EciesP256 {
         rand::rngs::OsRng.fill_bytes(&mut nonce);
 
         // Encrypt with AES-256-GCM
-        let cipher = Aes256Gcm::new_from_slice(&symmetric_key)
-            .map_err(|_| Error::EncryptionFailed)?;
+        let cipher =
+            Aes256Gcm::new_from_slice(&symmetric_key).map_err(|_| Error::EncryptionFailed)?;
         let ciphertext = cipher
             .encrypt(Nonce::from_slice(&nonce), plaintext)
             .map_err(|_| Error::EncryptionFailed)?;
@@ -141,6 +138,7 @@ impl EciesP256 {
     }
 
     /// Decrypt a message using the recipient's secret key.
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt(
         recipient_secret: &P256SecretKey,
         ciphertext: &EciesCiphertext,
@@ -155,10 +153,13 @@ impl EciesP256 {
         let mut symmetric_key = Self::derive_key(shared_secret.as_bytes())?;
 
         // Decrypt with AES-256-GCM
-        let cipher = Aes256Gcm::new_from_slice(&symmetric_key)
-            .map_err(|_| Error::DecryptionFailed)?;
+        let cipher =
+            Aes256Gcm::new_from_slice(&symmetric_key).map_err(|_| Error::DecryptionFailed)?;
         let plaintext = cipher
-            .decrypt(Nonce::from_slice(&ciphertext.nonce), ciphertext.ciphertext.as_slice())
+            .decrypt(
+                Nonce::from_slice(&ciphertext.nonce),
+                ciphertext.ciphertext.as_slice(),
+            )
             .map_err(|_| Error::DecryptionFailed)?;
 
         // Zeroize key material
@@ -191,10 +192,7 @@ impl EciesP384 {
     const HKDF_INFO: &'static [u8] = b"ECIES-P384-AES256-GCM";
 
     /// Encrypt a message to a recipient's public key.
-    pub fn encrypt(
-        recipient_public: &P384PublicKey,
-        plaintext: &[u8],
-    ) -> Result<EciesCiphertext> {
+    pub fn encrypt(recipient_public: &P384PublicKey, plaintext: &[u8]) -> Result<EciesCiphertext> {
         // Generate ephemeral key pair
         let ephemeral_secret = P384SecretKey::generate();
         let ephemeral_public = ephemeral_secret.public_key();
@@ -210,8 +208,8 @@ impl EciesP384 {
         rand::rngs::OsRng.fill_bytes(&mut nonce);
 
         // Encrypt with AES-256-GCM
-        let cipher = Aes256Gcm::new_from_slice(&symmetric_key)
-            .map_err(|_| Error::EncryptionFailed)?;
+        let cipher =
+            Aes256Gcm::new_from_slice(&symmetric_key).map_err(|_| Error::EncryptionFailed)?;
         let ciphertext = cipher
             .encrypt(Nonce::from_slice(&nonce), plaintext)
             .map_err(|_| Error::EncryptionFailed)?;
@@ -227,6 +225,7 @@ impl EciesP384 {
     }
 
     /// Decrypt a message using the recipient's secret key.
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt(
         recipient_secret: &P384SecretKey,
         ciphertext: &EciesCiphertext,
@@ -241,10 +240,13 @@ impl EciesP384 {
         let mut symmetric_key = Self::derive_key(shared_secret.as_bytes())?;
 
         // Decrypt with AES-256-GCM
-        let cipher = Aes256Gcm::new_from_slice(&symmetric_key)
-            .map_err(|_| Error::DecryptionFailed)?;
+        let cipher =
+            Aes256Gcm::new_from_slice(&symmetric_key).map_err(|_| Error::DecryptionFailed)?;
         let plaintext = cipher
-            .decrypt(Nonce::from_slice(&ciphertext.nonce), ciphertext.ciphertext.as_slice())
+            .decrypt(
+                Nonce::from_slice(&ciphertext.nonce),
+                ciphertext.ciphertext.as_slice(),
+            )
             .map_err(|_| Error::DecryptionFailed)?;
 
         // Zeroize key material
@@ -296,8 +298,8 @@ impl EciesSecp256k1 {
         rand::rngs::OsRng.fill_bytes(&mut nonce);
 
         // Encrypt with AES-256-GCM
-        let cipher = Aes256Gcm::new_from_slice(&symmetric_key)
-            .map_err(|_| Error::EncryptionFailed)?;
+        let cipher =
+            Aes256Gcm::new_from_slice(&symmetric_key).map_err(|_| Error::EncryptionFailed)?;
         let ciphertext = cipher
             .encrypt(Nonce::from_slice(&nonce), plaintext)
             .map_err(|_| Error::EncryptionFailed)?;
@@ -313,6 +315,7 @@ impl EciesSecp256k1 {
     }
 
     /// Decrypt a message using the recipient's secret key.
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt(
         recipient_secret: &Secp256k1SecretKey,
         ciphertext: &EciesCiphertext,
@@ -327,10 +330,13 @@ impl EciesSecp256k1 {
         let mut symmetric_key = Self::derive_key(shared_secret.as_bytes())?;
 
         // Decrypt with AES-256-GCM
-        let cipher = Aes256Gcm::new_from_slice(&symmetric_key)
-            .map_err(|_| Error::DecryptionFailed)?;
+        let cipher =
+            Aes256Gcm::new_from_slice(&symmetric_key).map_err(|_| Error::DecryptionFailed)?;
         let plaintext = cipher
-            .decrypt(Nonce::from_slice(&ciphertext.nonce), ciphertext.ciphertext.as_slice())
+            .decrypt(
+                Nonce::from_slice(&ciphertext.nonce),
+                ciphertext.ciphertext.as_slice(),
+            )
             .map_err(|_| Error::DecryptionFailed)?;
 
         // Zeroize key material

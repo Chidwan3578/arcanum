@@ -90,9 +90,11 @@ impl KeyDerivation for Hkdf<Sha512> {
     }
 }
 
-/// Type alias for the most common variant.
+/// Type alias for HKDF with SHA-256.
 pub type HkdfSha256 = Hkdf<Sha256>;
+/// Type alias for HKDF with SHA-384.
 pub type HkdfSha384 = Hkdf<Sha384>;
+/// Type alias for HKDF with SHA-512.
 pub type HkdfSha512 = Hkdf<Sha512>;
 
 /// Convenience functions for HKDF-SHA256.
@@ -132,8 +134,9 @@ mod tests {
         let okm = Hkdf::<Sha256>::derive(&ikm, Some(&salt), Some(&info), 42).unwrap();
 
         let expected = hex::decode(
-            "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"
-        ).unwrap();
+            "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865",
+        )
+        .unwrap();
 
         assert_eq!(okm, expected);
     }

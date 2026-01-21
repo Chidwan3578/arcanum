@@ -69,7 +69,9 @@ impl VerifyingShare {
     pub fn from_frost(id: frost::Identifier, share: &frost::keys::VerifyingShare) -> Result<Self> {
         Ok(Self {
             identifier_bytes: id.serialize(),
-            bytes: share.serialize().map_err(|e| ThresholdError::SerializationError(e.to_string()))?,
+            bytes: share
+                .serialize()
+                .map_err(|e| ThresholdError::SerializationError(e.to_string()))?,
         })
     }
 
@@ -95,7 +97,9 @@ impl GroupVerifyingKey {
     /// Create from FROST verifying key.
     pub fn from_frost(key: &frost::VerifyingKey) -> Result<Self> {
         Ok(Self {
-            bytes: key.serialize().map_err(|e| ThresholdError::SerializationError(e.to_string()))?,
+            bytes: key
+                .serialize()
+                .map_err(|e| ThresholdError::SerializationError(e.to_string()))?,
         })
     }
 
@@ -142,10 +146,8 @@ impl FrostSigner {
     /// Generate round 1 commitment for signing.
     pub fn round1(&self) -> Result<(SigningNonces, SigningCommitments)> {
         let mut rng = rand::rngs::OsRng;
-        let (nonces, commitments) = frost::round1::commit(
-            self.key_package.signing_share(),
-            &mut rng,
-        );
+        let (nonces, commitments) =
+            frost::round1::commit(self.key_package.signing_share(), &mut rng);
 
         Ok((
             SigningNonces { inner: nonces },
@@ -160,11 +162,9 @@ impl FrostSigner {
         nonces: &SigningNonces,
         signing_package: &SigningPackage,
     ) -> Result<SignatureShare> {
-        let sig_share = frost::round2::sign(
-            &signing_package.inner,
-            &nonces.inner,
-            &self.key_package,
-        ).map_err(|e| ThresholdError::SigningError(e.to_string()))?;
+        let sig_share =
+            frost::round2::sign(&signing_package.inner, &nonces.inner, &self.key_package)
+                .map_err(|e| ThresholdError::SigningError(e.to_string()))?;
 
         Ok(SignatureShare::from_frost(self.identifier(), &sig_share))
     }
@@ -186,17 +186,19 @@ impl SigningCommitments {
     fn from_frost(id: frost::Identifier, c: &frost::round1::SigningCommitments) -> Result<Self> {
         Ok(Self {
             identifier_bytes: id.serialize(),
-            bytes: c.serialize().map_err(|e| ThresholdError::SerializationError(e.to_string()))?,
+            bytes: c
+                .serialize()
+                .map_err(|e| ThresholdError::SerializationError(e.to_string()))?,
         })
     }
 
     fn to_frost(&self) -> Result<(frost::Identifier, frost::round1::SigningCommitments)> {
         let id = frost::Identifier::deserialize(&self.identifier_bytes)
             .map_err(|e| ThresholdError::InternalError(e.to_string()))?;
-        
+
         let commitments = frost::round1::SigningCommitments::deserialize(&self.bytes)
             .map_err(|e| ThresholdError::InternalError(e.to_string()))?;
-        
+
         Ok((id, commitments))
     }
 }
@@ -208,17 +210,14 @@ pub struct SigningPackage {
 
 impl SigningPackage {
     /// Create a signing package from commitments.
-    pub fn new(
-        commitments: &[SigningCommitments],
-        message: &[u8],
-    ) -> Result<Self> {
+    pub fn new(commitments: &[SigningCommitments], message: &[u8]) -> Result<Self> {
         let mut commitment_map = BTreeMap::new();
-        
+
         for c in commitments {
             let (id, frost_c) = c.to_frost()?;
             commitment_map.insert(id, frost_c);
         }
-        
+
         let inner = frost::SigningPackage::new(commitment_map, message);
         Ok(Self { inner })
     }
@@ -242,10 +241,10 @@ impl SignatureShare {
     fn to_frost(&self) -> Result<(frost::Identifier, frost::round2::SignatureShare)> {
         let id = frost::Identifier::deserialize(&self.identifier_bytes)
             .map_err(|e| ThresholdError::InternalError(e.to_string()))?;
-        
+
         let share = frost::round2::SignatureShare::deserialize(&self.bytes)
             .map_err(|e| ThresholdError::InternalError(e.to_string()))?;
-        
+
         Ok((id, share))
     }
 }
@@ -272,28 +271,28 @@ impl FrostVerifier {
         pubkey_package: &PublicKeyPackage,
     ) -> Result<Signature> {
         let mut share_map = BTreeMap::new();
-        
+
         for share in signature_shares {
             let (id, frost_share) = share.to_frost()?;
             share_map.insert(id, frost_share);
         }
-        
-        let signature = frost::aggregate(
-            &signing_package.inner,
-            &share_map,
-            &pubkey_package.inner,
-        ).map_err(|e| ThresholdError::SigningError(e.to_string()))?;
-        
+
+        let signature = frost::aggregate(&signing_package.inner, &share_map, &pubkey_package.inner)
+            .map_err(|e| ThresholdError::SigningError(e.to_string()))?;
+
         Ok(Signature {
-            bytes: signature.serialize().map_err(|e| ThresholdError::SerializationError(e.to_string()))?,
+            bytes: signature
+                .serialize()
+                .map_err(|e| ThresholdError::SerializationError(e.to_string()))?,
         })
     }
 
     /// Verify a threshold signature.
+    #[must_use = "signature verification must be checked - ignoring bypasses authentication"]
     pub fn verify(&self, message: &[u8], signature: &Signature) -> Result<bool> {
         let sig = frost::Signature::deserialize(&signature.bytes)
             .map_err(|_| ThresholdError::InvalidSignature)?;
-        
+
         self.verifying_key
             .verify(message, &sig)
             .map(|_| true)
@@ -356,14 +355,15 @@ pub fn trusted_dealer_keygen(
     total: u16,
 ) -> Result<(Vec<frost::keys::SecretShare>, frost::keys::PublicKeyPackage)> {
     let mut rng = rand::rngs::OsRng;
-    
+
     let (shares, pubkeys) = frost::keys::generate_with_dealer(
         total,
         threshold,
         frost::keys::IdentifierList::Default,
         &mut rng,
-    ).map_err(|e| ThresholdError::InternalError(e.to_string()))?;
-    
+    )
+    .map_err(|e| ThresholdError::InternalError(e.to_string()))?;
+
     Ok((shares.into_values().collect(), pubkeys))
 }
 
@@ -375,11 +375,11 @@ mod tests {
     fn test_frost_trusted_dealer() {
         let threshold = 2u16;
         let total = 3u16;
-        
+
         // Generate keys with trusted dealer
         let (shares, _pubkey_package) = trusted_dealer_keygen(threshold, total).unwrap();
         assert_eq!(shares.len(), total as usize);
-        
+
         // Verify we can create key packages
         for share in &shares {
             let key_package = frost::keys::KeyPackage::try_from(share.clone()).unwrap();
@@ -392,46 +392,52 @@ mod tests {
         let threshold = 2u16;
         let total = 3u16;
         let message = b"Test message for FROST signing";
-        
+
         // Generate keys
         let (shares, pubkey_package) = trusted_dealer_keygen(threshold, total).unwrap();
-        
+
         // Create signers from first 2 participants
-        let key_packages: Vec<_> = shares.iter()
+        let key_packages: Vec<_> = shares
+            .iter()
             .take(threshold as usize)
             .map(|s| frost::keys::KeyPackage::try_from(s.clone()).unwrap())
             .collect();
-        
-        let signers: Vec<_> = key_packages.iter()
+
+        let signers: Vec<_> = key_packages
+            .iter()
             .map(|kp| FrostSigner::new(kp.clone()))
             .collect();
-        
+
         // Round 1: Generate commitments
         let mut all_nonces = Vec::new();
         let mut all_commitments = Vec::new();
-        
+
         for signer in &signers {
             let (nonces, commitments) = signer.round1().unwrap();
             all_nonces.push(nonces);
             all_commitments.push(commitments);
         }
-        
+
         // Create signing package
         let signing_package = SigningPackage::new(&all_commitments, message).unwrap();
-        
+
         // Round 2: Generate signature shares
         let mut signature_shares = Vec::new();
         for (i, signer) in signers.iter().enumerate() {
-            let share = signer.round2(message, &all_nonces[i], &signing_package).unwrap();
+            let share = signer
+                .round2(message, &all_nonces[i], &signing_package)
+                .unwrap();
             signature_shares.push(share);
         }
-        
+
         // Aggregate and verify
         let group_key = GroupVerifyingKey::from_frost(pubkey_package.verifying_key()).unwrap();
         let verifier = FrostVerifier::new(&group_key).unwrap();
         let pkg = PublicKeyPackage::from_frost(pubkey_package);
-        
-        let signature = verifier.aggregate(&signing_package, &signature_shares, &pkg).unwrap();
+
+        let signature = verifier
+            .aggregate(&signing_package, &signature_shares, &pkg)
+            .unwrap();
         assert!(verifier.verify(message, &signature).unwrap());
     }
 
@@ -441,43 +447,49 @@ mod tests {
         let total = 3u16;
         let message = b"Original message";
         let wrong_message = b"Wrong message";
-        
+
         // Generate keys
         let (shares, pubkey_package) = trusted_dealer_keygen(threshold, total).unwrap();
-        
-        let key_packages: Vec<_> = shares.iter()
+
+        let key_packages: Vec<_> = shares
+            .iter()
             .take(threshold as usize)
             .map(|s| frost::keys::KeyPackage::try_from(s.clone()).unwrap())
             .collect();
-        
-        let signers: Vec<_> = key_packages.iter()
+
+        let signers: Vec<_> = key_packages
+            .iter()
             .map(|kp| FrostSigner::new(kp.clone()))
             .collect();
-        
+
         // Sign the original message
         let mut all_nonces = Vec::new();
         let mut all_commitments = Vec::new();
-        
+
         for signer in &signers {
             let (nonces, commitments) = signer.round1().unwrap();
             all_nonces.push(nonces);
             all_commitments.push(commitments);
         }
-        
+
         let signing_package = SigningPackage::new(&all_commitments, message).unwrap();
-        
+
         let mut signature_shares = Vec::new();
         for (i, signer) in signers.iter().enumerate() {
-            let share = signer.round2(message, &all_nonces[i], &signing_package).unwrap();
+            let share = signer
+                .round2(message, &all_nonces[i], &signing_package)
+                .unwrap();
             signature_shares.push(share);
         }
-        
+
         let group_key = GroupVerifyingKey::from_frost(pubkey_package.verifying_key()).unwrap();
         let verifier = FrostVerifier::new(&group_key).unwrap();
         let pkg = PublicKeyPackage::from_frost(pubkey_package);
-        
-        let signature = verifier.aggregate(&signing_package, &signature_shares, &pkg).unwrap();
-        
+
+        let signature = verifier
+            .aggregate(&signing_package, &signature_shares, &pkg)
+            .unwrap();
+
         // Verify with wrong message should fail
         assert!(verifier.verify(wrong_message, &signature).is_err());
     }

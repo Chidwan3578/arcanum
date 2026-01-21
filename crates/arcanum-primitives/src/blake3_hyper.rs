@@ -21,10 +21,8 @@ use core::arch::x86_64::*;
 use rayon::prelude::*;
 
 use super::blake3_simd::{
-    IV, compress_auto,
-    hash_8_chunks_from_ptrs, hash_16_chunks_from_ptrs,
-    hash_8_chunks_parallel, hash_16_chunks_parallel,
-    has_avx512f, has_avx2,
+    compress_auto, has_avx2, has_avx512f, hash_16_chunks_from_ptrs, hash_16_chunks_parallel,
+    hash_8_chunks_from_ptrs, hash_8_chunks_parallel, IV,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -55,7 +53,10 @@ struct AlignedCV {
 impl AlignedCV {
     #[inline(always)]
     fn new(words: [u32; 8]) -> Self {
-        Self { words, _pad: [0; 8] }
+        Self {
+            words,
+            _pad: [0; 8],
+        }
     }
 
     #[inline(always)]
@@ -168,11 +169,13 @@ fn process_chunks_parallel(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
                         for j in 0..16 {
                             let chunk_idx = batch[i + j];
                             // Create pointer from slice reference - safe within slice bounds
-                            chunk_ptrs[j] = data[chunk_idx * CHUNK_LEN..(chunk_idx + 1) * CHUNK_LEN].as_ptr();
+                            chunk_ptrs[j] =
+                                data[chunk_idx * CHUNK_LEN..(chunk_idx + 1) * CHUNK_LEN].as_ptr();
                             counters[j] = chunk_idx as u64;
                         }
 
-                        let cvs = unsafe { hash_16_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
+                        let cvs =
+                            unsafe { hash_16_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
                         batch_cvs.extend_from_slice(&cvs);
                         i += 16;
                     } else if remaining >= 8 {
@@ -182,11 +185,13 @@ fn process_chunks_parallel(data: &[u8], key: &[u32; 8]) -> Vec<[u32; 8]> {
 
                         for j in 0..8 {
                             let chunk_idx = batch[i + j];
-                            chunk_ptrs[j] = data[chunk_idx * CHUNK_LEN..(chunk_idx + 1) * CHUNK_LEN].as_ptr();
+                            chunk_ptrs[j] =
+                                data[chunk_idx * CHUNK_LEN..(chunk_idx + 1) * CHUNK_LEN].as_ptr();
                             counters[j] = chunk_idx as u64;
                         }
 
-                        let cvs = unsafe { hash_8_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
+                        let cvs =
+                            unsafe { hash_8_chunks_from_ptrs(key, &chunk_ptrs, &counters, 0) };
                         batch_cvs.extend_from_slice(&cvs);
                         i += 8;
                     } else {
@@ -250,8 +255,12 @@ fn hash_single_chunk(key: &[u32; 8], data: &[u8], counter: u64) -> [u32; 8] {
         block[..block_len].copy_from_slice(&data[start..end]);
 
         let mut flags = 0u8;
-        if is_first { flags |= CHUNK_START; }
-        if is_last { flags |= CHUNK_END; }
+        if is_first {
+            flags |= CHUNK_START;
+        }
+        if is_last {
+            flags |= CHUNK_END;
+        }
 
         let output = compress_auto(&cv, &block, counter, block_len as u32, flags);
         cv = output[..8].try_into().unwrap();
@@ -336,13 +345,23 @@ pub fn hash_hyper(data: &[u8]) -> [u8; 32] {
     let cvs = process_chunks_parallel(data, &IV);
 
     if cvs.is_empty() {
-        return IV.iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>().try_into().unwrap();
+        return IV
+            .iter()
+            .flat_map(|w| w.to_le_bytes())
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
     }
 
     // Reduce CVs to root
     let root_cv = reduce_cvs_parallel(&cvs, &IV);
 
-    root_cv.iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>().try_into().unwrap()
+    root_cv
+        .iter()
+        .flat_map(|w| w.to_le_bytes())
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap()
 }
 
 /// Hash small data (less than one chunk)
@@ -408,9 +427,8 @@ impl HyperHasher {
     /// Process a batch of chunks in parallel
     fn process_batch(&mut self, batch: &[u8]) -> Vec<[u32; 8]> {
         let num_chunks = batch.len() / CHUNK_LEN;
-        let chunk_indices: Vec<u64> = (0..num_chunks as u64)
-            .map(|i| self.chunk_counter + i)
-            .collect();
+        let start_counter = self.chunk_counter;
+        let chunk_indices: Vec<u64> = (0..num_chunks as u64).map(|i| start_counter + i).collect();
 
         self.chunk_counter += num_chunks as u64;
 
@@ -423,8 +441,10 @@ impl HyperHasher {
                     let mut chunks = [[0u8; CHUNK_LEN]; 16];
                     let mut counters = [0u64; 16];
                     for (j, &idx) in indices.iter().enumerate().take(16) {
-                        let local_idx = (idx - self.chunk_counter + indices.len() as u64) as usize;
-                        chunks[j].copy_from_slice(&batch[local_idx * CHUNK_LEN..(local_idx + 1) * CHUNK_LEN]);
+                        let local_idx = (idx - start_counter) as usize;
+                        chunks[j].copy_from_slice(
+                            &batch[local_idx * CHUNK_LEN..(local_idx + 1) * CHUNK_LEN],
+                        );
                         counters[j] = idx;
                     }
                     hash_16_chunks_parallel(&self.key, &chunks, &counters, 0).to_vec()
@@ -432,16 +452,25 @@ impl HyperHasher {
                     let mut chunks = [[0u8; CHUNK_LEN]; 8];
                     let mut counters = [0u64; 8];
                     for (j, &idx) in indices.iter().enumerate().take(8) {
-                        let local_idx = (idx - self.chunk_counter + indices.len() as u64) as usize;
-                        chunks[j].copy_from_slice(&batch[local_idx * CHUNK_LEN..(local_idx + 1) * CHUNK_LEN]);
+                        let local_idx = (idx - start_counter) as usize;
+                        chunks[j].copy_from_slice(
+                            &batch[local_idx * CHUNK_LEN..(local_idx + 1) * CHUNK_LEN],
+                        );
                         counters[j] = idx;
                     }
                     hash_8_chunks_parallel(&self.key, &chunks, &counters, 0).to_vec()
                 } else {
-                    indices.iter().map(|&idx| {
-                        let local_idx = (idx - self.chunk_counter + indices.len() as u64) as usize;
-                        hash_single_chunk(&self.key, &batch[local_idx * CHUNK_LEN..(local_idx + 1) * CHUNK_LEN], idx)
-                    }).collect()
+                    indices
+                        .iter()
+                        .map(|&idx| {
+                            let local_idx = (idx - start_counter) as usize;
+                            hash_single_chunk(
+                                &self.key,
+                                &batch[local_idx * CHUNK_LEN..(local_idx + 1) * CHUNK_LEN],
+                                idx,
+                            )
+                        })
+                        .collect()
                 }
             })
             .collect()
@@ -456,11 +485,21 @@ impl HyperHasher {
         }
 
         if self.cvs.is_empty() {
-            return IV.iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>().try_into().unwrap();
+            return IV
+                .iter()
+                .flat_map(|w| w.to_le_bytes())
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();
         }
 
         let root_cv = reduce_cvs_parallel(&self.cvs, &self.key);
-        root_cv.iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>().try_into().unwrap()
+        root_cv
+            .iter()
+            .flat_map(|w| w.to_le_bytes())
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap()
     }
 }
 
@@ -511,7 +550,12 @@ mod tests {
             let hyper_hash = hash_hyper(&data);
             let reference_hash = blake3::hash(&data);
 
-            assert_eq!(hyper_hash, *reference_hash.as_bytes(), "Mismatch at size {}", size);
+            assert_eq!(
+                hyper_hash,
+                *reference_hash.as_bytes(),
+                "Mismatch at size {}",
+                size
+            );
         }
     }
 
@@ -533,13 +577,16 @@ mod tests {
     #[test]
     #[cfg(all(feature = "rayon", target_arch = "x86_64"))]
     fn bench_all_implementations() {
-        use std::time::Instant;
         use crate::blake3_ultra::{hash_apex, hash_apex_monolithic};
+        use std::time::Instant;
 
         let sizes_mb = [64, 128, 256, 512];
 
         eprintln!("\n=== All Implementations Comparison ===");
-        eprintln!("{:>8} {:>14} {:>14} {:>14} {:>14}", "Size", "Hyper", "Apex", "Apex Mono", "blake3");
+        eprintln!(
+            "{:>8} {:>14} {:>14} {:>14} {:>14}",
+            "Size", "Hyper", "Apex", "Apex Mono", "blake3"
+        );
 
         for size_mb in sizes_mb {
             let size = size_mb * 1024 * 1024;
@@ -582,13 +629,19 @@ mod tests {
             }
             let blake3_elapsed = start.elapsed();
 
-            let hyper_gib_s = (iterations as f64 * size as f64) / (hyper_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
-            let apex_gib_s = (iterations as f64 * size as f64) / (apex_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
-            let mono_gib_s = (iterations as f64 * size as f64) / (mono_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
-            let blake3_gib_s = (iterations as f64 * size as f64) / (blake3_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let hyper_gib_s = (iterations as f64 * size as f64)
+                / (hyper_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let apex_gib_s = (iterations as f64 * size as f64)
+                / (apex_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let mono_gib_s = (iterations as f64 * size as f64)
+                / (mono_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
+            let blake3_gib_s = (iterations as f64 * size as f64)
+                / (blake3_elapsed.as_secs_f64() * 1024.0 * 1024.0 * 1024.0);
 
-            eprintln!("{:>6}MB {:>12.2} GiB/s {:>12.2} GiB/s {:>12.2} GiB/s {:>12.2} GiB/s",
-                size_mb, hyper_gib_s, apex_gib_s, mono_gib_s, blake3_gib_s);
+            eprintln!(
+                "{:>6}MB {:>12.2} GiB/s {:>12.2} GiB/s {:>12.2} GiB/s {:>12.2} GiB/s",
+                size_mb, hyper_gib_s, apex_gib_s, mono_gib_s, blake3_gib_s
+            );
         }
     }
 }

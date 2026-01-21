@@ -4,9 +4,9 @@
 //! - RustCrypto (direct backend via ed25519-dalek)
 //! - ring (BoringSSL wrapper)
 
-use criterion::{
-    black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput,
-};
+#![allow(clippy::redundant_closure)]
+
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 // Message sizes for benchmarking
 const SIZES: &[usize] = &[32, 256, 1024, 4096, 16384];
@@ -19,9 +19,9 @@ const BATCH_SIZES: &[usize] = &[2, 4, 8, 16, 32, 64, 128];
 // ═══════════════════════════════════════════════════════════════════════════════
 
 mod arcanum_ed25519 {
-    use arcanum_signatures::{Ed25519SigningKey, Ed25519VerifyingKey, Ed25519Signature};
-    use arcanum_signatures::{SigningKey, VerifyingKey, BatchVerifier};
     use arcanum_signatures::ed25519::Ed25519BatchVerifier;
+    use arcanum_signatures::{BatchVerifier, SigningKey, VerifyingKey};
+    use arcanum_signatures::{Ed25519Signature, Ed25519SigningKey, Ed25519VerifyingKey};
 
     pub fn keygen() -> (Ed25519SigningKey, Ed25519VerifyingKey) {
         let signing_key = Ed25519SigningKey::generate();
@@ -33,7 +33,11 @@ mod arcanum_ed25519 {
         signing_key.sign(message)
     }
 
-    pub fn verify(verifying_key: &Ed25519VerifyingKey, message: &[u8], signature: &Ed25519Signature) -> bool {
+    pub fn verify(
+        verifying_key: &Ed25519VerifyingKey,
+        message: &[u8],
+        signature: &Ed25519Signature,
+    ) -> bool {
         verifying_key.verify(message, signature).is_ok()
     }
 
@@ -58,7 +62,7 @@ mod arcanum_ed25519 {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 mod arcanum_p256 {
-    use arcanum_signatures::{P256SigningKey, P256VerifyingKey, P256Signature};
+    use arcanum_signatures::{P256Signature, P256SigningKey, P256VerifyingKey};
     use arcanum_signatures::{SigningKey, VerifyingKey};
 
     pub fn keygen() -> (P256SigningKey, P256VerifyingKey) {
@@ -71,7 +75,11 @@ mod arcanum_p256 {
         signing_key.sign(message)
     }
 
-    pub fn verify(verifying_key: &P256VerifyingKey, message: &[u8], signature: &P256Signature) -> bool {
+    pub fn verify(
+        verifying_key: &P256VerifyingKey,
+        message: &[u8],
+        signature: &P256Signature,
+    ) -> bool {
         verifying_key.verify(message, signature).is_ok()
     }
 }
@@ -81,7 +89,7 @@ mod arcanum_p256 {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 mod rustcrypto_ed25519 {
-    use ed25519_dalek::{SigningKey, VerifyingKey, Signature, Signer, Verifier};
+    use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
     use rand::rngs::OsRng;
 
     pub fn keygen() -> (SigningKey, VerifyingKey) {
@@ -104,7 +112,10 @@ mod rustcrypto_ed25519 {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 mod rustcrypto_p256 {
-    use p256::ecdsa::{SigningKey, VerifyingKey, Signature, signature::{Signer, Verifier}};
+    use p256::ecdsa::{
+        Signature, SigningKey, VerifyingKey,
+        signature::{Signer, Verifier},
+    };
     use rand_core::OsRng;
 
     pub fn keygen() -> (SigningKey, VerifyingKey) {
@@ -128,8 +139,8 @@ mod rustcrypto_p256 {
 
 #[cfg(feature = "bench-ring")]
 mod ring_ed25519 {
-    use ring::signature::{Ed25519KeyPair, KeyPair, UnparsedPublicKey, ED25519};
     use ring::rand::SystemRandom;
+    use ring::signature::{ED25519, Ed25519KeyPair, KeyPair, UnparsedPublicKey};
 
     pub struct RingKeyPair {
         keypair: Ed25519KeyPair,
@@ -141,7 +152,10 @@ mod ring_ed25519 {
         let pkcs8_bytes = Ed25519KeyPair::generate_pkcs8(&rng).unwrap();
         let keypair = Ed25519KeyPair::from_pkcs8(pkcs8_bytes.as_ref()).unwrap();
         let public_key_bytes = keypair.public_key().as_ref().to_vec();
-        RingKeyPair { keypair, public_key_bytes }
+        RingKeyPair {
+            keypair,
+            public_key_bytes,
+        }
     }
 
     pub fn sign(keypair: &RingKeyPair, message: &[u8]) -> Vec<u8> {
@@ -156,8 +170,11 @@ mod ring_ed25519 {
 
 #[cfg(feature = "bench-ring")]
 mod ring_p256 {
-    use ring::signature::{EcdsaKeyPair, KeyPair, UnparsedPublicKey, ECDSA_P256_SHA256_ASN1_SIGNING, ECDSA_P256_SHA256_ASN1};
     use ring::rand::SystemRandom;
+    use ring::signature::{
+        ECDSA_P256_SHA256_ASN1, ECDSA_P256_SHA256_ASN1_SIGNING, EcdsaKeyPair, KeyPair,
+        UnparsedPublicKey,
+    };
 
     pub struct RingP256KeyPair {
         keypair: EcdsaKeyPair,
@@ -166,15 +183,26 @@ mod ring_p256 {
 
     pub fn keygen() -> RingP256KeyPair {
         let rng = SystemRandom::new();
-        let pkcs8_bytes = EcdsaKeyPair::generate_pkcs8(&ECDSA_P256_SHA256_ASN1_SIGNING, &rng).unwrap();
-        let keypair = EcdsaKeyPair::from_pkcs8(&ECDSA_P256_SHA256_ASN1_SIGNING, pkcs8_bytes.as_ref(), &rng).unwrap();
+        let pkcs8_bytes =
+            EcdsaKeyPair::generate_pkcs8(&ECDSA_P256_SHA256_ASN1_SIGNING, &rng).unwrap();
+        let keypair =
+            EcdsaKeyPair::from_pkcs8(&ECDSA_P256_SHA256_ASN1_SIGNING, pkcs8_bytes.as_ref(), &rng)
+                .unwrap();
         let public_key_bytes = keypair.public_key().as_ref().to_vec();
-        RingP256KeyPair { keypair, public_key_bytes }
+        RingP256KeyPair {
+            keypair,
+            public_key_bytes,
+        }
     }
 
     pub fn sign(keypair: &RingP256KeyPair, message: &[u8]) -> Vec<u8> {
         let rng = SystemRandom::new();
-        keypair.keypair.sign(&rng, message).unwrap().as_ref().to_vec()
+        keypair
+            .keypair
+            .sign(&rng, message)
+            .unwrap()
+            .as_ref()
+            .to_vec()
     }
 
     pub fn verify(keypair: &RingP256KeyPair, message: &[u8], signature: &[u8]) -> bool {
@@ -190,18 +218,12 @@ mod ring_p256 {
 fn bench_ed25519_keygen(c: &mut Criterion) {
     let mut group = c.benchmark_group("Ed25519/KeyGeneration");
 
-    group.bench_function("Arcanum", |b| {
-        b.iter(|| arcanum_ed25519::keygen())
-    });
+    group.bench_function("Arcanum", |b| b.iter(|| arcanum_ed25519::keygen()));
 
-    group.bench_function("RustCrypto", |b| {
-        b.iter(|| rustcrypto_ed25519::keygen())
-    });
+    group.bench_function("RustCrypto", |b| b.iter(|| rustcrypto_ed25519::keygen()));
 
     #[cfg(feature = "bench-ring")]
-    group.bench_function("ring", |b| {
-        b.iter(|| ring_ed25519::keygen())
-    });
+    group.bench_function("ring", |b| b.iter(|| ring_ed25519::keygen()));
 
     group.finish();
 }
@@ -215,35 +237,23 @@ fn bench_ed25519_sign(c: &mut Criterion) {
 
         // Arcanum
         let (signing_key, _) = arcanum_ed25519::keygen();
-        group.bench_with_input(
-            BenchmarkId::new("Arcanum", size),
-            size,
-            |b, _| {
-                b.iter(|| arcanum_ed25519::sign(black_box(&signing_key), black_box(&message)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("Arcanum", size), size, |b, _| {
+            b.iter(|| arcanum_ed25519::sign(black_box(&signing_key), black_box(&message)))
+        });
 
         // RustCrypto
         let (rc_signing_key, _) = rustcrypto_ed25519::keygen();
-        group.bench_with_input(
-            BenchmarkId::new("RustCrypto", size),
-            size,
-            |b, _| {
-                b.iter(|| rustcrypto_ed25519::sign(black_box(&rc_signing_key), black_box(&message)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("RustCrypto", size), size, |b, _| {
+            b.iter(|| rustcrypto_ed25519::sign(black_box(&rc_signing_key), black_box(&message)))
+        });
 
         // ring
         #[cfg(feature = "bench-ring")]
         {
             let ring_keypair = ring_ed25519::keygen();
-            group.bench_with_input(
-                BenchmarkId::new("ring", size),
-                size,
-                |b, _| {
-                    b.iter(|| ring_ed25519::sign(black_box(&ring_keypair), black_box(&message)))
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("ring", size), size, |b, _| {
+                b.iter(|| ring_ed25519::sign(black_box(&ring_keypair), black_box(&message)))
+            });
         }
     }
 
@@ -260,37 +270,43 @@ fn bench_ed25519_verify(c: &mut Criterion) {
         // Arcanum
         let (signing_key, verifying_key) = arcanum_ed25519::keygen();
         let signature = arcanum_ed25519::sign(&signing_key, &message);
-        group.bench_with_input(
-            BenchmarkId::new("Arcanum", size),
-            size,
-            |b, _| {
-                b.iter(|| arcanum_ed25519::verify(black_box(&verifying_key), black_box(&message), black_box(&signature)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("Arcanum", size), size, |b, _| {
+            b.iter(|| {
+                arcanum_ed25519::verify(
+                    black_box(&verifying_key),
+                    black_box(&message),
+                    black_box(&signature),
+                )
+            })
+        });
 
         // RustCrypto
         let (rc_signing_key, rc_verifying_key) = rustcrypto_ed25519::keygen();
         let rc_signature = rustcrypto_ed25519::sign(&rc_signing_key, &message);
-        group.bench_with_input(
-            BenchmarkId::new("RustCrypto", size),
-            size,
-            |b, _| {
-                b.iter(|| rustcrypto_ed25519::verify(black_box(&rc_verifying_key), black_box(&message), black_box(&rc_signature)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("RustCrypto", size), size, |b, _| {
+            b.iter(|| {
+                rustcrypto_ed25519::verify(
+                    black_box(&rc_verifying_key),
+                    black_box(&message),
+                    black_box(&rc_signature),
+                )
+            })
+        });
 
         // ring
         #[cfg(feature = "bench-ring")]
         {
             let ring_keypair = ring_ed25519::keygen();
             let ring_signature = ring_ed25519::sign(&ring_keypair, &message);
-            group.bench_with_input(
-                BenchmarkId::new("ring", size),
-                size,
-                |b, _| {
-                    b.iter(|| ring_ed25519::verify(black_box(&ring_keypair), black_box(&message), black_box(&ring_signature)))
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("ring", size), size, |b, _| {
+                b.iter(|| {
+                    ring_ed25519::verify(
+                        black_box(&ring_keypair),
+                        black_box(&message),
+                        black_box(&ring_signature),
+                    )
+                })
+            });
         }
     }
 
@@ -300,18 +316,12 @@ fn bench_ed25519_verify(c: &mut Criterion) {
 fn bench_p256_keygen(c: &mut Criterion) {
     let mut group = c.benchmark_group("ECDSA-P256/KeyGeneration");
 
-    group.bench_function("Arcanum", |b| {
-        b.iter(|| arcanum_p256::keygen())
-    });
+    group.bench_function("Arcanum", |b| b.iter(|| arcanum_p256::keygen()));
 
-    group.bench_function("RustCrypto", |b| {
-        b.iter(|| rustcrypto_p256::keygen())
-    });
+    group.bench_function("RustCrypto", |b| b.iter(|| rustcrypto_p256::keygen()));
 
     #[cfg(feature = "bench-ring")]
-    group.bench_function("ring", |b| {
-        b.iter(|| ring_p256::keygen())
-    });
+    group.bench_function("ring", |b| b.iter(|| ring_p256::keygen()));
 
     group.finish();
 }
@@ -325,35 +335,23 @@ fn bench_p256_sign(c: &mut Criterion) {
 
         // Arcanum
         let (signing_key, _) = arcanum_p256::keygen();
-        group.bench_with_input(
-            BenchmarkId::new("Arcanum", size),
-            size,
-            |b, _| {
-                b.iter(|| arcanum_p256::sign(black_box(&signing_key), black_box(&message)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("Arcanum", size), size, |b, _| {
+            b.iter(|| arcanum_p256::sign(black_box(&signing_key), black_box(&message)))
+        });
 
         // RustCrypto
         let (rc_signing_key, _) = rustcrypto_p256::keygen();
-        group.bench_with_input(
-            BenchmarkId::new("RustCrypto", size),
-            size,
-            |b, _| {
-                b.iter(|| rustcrypto_p256::sign(black_box(&rc_signing_key), black_box(&message)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("RustCrypto", size), size, |b, _| {
+            b.iter(|| rustcrypto_p256::sign(black_box(&rc_signing_key), black_box(&message)))
+        });
 
         // ring
         #[cfg(feature = "bench-ring")]
         {
             let ring_keypair = ring_p256::keygen();
-            group.bench_with_input(
-                BenchmarkId::new("ring", size),
-                size,
-                |b, _| {
-                    b.iter(|| ring_p256::sign(black_box(&ring_keypair), black_box(&message)))
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("ring", size), size, |b, _| {
+                b.iter(|| ring_p256::sign(black_box(&ring_keypair), black_box(&message)))
+            });
         }
     }
 
@@ -370,37 +368,43 @@ fn bench_p256_verify(c: &mut Criterion) {
         // Arcanum
         let (signing_key, verifying_key) = arcanum_p256::keygen();
         let signature = arcanum_p256::sign(&signing_key, &message);
-        group.bench_with_input(
-            BenchmarkId::new("Arcanum", size),
-            size,
-            |b, _| {
-                b.iter(|| arcanum_p256::verify(black_box(&verifying_key), black_box(&message), black_box(&signature)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("Arcanum", size), size, |b, _| {
+            b.iter(|| {
+                arcanum_p256::verify(
+                    black_box(&verifying_key),
+                    black_box(&message),
+                    black_box(&signature),
+                )
+            })
+        });
 
         // RustCrypto
         let (rc_signing_key, rc_verifying_key) = rustcrypto_p256::keygen();
         let rc_signature = rustcrypto_p256::sign(&rc_signing_key, &message);
-        group.bench_with_input(
-            BenchmarkId::new("RustCrypto", size),
-            size,
-            |b, _| {
-                b.iter(|| rustcrypto_p256::verify(black_box(&rc_verifying_key), black_box(&message), black_box(&rc_signature)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("RustCrypto", size), size, |b, _| {
+            b.iter(|| {
+                rustcrypto_p256::verify(
+                    black_box(&rc_verifying_key),
+                    black_box(&message),
+                    black_box(&rc_signature),
+                )
+            })
+        });
 
         // ring
         #[cfg(feature = "bench-ring")]
         {
             let ring_keypair = ring_p256::keygen();
             let ring_signature = ring_p256::sign(&ring_keypair, &message);
-            group.bench_with_input(
-                BenchmarkId::new("ring", size),
-                size,
-                |b, _| {
-                    b.iter(|| ring_p256::verify(black_box(&ring_keypair), black_box(&message), black_box(&ring_signature)))
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("ring", size), size, |b, _| {
+                b.iter(|| {
+                    ring_p256::verify(
+                        black_box(&ring_keypair),
+                        black_box(&message),
+                        black_box(&ring_signature),
+                    )
+                })
+            });
         }
     }
 
@@ -484,18 +488,14 @@ fn bench_ed25519_batch_verify(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("Batch", batch_size),
             &batch_size,
-            |b, _| {
-                b.iter(|| arcanum_ed25519::verify_batch(black_box(&refs)))
-            },
+            |b, _| b.iter(|| arcanum_ed25519::verify_batch(black_box(&refs))),
         );
 
         // Sequential verification (baseline)
         group.bench_with_input(
             BenchmarkId::new("Sequential", batch_size),
             &batch_size,
-            |b, _| {
-                b.iter(|| arcanum_ed25519::verify_sequential(black_box(&refs)))
-            },
+            |b, _| b.iter(|| arcanum_ed25519::verify_sequential(black_box(&refs))),
         );
     }
 
@@ -529,18 +529,14 @@ fn bench_ed25519_batch_same_key(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("Batch", batch_size),
             &batch_size,
-            |b, _| {
-                b.iter(|| arcanum_ed25519::verify_batch(black_box(&refs)))
-            },
+            |b, _| b.iter(|| arcanum_ed25519::verify_batch(black_box(&refs))),
         );
 
         // Sequential verification
         group.bench_with_input(
             BenchmarkId::new("Sequential", batch_size),
             &batch_size,
-            |b, _| {
-                b.iter(|| arcanum_ed25519::verify_sequential(black_box(&refs)))
-            },
+            |b, _| b.iter(|| arcanum_ed25519::verify_sequential(black_box(&refs))),
         );
     }
 
@@ -572,20 +568,14 @@ fn bench_ed25519_batch_large_messages(c: &mut Criterion) {
 
         group.throughput(Throughput::Bytes((BATCH * msg_size) as u64));
 
-        group.bench_with_input(
-            BenchmarkId::new("Batch", msg_size),
-            &msg_size,
-            |b, _| {
-                b.iter(|| arcanum_ed25519::verify_batch(black_box(&refs)))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("Batch", msg_size), &msg_size, |b, _| {
+            b.iter(|| arcanum_ed25519::verify_batch(black_box(&refs)))
+        });
 
         group.bench_with_input(
             BenchmarkId::new("Sequential", msg_size),
             &msg_size,
-            |b, _| {
-                b.iter(|| arcanum_ed25519::verify_sequential(black_box(&refs)))
-            },
+            |b, _| b.iter(|| arcanum_ed25519::verify_sequential(black_box(&refs))),
         );
     }
 

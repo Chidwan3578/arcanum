@@ -101,10 +101,11 @@ pub type Poly1305Tag = AuthTag;
 /// let key: Aes256Key = vec_to_array(key_vec)?;
 /// ```
 pub fn vec_to_array<const N: usize>(vec: Vec<u8>) -> Result<[u8; N]> {
-    vec.try_into().map_err(|v: Vec<u8>| Error::InvalidKeyLength {
-        expected: N,
-        actual: v.len(),
-    })
+    vec.try_into()
+        .map_err(|v: Vec<u8>| Error::InvalidKeyLength {
+            expected: N,
+            actual: v.len(),
+        })
 }
 
 /// Convert a slice to a fixed-size array, returning an error if the length is wrong.

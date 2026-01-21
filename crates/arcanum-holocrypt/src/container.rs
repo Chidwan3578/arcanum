@@ -12,15 +12,15 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[cfg(feature = "signatures")]
 use arcanum_signatures::{
-    ed25519::{Ed25519SigningKey, Ed25519VerifyingKey, Ed25519Signature},
-    SigningKey, VerifyingKey, Signature,
+    Signature, SigningKey, VerifyingKey,
+    ed25519::{Ed25519Signature, Ed25519SigningKey, Ed25519VerifyingKey},
 };
 
 #[cfg(feature = "encryption")]
-use arcanum_symmetric::{Cipher, ChaCha20Poly1305Cipher};
+use arcanum_symmetric::{ChaCha20Poly1305Cipher, Cipher};
 
 #[cfg(feature = "merkle")]
-use arcanum_hash::{Hasher, Blake3};
+use arcanum_hash::{Blake3, Hasher};
 
 /// Default chunk size for Merkle tree (4KB).
 const DEFAULT_CHUNK_SIZE: usize = 4096;
@@ -157,8 +157,8 @@ where
             &plaintext,
             Some(&commitment), // Use commitment as AAD
         )
-        .map_err(|e| HoloCryptError::SealFailed {
-            reason: format!("encryption failed: {:?}", e),
+        .map_err(|_| HoloCryptError::SealFailed {
+            reason: "encryption failed".into(),
         })?;
 
         // Step 5: Sign commitment || merkle_root
@@ -370,7 +370,7 @@ where
 #[cfg(feature = "threshold")]
 pub mod threshold {
     use super::*;
-    use arcanum_threshold::{Share, ShamirScheme};
+    use arcanum_threshold::{ShamirScheme, Share};
 
     /// A key share for threshold decryption.
     #[derive(Clone, Debug)]
@@ -404,8 +404,8 @@ pub mod threshold {
 
         /// Deserialize from bytes.
         pub fn from_bytes(bytes: &[u8]) -> HoloCryptResult<Self> {
-            let share = Share::from_bytes(bytes).map_err(|e| HoloCryptError::CryptoError {
-                reason: format!("invalid share: {:?}", e),
+            let share = Share::from_bytes(bytes).map_err(|_| HoloCryptError::CryptoError {
+                reason: "invalid share format".into(),
             })?;
             Ok(Self { share })
         }
@@ -466,9 +466,9 @@ pub mod threshold {
             let symmetric_key = ChaCha20Poly1305Cipher::generate_key();
 
             // Split the symmetric key into shares
-            let shares = ShamirScheme::split(&symmetric_key, threshold, total).map_err(|e| {
+            let shares = ShamirScheme::split(&symmetric_key, threshold, total).map_err(|_| {
                 HoloCryptError::CryptoError {
-                    reason: format!("failed to split key: {:?}", e),
+                    reason: "failed to split key".into(),
                 }
             })?;
 
@@ -482,10 +482,8 @@ pub mod threshold {
             let inner = HoloCrypt::seal(data, &sealing_key)?;
 
             // Convert shares to KeyShares
-            let key_shares: Vec<KeyShare> = shares
-                .into_iter()
-                .map(|s| KeyShare { share: s })
-                .collect();
+            let key_shares: Vec<KeyShare> =
+                shares.into_iter().map(|s| KeyShare { share: s }).collect();
 
             // Serialize the verifying key
             let verifying_key_bytes = verifying_key.to_bytes().to_vec();
@@ -517,10 +515,11 @@ pub mod threshold {
             let shamir_shares: Vec<Share> = shares.iter().map(|ks| ks.share.clone()).collect();
 
             // Reconstruct the symmetric key
-            let symmetric_key =
-                ShamirScheme::combine(&shamir_shares).map_err(|e| HoloCryptError::KeyReconstructionFailed {
-                    reason: format!("{:?}", e),
-                })?;
+            let symmetric_key = ShamirScheme::combine(&shamir_shares).map_err(|_| {
+                HoloCryptError::KeyReconstructionFailed {
+                    reason: "insufficient or invalid shares".into(),
+                }
+            })?;
 
             // Reconstruct verifying key
             let verifying_key = Ed25519VerifyingKey::from_bytes(&self.verifying_key_bytes)
@@ -616,9 +615,15 @@ pub mod threshold {
             let (container, shares) = ThresholdContainer::seal(&data, 3, 5).unwrap();
 
             // Any 3 shares should work
-            let r1: TestRecord = container.unseal(&[shares[0].clone(), shares[1].clone(), shares[2].clone()]).unwrap();
-            let r2: TestRecord = container.unseal(&[shares[0].clone(), shares[2].clone(), shares[4].clone()]).unwrap();
-            let r3: TestRecord = container.unseal(&[shares[1].clone(), shares[3].clone(), shares[4].clone()]).unwrap();
+            let r1: TestRecord = container
+                .unseal(&[shares[0].clone(), shares[1].clone(), shares[2].clone()])
+                .unwrap();
+            let r2: TestRecord = container
+                .unseal(&[shares[0].clone(), shares[2].clone(), shares[4].clone()])
+                .unwrap();
+            let r3: TestRecord = container
+                .unseal(&[shares[1].clone(), shares[3].clone(), shares[4].clone()])
+                .unwrap();
 
             assert_eq!(data, r1);
             assert_eq!(data, r2);
@@ -736,7 +741,11 @@ mod tests {
         let container = HoloCrypt::seal(&data, &sealing_key).unwrap();
 
         // Third party can verify structure with just the verifying key
-        assert!(container.verify_structure(&opening_key.verifying_key).is_ok());
+        assert!(
+            container
+                .verify_structure(&opening_key.verifying_key)
+                .is_ok()
+        );
     }
 
     #[test]

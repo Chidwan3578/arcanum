@@ -186,7 +186,13 @@ impl U130 {
         t[1] += c;
 
         Self {
-            limbs: [t[0] as u64, t[1] as u64, t[2] as u64, t[3] as u64, t[4] as u64],
+            limbs: [
+                t[0] as u64,
+                t[1] as u64,
+                t[2] as u64,
+                t[3] as u64,
+                t[4] as u64,
+            ],
         }
     }
 

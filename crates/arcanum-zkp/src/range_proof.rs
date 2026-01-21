@@ -15,8 +15,8 @@ use merlin::Transcript;
 use rand::RngCore;
 
 // Use curve25519-dalek-ng types for bulletproofs compatibility
-use curve25519_dalek_ng::scalar::Scalar;
 use curve25519_dalek_ng::ristretto::CompressedRistretto;
+use curve25519_dalek_ng::scalar::Scalar;
 
 /// Range proof proving a value is in [0, 2^n).
 #[derive(Clone)]
@@ -34,16 +34,15 @@ impl RangeProof {
     /// Returns the commitment and the proof.
     pub fn prove(value: u64, n_bits: usize) -> Result<Self> {
         if n_bits > Self::MAX_BITS {
-            return Err(Error::InvalidParameter(
-                format!("n_bits must be <= {}", Self::MAX_BITS)
-            ));
+            return Err(Error::InvalidParameter(format!(
+                "n_bits must be <= {}",
+                Self::MAX_BITS
+            )));
         }
 
         // Check value is in range
         if n_bits < 64 && value >= (1u64 << n_bits) {
-            return Err(Error::InvalidParameter(
-                "value out of range".to_string()
-            ));
+            return Err(Error::InvalidParameter("value out of range".to_string()));
         }
 
         let pc_gens = PedersenGens::default();
@@ -62,7 +61,8 @@ impl RangeProof {
             value,
             &blinding,
             n_bits,
-        ).map_err(|_| Error::ProofGenerationFailed)?;
+        )
+        .map_err(|_| Error::ProofGenerationFailed)?;
 
         Ok(Self { proof, commitment })
     }
@@ -74,9 +74,10 @@ impl RangeProof {
         n_bits: usize,
     ) -> Result<Self> {
         if n_bits > Self::MAX_BITS {
-            return Err(Error::InvalidParameter(
-                format!("n_bits must be <= {}", Self::MAX_BITS)
-            ));
+            return Err(Error::InvalidParameter(format!(
+                "n_bits must be <= {}",
+                Self::MAX_BITS
+            )));
         }
 
         let pc_gens = PedersenGens::default();
@@ -92,7 +93,8 @@ impl RangeProof {
             value,
             &blinding,
             n_bits,
-        ).map_err(|_| Error::ProofGenerationFailed)?;
+        )
+        .map_err(|_| Error::ProofGenerationFailed)?;
 
         Ok(Self { proof, commitment })
     }
@@ -100,9 +102,10 @@ impl RangeProof {
     /// Verify the range proof.
     pub fn verify(&self, n_bits: usize) -> Result<bool> {
         if n_bits > Self::MAX_BITS {
-            return Err(Error::InvalidParameter(
-                format!("n_bits must be <= {}", Self::MAX_BITS)
-            ));
+            return Err(Error::InvalidParameter(format!(
+                "n_bits must be <= {}",
+                Self::MAX_BITS
+            )));
         }
 
         let pc_gens = PedersenGens::default();
@@ -111,7 +114,13 @@ impl RangeProof {
         let mut transcript = Transcript::new(b"arcanum-range-proof");
 
         self.proof
-            .verify_single(&bp_gens, &pc_gens, &mut transcript, &self.commitment, n_bits)
+            .verify_single(
+                &bp_gens,
+                &pc_gens,
+                &mut transcript,
+                &self.commitment,
+                n_bits,
+            )
             .map(|_| true)
             .map_err(|_| Error::ProofVerificationFailed)
     }
@@ -168,14 +177,15 @@ impl RangeProofBatch {
     pub fn prove(values: &[u64], n_bits: usize) -> Result<Self> {
         if values.is_empty() || !values.len().is_power_of_two() {
             return Err(Error::InvalidParameter(
-                "number of values must be a power of 2".to_string()
+                "number of values must be a power of 2".to_string(),
             ));
         }
 
         if n_bits > RangeProof::MAX_BITS {
-            return Err(Error::InvalidParameter(
-                format!("n_bits must be <= {}", RangeProof::MAX_BITS)
-            ));
+            return Err(Error::InvalidParameter(format!(
+                "n_bits must be <= {}",
+                RangeProof::MAX_BITS
+            )));
         }
 
         let pc_gens = PedersenGens::default();
@@ -199,7 +209,8 @@ impl RangeProofBatch {
             values,
             &blindings,
             n_bits,
-        ).map_err(|_| Error::ProofGenerationFailed)?;
+        )
+        .map_err(|_| Error::ProofGenerationFailed)?;
 
         Ok(Self { proof, commitments })
     }
@@ -207,9 +218,10 @@ impl RangeProofBatch {
     /// Verify the batch range proof.
     pub fn verify(&self, n_bits: usize) -> Result<bool> {
         if n_bits > RangeProof::MAX_BITS {
-            return Err(Error::InvalidParameter(
-                format!("n_bits must be <= {}", RangeProof::MAX_BITS)
-            ));
+            return Err(Error::InvalidParameter(format!(
+                "n_bits must be <= {}",
+                RangeProof::MAX_BITS
+            )));
         }
 
         let pc_gens = PedersenGens::default();
@@ -218,7 +230,13 @@ impl RangeProofBatch {
         let mut transcript = Transcript::new(b"arcanum-batch-range-proof");
 
         self.proof
-            .verify_multiple(&bp_gens, &pc_gens, &mut transcript, &self.commitments, n_bits)
+            .verify_multiple(
+                &bp_gens,
+                &pc_gens,
+                &mut transcript,
+                &self.commitments,
+                n_bits,
+            )
             .map(|_| true)
             .map_err(|_| Error::ProofVerificationFailed)
     }

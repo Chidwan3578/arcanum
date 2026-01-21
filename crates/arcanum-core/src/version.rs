@@ -143,6 +143,7 @@ pub struct AlgorithmId {
     pub variant: Option<String>,
 }
 
+#[allow(missing_docs)] // Algorithm identifier constants are self-documenting
 impl AlgorithmId {
     /// Create a new algorithm identifier.
     pub fn new(name: impl Into<String>) -> Self {
@@ -160,7 +161,7 @@ impl AlgorithmId {
         }
     }
 
-    /// Common algorithm identifiers
+    // Common algorithm identifiers
     pub const AES_128_GCM: &'static str = "AES-128-GCM";
     pub const AES_256_GCM: &'static str = "AES-256-GCM";
     pub const CHACHA20_POLY1305: &'static str = "ChaCha20-Poly1305";

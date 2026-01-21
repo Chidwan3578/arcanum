@@ -10,7 +10,9 @@
 //! - RFC 7748 test vectors
 //! - Edge cases with special byte patterns
 
-use arcanum_asymmetric::x25519::{X25519SecretKey, X25519PublicKey, X25519SharedSecret, X25519};
+#![allow(unused_imports)]
+
+use arcanum_asymmetric::x25519::{X25519, X25519PublicKey, X25519SecretKey, X25519SharedSecret};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // RFC 7748 Test Vectors
@@ -25,15 +27,15 @@ mod rfc7748_vectors {
     /// output: c3da55379de9c6908e94ea4df28d084f32eccf03491c71f754b4075577a28552
     #[test]
     fn rfc7748_test_vector_1() {
-        let scalar = hex::decode(
-            "a546e36bf0527c9d3b16154b82465edd62144c0ac1fc5a18506a2244ba449ac4"
-        ).unwrap();
-        let u_coord = hex::decode(
-            "e6db6867583030db3594c1a424b15f7c726624ec26b3353b10a903a6d0ab1c4c"
-        ).unwrap();
-        let expected = hex::decode(
-            "c3da55379de9c6908e94ea4df28d084f32eccf03491c71f754b4075577a28552"
-        ).unwrap();
+        let scalar =
+            hex::decode("a546e36bf0527c9d3b16154b82465edd62144c0ac1fc5a18506a2244ba449ac4")
+                .unwrap();
+        let u_coord =
+            hex::decode("e6db6867583030db3594c1a424b15f7c726624ec26b3353b10a903a6d0ab1c4c")
+                .unwrap();
+        let expected =
+            hex::decode("c3da55379de9c6908e94ea4df28d084f32eccf03491c71f754b4075577a28552")
+                .unwrap();
 
         let secret_arr: [u8; 32] = scalar.try_into().unwrap();
         let public_arr: [u8; 32] = u_coord.try_into().unwrap();
@@ -43,7 +45,11 @@ mod rfc7748_vectors {
 
         let shared = secret.diffie_hellman(&public);
 
-        assert_eq!(shared.as_bytes(), &expected[..], "RFC 7748 test vector 1 failed");
+        assert_eq!(
+            shared.as_bytes(),
+            &expected[..],
+            "RFC 7748 test vector 1 failed"
+        );
     }
 
     /// RFC 7748 Section 6.1 - X25519 test vector 2
@@ -52,15 +58,15 @@ mod rfc7748_vectors {
     /// output: 95cbde9476e8907d7aade45cb4b873f88b595a68799fa152e6f8f7647aac7957
     #[test]
     fn rfc7748_test_vector_2() {
-        let scalar = hex::decode(
-            "4b66e9d4d1b4673c5ad22691957d6af5c11b6421e0ea01d42ca4169e7918ba0d"
-        ).unwrap();
-        let u_coord = hex::decode(
-            "e5210f12786811d3f4b7959d0538ae2c31dbe7106fc03c3efc4cd549c715a493"
-        ).unwrap();
-        let expected = hex::decode(
-            "95cbde9476e8907d7aade45cb4b873f88b595a68799fa152e6f8f7647aac7957"
-        ).unwrap();
+        let scalar =
+            hex::decode("4b66e9d4d1b4673c5ad22691957d6af5c11b6421e0ea01d42ca4169e7918ba0d")
+                .unwrap();
+        let u_coord =
+            hex::decode("e5210f12786811d3f4b7959d0538ae2c31dbe7106fc03c3efc4cd549c715a493")
+                .unwrap();
+        let expected =
+            hex::decode("95cbde9476e8907d7aade45cb4b873f88b595a68799fa152e6f8f7647aac7957")
+                .unwrap();
 
         let secret_arr: [u8; 32] = scalar.try_into().unwrap();
         let public_arr: [u8; 32] = u_coord.try_into().unwrap();
@@ -70,7 +76,11 @@ mod rfc7748_vectors {
 
         let shared = secret.diffie_hellman(&public);
 
-        assert_eq!(shared.as_bytes(), &expected[..], "RFC 7748 test vector 2 failed");
+        assert_eq!(
+            shared.as_bytes(),
+            &expected[..],
+            "RFC 7748 test vector 2 failed"
+        );
     }
 }
 
@@ -281,7 +291,11 @@ mod special_patterns {
         let public = secret.public_key();
 
         // Should still produce a valid public key (due to clamping)
-        assert_ne!(public.to_bytes(), zeros, "Zero secret should not produce zero public");
+        assert_ne!(
+            public.to_bytes(),
+            zeros,
+            "Zero secret should not produce zero public"
+        );
     }
 
     /// All-ones secret key

@@ -395,8 +395,14 @@ mod tests {
     fn test_u32_ct_select() {
         assert_eq!(u32::ct_select(CtBool::TRUE, 100, 200), 100);
         assert_eq!(u32::ct_select(CtBool::FALSE, 100, 200), 200);
-        assert_eq!(u32::ct_select(CtBool::TRUE, 0xDEADBEEF, 0xCAFEBABE), 0xDEADBEEF);
-        assert_eq!(u32::ct_select(CtBool::FALSE, 0xDEADBEEF, 0xCAFEBABE), 0xCAFEBABE);
+        assert_eq!(
+            u32::ct_select(CtBool::TRUE, 0xDEADBEEF, 0xCAFEBABE),
+            0xDEADBEEF
+        );
+        assert_eq!(
+            u32::ct_select(CtBool::FALSE, 0xDEADBEEF, 0xCAFEBABE),
+            0xCAFEBABE
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -406,9 +412,13 @@ mod tests {
     #[test]
     fn test_u64_ct_eq() {
         assert!(0u64.ct_eq(&0u64).is_true());
-        assert!(0xFFFFFFFFFFFFFFFFu64.ct_eq(&0xFFFFFFFFFFFFFFFFu64).is_true());
+        assert!(0xFFFFFFFFFFFFFFFFu64
+            .ct_eq(&0xFFFFFFFFFFFFFFFFu64)
+            .is_true());
         assert!(!0u64.ct_eq(&1u64).is_true());
-        assert!(!0x8000000000000000u64.ct_eq(&0x8000000000000001u64).is_true());
+        assert!(!0x8000000000000000u64
+            .ct_eq(&0x8000000000000001u64)
+            .is_true());
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

@@ -11,20 +11,32 @@ keywords = ["cryptography", "post-quantum", "kyber", "dilithium", "sphincs"]
 categories = ["cryptography"]
 
 [features]
-default = ["ml-kem", "ml-dsa"]
+# Note: ml-dsa is excluded from default until it has a stable release
+# (currently depends on rand_core release candidates)
+default = ["std", "ml-kem"]
+std = []
 ml-kem = ["dep:ml-kem"]
 ml-dsa = ["dep:ml-dsa"]
-slh-dsa = ["dep:slh-dsa"]
+# Native ML-DSA implementation (FIPS 204) - requires SHAKE primitives from arcanum-primitives
+ml-dsa-native = ["arcanum-primitives/shake"]
+# Native SLH-DSA implementation (FIPS 205) - no external dependency
+slh-dsa = []
 hybrid = ["ml-kem"]
-all = ["ml-kem", "ml-dsa", "slh-dsa", "hybrid"]
+# Optimization features
+simd = ["std", "arcanum-primitives/simd"]  # Enable SIMD optimizations (AVX2/NEON)
+parallel = ["dep:rayon", "std"]  # Enable parallel processing
+optimized = ["simd", "parallel"]  # All optimizations
+all = ["ml-kem", "ml-dsa", "ml-dsa-native", "slh-dsa", "hybrid"]
 
 [dependencies]
 arcanum-core = { workspace = true }
+# Native primitives for SLH-DSA (SHA-256) and ML-DSA (SHAKE when ml-dsa-native enabled)
+arcanum-primitives = { workspace = true, features = ["sha2"] }
 
-# NIST PQC Standards (FIPS 203, 204, 205)
+# NIST PQC Standards (FIPS 203, 204)
 ml-kem = { workspace = true, optional = true }
 ml-dsa = { workspace = true, optional = true }
-slh-dsa = { workspace = true, optional = true }
+# Note: slh-dsa is implemented natively, no external dependency
 
 # KEM traits (required by ml-kem)
 kem = "0.3.0-pre.0"
@@ -38,12 +50,16 @@ sha2 = { workspace = true }
 hkdf = { workspace = true }
 
 # Core
+subtle = { workspace = true }
 zeroize = { workspace = true }
 rand = { workspace = true }
 rand_core = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 hex = { workspace = true }
+
+# Parallel processing (optional)
+rayon = { version = "1.10", optional = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

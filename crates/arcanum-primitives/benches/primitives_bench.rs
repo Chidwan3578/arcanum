@@ -4,12 +4,19 @@
 //!
 //! These benchmarks compare native Arcanum implementations against RustCrypto equivalents.
 
+#![allow(
+    unused_imports,
+    clippy::needless_range_loop,
+    clippy::manual_memcpy,
+    clippy::get_first
+)]
+
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 
-use arcanum_primitives::sha2::{Sha256, Sha512};
 use arcanum_primitives::blake3::Blake3;
 use arcanum_primitives::chacha20::ChaCha20;
 use arcanum_primitives::chacha20poly1305::ChaCha20Poly1305;
+use arcanum_primitives::sha2::{Sha256, Sha512};
 
 const SIZES: &[usize] = &[64, 256, 1024, 4096, 16384];
 
@@ -33,15 +40,13 @@ fn bench_sha256(c: &mut Criterion) {
 }
 
 fn bench_sha256_vs_rustcrypto(c: &mut Criterion) {
-    use sha2::{Sha256 as RefSha256, Digest};
+    use sha2::{Digest, Sha256 as RefSha256};
 
     let mut group = c.benchmark_group("SHA-256/Comparison");
     let data = vec![0u8; 4096];
     group.throughput(Throughput::Bytes(4096));
 
-    group.bench_function("Native", |b| {
-        b.iter(|| Sha256::hash(black_box(&data)))
-    });
+    group.bench_function("Native", |b| b.iter(|| Sha256::hash(black_box(&data))));
 
     group.bench_function("RustCrypto", |b| {
         b.iter(|| RefSha256::digest(black_box(&data)))
@@ -70,15 +75,13 @@ fn bench_sha512(c: &mut Criterion) {
 }
 
 fn bench_sha512_vs_rustcrypto(c: &mut Criterion) {
-    use sha2::{Sha512 as RefSha512, Digest};
+    use sha2::{Digest, Sha512 as RefSha512};
 
     let mut group = c.benchmark_group("SHA-512/Comparison");
     let data = vec![0u8; 4096];
     group.throughput(Throughput::Bytes(4096));
 
-    group.bench_function("Native", |b| {
-        b.iter(|| Sha512::hash(black_box(&data)))
-    });
+    group.bench_function("Native", |b| b.iter(|| Sha512::hash(black_box(&data))));
 
     group.bench_function("RustCrypto", |b| {
         b.iter(|| RefSha512::digest(black_box(&data)))
@@ -111,13 +114,9 @@ fn bench_blake3_vs_rustcrypto(c: &mut Criterion) {
     let data = vec![0u8; 4096];
     group.throughput(Throughput::Bytes(4096));
 
-    group.bench_function("Native", |b| {
-        b.iter(|| Blake3::hash(black_box(&data)))
-    });
+    group.bench_function("Native", |b| b.iter(|| Blake3::hash(black_box(&data))));
 
-    group.bench_function("RustCrypto", |b| {
-        b.iter(|| blake3::hash(black_box(&data)))
-    });
+    group.bench_function("RustCrypto", |b| b.iter(|| blake3::hash(black_box(&data))));
 
     group.finish();
 }
@@ -186,17 +185,15 @@ fn bench_blake3_parallel_vs_rustcrypto(c: &mut Criterion) {
         b.iter(|| Blake3::hash(black_box(&data)))
     });
 
-    group.bench_function("RustCrypto", |b| {
-        b.iter(|| blake3::hash(black_box(&data)))
-    });
+    group.bench_function("RustCrypto", |b| b.iter(|| blake3::hash(black_box(&data))));
 
     group.finish();
 }
 
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]
 fn bench_blake3_turbo(c: &mut Criterion) {
-    use arcanum_primitives::blake3_turbo::hash_turbo;
     use arcanum_primitives::blake3_simd::hash_large_parallel;
+    use arcanum_primitives::blake3_turbo::hash_turbo;
 
     let mut group = c.benchmark_group("BLAKE3-Turbo/Comparison");
 
@@ -292,8 +289,8 @@ fn bench_blake3_asm(c: &mut Criterion) {
 
 #[cfg(all(feature = "simd", feature = "rayon", target_arch = "x86_64"))]
 fn bench_blake3_ultra(c: &mut Criterion) {
-    use arcanum_primitives::blake3_ultra::{hash_ultra, hash_ultra_streaming};
     use arcanum_primitives::blake3_hyper::hash_hyper;
+    use arcanum_primitives::blake3_ultra::{hash_ultra, hash_ultra_streaming};
 
     let mut group = c.benchmark_group("BLAKE3-Ultra/Comparison");
 
@@ -330,13 +327,19 @@ fn bench_blake3_ultra(c: &mut Criterion) {
 
 #[cfg(all(feature = "simd", feature = "rayon", target_arch = "x86_64"))]
 fn bench_blake3_adaptive(c: &mut Criterion) {
-    use arcanum_primitives::blake3_ultra::{hash_adaptive, hash_minimal_alloc};
     use arcanum_primitives::blake3_hyper::hash_hyper;
+    use arcanum_primitives::blake3_ultra::{hash_adaptive, hash_minimal_alloc};
 
     let mut group = c.benchmark_group("BLAKE3-Adaptive/Comparison");
 
     // Test across all size ranges to verify adaptive picks correctly
-    for size in [64 * 1024, 256 * 1024, 1024 * 1024, 4 * 1024 * 1024, 16 * 1024 * 1024] {
+    for size in [
+        64 * 1024,
+        256 * 1024,
+        1024 * 1024,
+        4 * 1024 * 1024,
+        16 * 1024 * 1024,
+    ] {
         let data = vec![0u8; size];
         let size_label = if size >= 1024 * 1024 {
             format!("{}MB", size / (1024 * 1024))
@@ -398,7 +401,7 @@ fn bench_blake3_apex(c: &mut Criterion) {
 /// Benchmark hyper-parallel for small data (Threadripper optimization)
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]
 fn bench_blake3_hyper_parallel(c: &mut Criterion) {
-    use arcanum_primitives::blake3_simd::{hash_large_parallel, hash_hyper_parallel};
+    use arcanum_primitives::blake3_simd::{hash_hyper_parallel, hash_large_parallel};
 
     let mut group = c.benchmark_group("BLAKE3-HyperParallel/SmallData");
 
@@ -442,9 +445,8 @@ fn bench_blake3_compress_asm_vs_intrinsics(c: &mut Criterion) {
     let cvs: [[u32; 8]; 16] = core::array::from_fn(|i| {
         core::array::from_fn(|j| ((i * 8 + j) as u32).wrapping_mul(0x01010101))
     });
-    let blocks: [[u8; 64]; 16] = core::array::from_fn(|i| {
-        core::array::from_fn(|j| ((i * 64 + j) % 256) as u8)
-    });
+    let blocks: [[u8; 64]; 16] =
+        core::array::from_fn(|i| core::array::from_fn(|j| ((i * 64 + j) % 256) as u8));
     let counters: [u64; 16] = core::array::from_fn(|i| i as u64);
     let block_lens = [64u32; 16];
     let flags: [u8; 16] = [0; 16];
@@ -494,8 +496,8 @@ fn bench_blake3_monolithic(c: &mut Criterion) {
     // Create test data: 16 chunks of 1024 bytes each (16KB total)
     let data: Vec<u8> = (0..16 * 1024).map(|i| (i % 256) as u8).collect();
     let key: [u32; 8] = [
-        0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-        0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+        0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB,
+        0x5BE0CD19,
     ];
     let counters: [u64; 16] = core::array::from_fn(|i| i as u64);
 
@@ -529,7 +531,7 @@ fn bench_blake3_monolithic(c: &mut Criterion) {
 
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]
 fn bench_blake3_batch(c: &mut Criterion) {
-    use arcanum_primitives::blake3_simd::{hash_batch_8, hash_batch};
+    use arcanum_primitives::blake3_simd::{hash_batch, hash_batch_8};
 
     let mut group = c.benchmark_group("BLAKE3-Batch");
 
@@ -539,8 +541,14 @@ fn bench_blake3_batch(c: &mut Criterion) {
         .map(|i| vec![(i as u8).wrapping_mul(0x42); msg_size])
         .collect();
     let msg_refs: [&[u8]; 8] = [
-        &messages[0], &messages[1], &messages[2], &messages[3],
-        &messages[4], &messages[5], &messages[6], &messages[7],
+        &messages[0],
+        &messages[1],
+        &messages[2],
+        &messages[3],
+        &messages[4],
+        &messages[5],
+        &messages[6],
+        &messages[7],
     ];
 
     // Total bytes: 8 * 256 = 2048
@@ -565,8 +573,14 @@ fn bench_blake3_batch(c: &mut Criterion) {
         .map(|i| vec![(i as u8).wrapping_mul(0x17); 64])
         .collect();
     let small_refs: [&[u8]; 8] = [
-        &small_msgs[0], &small_msgs[1], &small_msgs[2], &small_msgs[3],
-        &small_msgs[4], &small_msgs[5], &small_msgs[6], &small_msgs[7],
+        &small_msgs[0],
+        &small_msgs[1],
+        &small_msgs[2],
+        &small_msgs[3],
+        &small_msgs[4],
+        &small_msgs[5],
+        &small_msgs[6],
+        &small_msgs[7],
     ];
 
     group.throughput(Throughput::Bytes((8 * 64) as u64));
@@ -591,7 +605,7 @@ fn bench_blake3_batch(c: &mut Criterion) {
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]
 fn bench_blake3_avx512(c: &mut Criterion) {
     use arcanum_primitives::blake3_simd::{
-        hash_16_chunks_parallel, hash_8_chunks_parallel, IV, has_avx512f,
+        has_avx512f, hash_16_chunks_parallel, hash_8_chunks_parallel, IV,
     };
 
     let mut group = c.benchmark_group("BLAKE3-AVX512");
@@ -623,14 +637,28 @@ fn bench_blake3_avx512(c: &mut Criterion) {
     }
 
     group.bench_function("16-way parallel (16KB)", |b| {
-        b.iter(|| hash_16_chunks_parallel(black_box(&IV), black_box(&chunks16), black_box(&counters16), 0))
+        b.iter(|| {
+            hash_16_chunks_parallel(
+                black_box(&IV),
+                black_box(&chunks16),
+                black_box(&counters16),
+                0,
+            )
+        })
     });
 
     // 8KB for 8 chunks
     group.throughput(Throughput::Bytes((8 * 1024) as u64));
 
     group.bench_function("8-way parallel (8KB)", |b| {
-        b.iter(|| hash_8_chunks_parallel(black_box(&IV), black_box(&chunks8), black_box(&counters8), 0))
+        b.iter(|| {
+            hash_8_chunks_parallel(
+                black_box(&IV),
+                black_box(&chunks8),
+                black_box(&counters8),
+                0,
+            )
+        })
     });
 
     // Compare 2x 8-way vs 1x 16-way (both processing 16 chunks)
@@ -638,13 +666,23 @@ fn bench_blake3_avx512(c: &mut Criterion) {
 
     group.bench_function("2x 8-way parallel (16KB)", |b| {
         b.iter(|| {
-            let cv1 = hash_8_chunks_parallel(black_box(&IV), black_box(&chunks8), black_box(&counters8), 0);
+            let cv1 = hash_8_chunks_parallel(
+                black_box(&IV),
+                black_box(&chunks8),
+                black_box(&counters8),
+                0,
+            );
             let mut chunks8_2 = [[0u8; 1024]; 8];
             for i in 0..8 {
                 chunks8_2[i] = chunks16[i + 8];
             }
             let counters8_2: [u64; 8] = [8, 9, 10, 11, 12, 13, 14, 15];
-            let cv2 = hash_8_chunks_parallel(black_box(&IV), black_box(&chunks8_2), black_box(&counters8_2), 0);
+            let cv2 = hash_8_chunks_parallel(
+                black_box(&IV),
+                black_box(&chunks8_2),
+                black_box(&counters8_2),
+                0,
+            );
             (cv1, cv2)
         })
     });
@@ -727,7 +765,7 @@ fn bench_chacha20poly1305_seal(c: &mut Criterion) {
 }
 
 fn bench_chacha20poly1305_vs_rustcrypto(c: &mut Criterion) {
-    use chacha20poly1305::{ChaCha20Poly1305 as RefChaCha20Poly1305, aead::Aead, KeyInit, Nonce};
+    use chacha20poly1305::{aead::Aead, ChaCha20Poly1305 as RefChaCha20Poly1305, KeyInit, Nonce};
 
     let mut group = c.benchmark_group("ChaCha20-Poly1305/Comparison");
     let key = [0x42u8; 32];
@@ -782,7 +820,9 @@ fn bench_chacha20poly1305_vs_rustcrypto(c: &mut Criterion) {
 }
 
 fn bench_chacha20poly1305_in_place(c: &mut Criterion) {
-    use chacha20poly1305::{ChaCha20Poly1305 as RefChaCha20Poly1305, aead::AeadInPlace, KeyInit, Nonce};
+    use chacha20poly1305::{
+        aead::AeadInPlace, ChaCha20Poly1305 as RefChaCha20Poly1305, KeyInit, Nonce,
+    };
 
     let mut group = c.benchmark_group("ChaCha20-Poly1305-InPlace/Comparison");
     let key = [0x42u8; 32];
@@ -803,7 +843,11 @@ fn bench_chacha20poly1305_in_place(c: &mut Criterion) {
         let nonce_ref = Nonce::from_slice(&nonce);
         b.iter(|| {
             let mut buffer = vec![0u8; 4096];
-            let _ = cipher.encrypt_in_place(black_box(nonce_ref), black_box(aad), black_box(&mut buffer));
+            let _ = cipher.encrypt_in_place(
+                black_box(nonce_ref),
+                black_box(aad),
+                black_box(&mut buffer),
+            );
         })
     });
 
@@ -816,8 +860,8 @@ fn bench_chacha20poly1305_in_place(c: &mut Criterion) {
 
 fn bench_poly1305(c: &mut Criterion) {
     use arcanum_primitives::poly1305::Poly1305;
-    use poly1305::Poly1305 as RefPoly1305;
     use poly1305::universal_hash::{KeyInit, UniversalHash};
+    use poly1305::Poly1305 as RefPoly1305;
 
     let mut group = c.benchmark_group("Poly1305/Comparison");
     let key = [0x42u8; 32];
@@ -843,8 +887,8 @@ fn bench_poly1305(c: &mut Criterion) {
 fn bench_poly1305_simd(c: &mut Criterion) {
     use arcanum_primitives::poly1305::Poly1305;
     use arcanum_primitives::poly1305_simd::Poly1305Simd;
-    use poly1305::Poly1305 as RefPoly1305;
     use poly1305::universal_hash::{KeyInit, UniversalHash};
+    use poly1305::Poly1305 as RefPoly1305;
 
     let mut group = c.benchmark_group("Poly1305-SIMD/Comparison");
     let key = [0x42u8; 32];
@@ -933,12 +977,18 @@ fn bench_chacha20poly1305_large_scale(c: &mut Criterion) {
 
         // RustCrypto for reference
         group.bench_function(format!("RustCrypto ({})", size_label), |b| {
-            use chacha20poly1305::{ChaCha20Poly1305 as RefChaCha20Poly1305, aead::AeadInPlace, KeyInit, Nonce};
+            use chacha20poly1305::{
+                aead::AeadInPlace, ChaCha20Poly1305 as RefChaCha20Poly1305, KeyInit, Nonce,
+            };
             let cipher = RefChaCha20Poly1305::new(&key.into());
             let nonce_ref = Nonce::from_slice(&nonce);
             b.iter(|| {
                 let mut buffer = plaintext.clone();
-                cipher.encrypt_in_place(black_box(nonce_ref), black_box(aad), black_box(&mut buffer))
+                cipher.encrypt_in_place(
+                    black_box(nonce_ref),
+                    black_box(aad),
+                    black_box(&mut buffer),
+                )
             })
         });
     }
@@ -1015,7 +1065,7 @@ fn bench_batch_sha256(c: &mut Criterion) {
 
         // RustCrypto sequential
         group.bench_function(format!("RustCrypto-4x ({}B)", msg_size), |b| {
-            use sha2::{Sha256 as RefSha256, Digest};
+            use sha2::{Digest, Sha256 as RefSha256};
             b.iter(|| {
                 let mut results = [[0u8; 32]; 4];
                 for (i, msg) in msg_refs.iter().enumerate() {
@@ -1066,12 +1116,18 @@ fn bench_fused_chacha20poly1305(c: &mut Criterion) {
 
         // RustCrypto for reference
         group.bench_function(format!("RustCrypto ({}B)", size), |b| {
-            use chacha20poly1305::{ChaCha20Poly1305 as RefChaCha20Poly1305, aead::AeadInPlace, KeyInit, Nonce};
+            use chacha20poly1305::{
+                aead::AeadInPlace, ChaCha20Poly1305 as RefChaCha20Poly1305, KeyInit, Nonce,
+            };
             let cipher = RefChaCha20Poly1305::new(&key.into());
             let nonce_ref = Nonce::from_slice(&nonce);
             b.iter(|| {
                 let mut buffer = plaintext.clone();
-                cipher.encrypt_in_place(black_box(nonce_ref), black_box(aad), black_box(&mut buffer))
+                cipher.encrypt_in_place(
+                    black_box(nonce_ref),
+                    black_box(aad),
+                    black_box(&mut buffer),
+                )
             })
         });
     }

@@ -7,7 +7,7 @@ use crate::errors::{HoloCryptError, HoloCryptResult};
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "merkle")]
-use arcanum_hash::{Hasher, Blake3};
+use arcanum_hash::{Blake3, Hasher};
 
 /// A Merkle proof for a specific chunk.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -197,7 +197,7 @@ pub struct ChunkConfig {
 impl Default for ChunkConfig {
     fn default() -> Self {
         Self {
-            chunk_size: 4096,      // 4KB chunks
+            chunk_size: 4096, // 4KB chunks
             min_chunks: 1,
             max_chunks: 1_000_000, // ~4GB max
         }
@@ -292,7 +292,12 @@ impl MerkleTreeBuilder {
             current_index /= 2;
         }
 
-        Some(ChunkProof::new(index, self.leaves.len(), siblings, directions))
+        Some(ChunkProof::new(
+            index,
+            self.leaves.len(),
+            siblings,
+            directions,
+        ))
     }
 
     /// Get number of leaves.
@@ -332,12 +337,7 @@ mod tests {
 
     #[test]
     fn merkle_tree_multiple_chunks() {
-        let chunks: Vec<&[u8]> = vec![
-            b"chunk 0",
-            b"chunk 1",
-            b"chunk 2",
-            b"chunk 3",
-        ];
+        let chunks: Vec<&[u8]> = vec![b"chunk 0", b"chunk 1", b"chunk 2", b"chunk 3"];
         let tree = MerkleTreeBuilder::from_chunks(&chunks);
 
         assert_eq!(tree.len(), 4);
@@ -352,11 +352,7 @@ mod tests {
 
     #[test]
     fn merkle_tree_odd_chunks() {
-        let chunks: Vec<&[u8]> = vec![
-            b"chunk 0",
-            b"chunk 1",
-            b"chunk 2",
-        ];
+        let chunks: Vec<&[u8]> = vec![b"chunk 0", b"chunk 1", b"chunk 2"];
         let tree = MerkleTreeBuilder::from_chunks(&chunks);
 
         assert_eq!(tree.len(), 3);
@@ -410,7 +406,9 @@ mod tests {
     #[test]
     fn merkle_tree_large() {
         // Test with 16 chunks
-        let chunks: Vec<Vec<u8>> = (0..16).map(|i| format!("chunk {}", i).into_bytes()).collect();
+        let chunks: Vec<Vec<u8>> = (0..16)
+            .map(|i| format!("chunk {}", i).into_bytes())
+            .collect();
         let chunk_refs: Vec<&[u8]> = chunks.iter().map(|c| c.as_slice()).collect();
         let tree = MerkleTreeBuilder::from_chunks(&chunk_refs);
 
@@ -419,7 +417,11 @@ mod tests {
         // Verify some chunks
         for i in [0, 5, 10, 15] {
             let proof = tree.generate_proof(i).unwrap();
-            assert!(proof.verify(&chunks[i], &tree.root()), "Failed for chunk {}", i);
+            assert!(
+                proof.verify(&chunks[i], &tree.root()),
+                "Failed for chunk {}",
+                i
+            );
         }
     }
 

@@ -61,8 +61,8 @@ impl X448SecretKey {
 
     /// Perform Diffie-Hellman key exchange.
     pub fn diffie_hellman(&self, peer_public: &X448PublicKey) -> X448SharedSecret {
-        let shared = x448::x448(peer_public.bytes, self.bytes)
-            .expect("DH should not fail with valid keys");
+        let shared =
+            x448::x448(peer_public.bytes, self.bytes).expect("DH should not fail with valid keys");
         X448SharedSecret { bytes: shared }
     }
 }
@@ -110,8 +110,7 @@ impl X448PublicKey {
 
     /// Decode from hex.
     pub fn from_hex(hex_str: &str) -> Result<Self> {
-        let bytes = hex::decode(hex_str)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let bytes = hex::decode(hex_str).map_err(|_| Error::InvalidKeyFormat)?;
         if bytes.len() != 56 {
             return Err(Error::InvalidKeyLength {
                 expected: 56,
@@ -152,9 +151,19 @@ impl X448SharedSecret {
         self.bytes.to_vec()
     }
 
-    /// Check if this is a low-order point.
+    /// Check if this is a low-order point (potential attack).
+    ///
+    /// Returns true if the shared secret is all zeros, which indicates
+    /// the peer provided a malicious low-order public key.
+    ///
+    /// # Security
+    ///
+    /// This check is performed in constant time to prevent timing attacks
+    /// that could leak information about the shared secret.
     pub fn is_low_order(&self) -> bool {
-        self.bytes.iter().all(|&b| b == 0)
+        use subtle::ConstantTimeEq;
+        let zero = [0u8; 56];
+        self.bytes.ct_eq(&zero).into()
     }
 
     /// Derive a key using HKDF.

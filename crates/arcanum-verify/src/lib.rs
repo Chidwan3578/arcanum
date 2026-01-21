@@ -57,14 +57,14 @@ mod errors;
 pub use errors::VerifyError;
 
 #[cfg(feature = "timing")]
-pub use timing::{TimingTest, TimingResult, Class};
+pub use timing::{Class, TimingResult, TimingTest};
 
 /// Prelude for convenient imports.
 pub mod prelude {
     pub use crate::errors::VerifyError;
 
     #[cfg(feature = "timing")]
-    pub use crate::timing::{TimingTest, TimingResult, Class};
+    pub use crate::timing::{Class, TimingResult, TimingTest};
 }
 
 /// Statistical utilities for timing analysis.
@@ -118,11 +118,7 @@ pub mod stats {
 
         let se = (var1 / n1 + var2 / n2).sqrt();
 
-        if se == 0.0 {
-            0.0
-        } else {
-            (mean1 - mean2) / se
-        }
+        if se == 0.0 { 0.0 } else { (mean1 - mean2) / se }
     }
 
     /// Threshold for timing leak detection.

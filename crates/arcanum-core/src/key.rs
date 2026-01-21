@@ -16,10 +16,10 @@ use chrono::{DateTime, Utc};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::mem::ManuallyDrop;
 use subtle::{Choice, ConstantTimeEq};
 use uuid::Uuid;
-use std::mem::ManuallyDrop;
-use zeroize::{Zeroize, ZeroizeOnDrop};
+use zeroize::ZeroizeOnDrop;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECRET KEY
@@ -170,7 +170,7 @@ impl<const N: usize> PublicKey<N> {
 
     /// Encode as hex string.
     pub fn to_hex(&self) -> String {
-        hex::encode(&self.bytes)
+        hex::encode(self.bytes)
     }
 
     /// Decode from hex string.
@@ -323,11 +323,6 @@ impl KeyId {
         &self.0
     }
 
-    /// Convert to string.
-    pub fn to_string(&self) -> String {
-        self.0.to_string()
-    }
-
     /// Parse from string.
     pub fn parse(s: &str) -> Result<Self> {
         let uuid = Uuid::parse_str(s).map_err(|e| Error::ParseError(e.to_string()))?;
@@ -360,6 +355,7 @@ pub enum KeyUsage {
 
 /// Key algorithm identifiers.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[allow(missing_docs)] // Variants are self-documenting
 pub enum KeyAlgorithm {
     // Symmetric
     Aes128,

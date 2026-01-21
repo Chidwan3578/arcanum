@@ -26,12 +26,11 @@
 use crate::traits::{AsymmetricDecrypt, AsymmetricEncrypt, RsaKeySize};
 use arcanum_core::error::{Error, Result};
 use rand::rngs::OsRng;
-use rsa::{
-    Oaep, Pkcs1v15Encrypt, Pkcs1v15Sign, Pss,
-    RsaPrivateKey as InnerPrivateKey, RsaPublicKey as InnerPublicKey,
-    traits::PublicKeyParts,
-};
 use rsa::signature::{RandomizedSigner, SignatureEncoding, Verifier};
+use rsa::{
+    Oaep, Pkcs1v15Encrypt, Pkcs1v15Sign, Pss, RsaPrivateKey as InnerPrivateKey,
+    RsaPublicKey as InnerPublicKey, traits::PublicKeyParts,
+};
 use sha2::{Sha256, Sha384, Sha512};
 use zeroize::ZeroizeOnDrop;
 
@@ -44,9 +43,10 @@ pub struct RsaPrivateKey {
 
 impl RsaPrivateKey {
     /// Generate a new RSA private key.
+    #[must_use = "key generation result must be checked for errors"]
     pub fn generate(bits: usize) -> Result<Self> {
-        let inner = InnerPrivateKey::new(&mut OsRng, bits)
-            .map_err(|_| Error::KeyGenerationFailed)?;
+        let inner =
+            InnerPrivateKey::new(&mut OsRng, bits).map_err(|_| Error::KeyGenerationFailed)?;
         Ok(Self { inner })
     }
 
@@ -63,6 +63,7 @@ impl RsaPrivateKey {
     }
 
     /// Decrypt using OAEP padding (recommended).
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt_oaep(&self, ciphertext: &[u8]) -> Result<Vec<u8>> {
         let padding = Oaep::new::<Sha256>();
         self.inner
@@ -71,6 +72,7 @@ impl RsaPrivateKey {
     }
 
     /// Decrypt using OAEP with SHA-384.
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt_oaep_sha384(&self, ciphertext: &[u8]) -> Result<Vec<u8>> {
         let padding = Oaep::new::<Sha384>();
         self.inner
@@ -79,6 +81,7 @@ impl RsaPrivateKey {
     }
 
     /// Decrypt using OAEP with SHA-512.
+    #[must_use = "decryption result must be checked - failure indicates tampering"]
     pub fn decrypt_oaep_sha512(&self, ciphertext: &[u8]) -> Result<Vec<u8>> {
         let padding = Oaep::new::<Sha512>();
         self.inner
@@ -121,7 +124,9 @@ impl RsaPrivateKey {
     /// Export to PKCS#8 DER format.
     pub fn to_pkcs8_der(&self) -> Result<Vec<u8>> {
         use pkcs8::EncodePrivateKey;
-        let der = self.inner.to_pkcs8_der()
+        let der = self
+            .inner
+            .to_pkcs8_der()
             .map_err(|_| Error::InvalidKeyFormat)?;
         Ok(der.as_bytes().to_vec())
     }
@@ -129,8 +134,7 @@ impl RsaPrivateKey {
     /// Import from PKCS#8 DER format.
     pub fn from_pkcs8_der(bytes: &[u8]) -> Result<Self> {
         use pkcs8::DecodePrivateKey;
-        let inner = InnerPrivateKey::from_pkcs8_der(bytes)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner = InnerPrivateKey::from_pkcs8_der(bytes).map_err(|_| Error::InvalidKeyFormat)?;
         Ok(Self { inner })
     }
 
@@ -138,7 +142,9 @@ impl RsaPrivateKey {
     pub fn to_pkcs8_pem(&self) -> Result<String> {
         use pkcs8::EncodePrivateKey;
         use pkcs8::LineEnding;
-        let pem = self.inner.to_pkcs8_pem(LineEnding::LF)
+        let pem = self
+            .inner
+            .to_pkcs8_pem(LineEnding::LF)
             .map_err(|_| Error::InvalidKeyFormat)?;
         Ok(pem.to_string())
     }
@@ -146,8 +152,7 @@ impl RsaPrivateKey {
     /// Import from PKCS#8 PEM format.
     pub fn from_pkcs8_pem(pem: &str) -> Result<Self> {
         use pkcs8::DecodePrivateKey;
-        let inner = InnerPrivateKey::from_pkcs8_pem(pem)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner = InnerPrivateKey::from_pkcs8_pem(pem).map_err(|_| Error::InvalidKeyFormat)?;
         Ok(Self { inner })
     }
 }
@@ -173,7 +178,8 @@ impl RsaPublicKey {
     /// Encrypt using OAEP padding (recommended).
     pub fn encrypt_oaep(&self, plaintext: &[u8]) -> Result<RsaOaepCiphertext> {
         let padding = Oaep::new::<Sha256>();
-        let ciphertext = self.inner
+        let ciphertext = self
+            .inner
             .encrypt(&mut OsRng, padding, plaintext)
             .map_err(|_| Error::EncryptionFailed)?;
         Ok(RsaOaepCiphertext { bytes: ciphertext })
@@ -182,7 +188,8 @@ impl RsaPublicKey {
     /// Encrypt using OAEP with SHA-384.
     pub fn encrypt_oaep_sha384(&self, plaintext: &[u8]) -> Result<RsaOaepCiphertext> {
         let padding = Oaep::new::<Sha384>();
-        let ciphertext = self.inner
+        let ciphertext = self
+            .inner
             .encrypt(&mut OsRng, padding, plaintext)
             .map_err(|_| Error::EncryptionFailed)?;
         Ok(RsaOaepCiphertext { bytes: ciphertext })
@@ -191,7 +198,8 @@ impl RsaPublicKey {
     /// Encrypt using OAEP with SHA-512.
     pub fn encrypt_oaep_sha512(&self, plaintext: &[u8]) -> Result<RsaOaepCiphertext> {
         let padding = Oaep::new::<Sha512>();
-        let ciphertext = self.inner
+        let ciphertext = self
+            .inner
             .encrypt(&mut OsRng, padding, plaintext)
             .map_err(|_| Error::EncryptionFailed)?;
         Ok(RsaOaepCiphertext { bytes: ciphertext })
@@ -200,13 +208,15 @@ impl RsaPublicKey {
     /// Encrypt using PKCS#1 v1.5 padding (legacy).
     #[deprecated(note = "Use OAEP instead for new applications")]
     pub fn encrypt_pkcs1(&self, plaintext: &[u8]) -> Result<RsaPkcs1Ciphertext> {
-        let ciphertext = self.inner
+        let ciphertext = self
+            .inner
             .encrypt(&mut OsRng, Pkcs1v15Encrypt, plaintext)
             .map_err(|_| Error::EncryptionFailed)?;
         Ok(RsaPkcs1Ciphertext { bytes: ciphertext })
     }
 
     /// Verify a PSS signature.
+    #[must_use = "signature verification must be checked - ignoring bypasses authentication"]
     pub fn verify_pss(&self, message: &[u8], signature: &RsaPssSignature) -> Result<()> {
         use rsa::pss::VerifyingKey;
 
@@ -219,6 +229,7 @@ impl RsaPublicKey {
     }
 
     /// Verify a PKCS#1 v1.5 signature.
+    #[must_use = "signature verification must be checked - ignoring bypasses authentication"]
     pub fn verify_pkcs1(&self, message: &[u8], signature: &RsaPkcs1Signature) -> Result<()> {
         use rsa::pkcs1v15::VerifyingKey;
 
@@ -233,7 +244,9 @@ impl RsaPublicKey {
     /// Export to SPKI DER format.
     pub fn to_spki_der(&self) -> Result<Vec<u8>> {
         use spki::EncodePublicKey;
-        let der = self.inner.to_public_key_der()
+        let der = self
+            .inner
+            .to_public_key_der()
             .map_err(|_| Error::InvalidKeyFormat)?;
         Ok(der.as_bytes().to_vec())
     }
@@ -241,16 +254,18 @@ impl RsaPublicKey {
     /// Import from SPKI DER format.
     pub fn from_spki_der(bytes: &[u8]) -> Result<Self> {
         use spki::DecodePublicKey;
-        let inner = InnerPublicKey::from_public_key_der(bytes)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner =
+            InnerPublicKey::from_public_key_der(bytes).map_err(|_| Error::InvalidKeyFormat)?;
         Ok(Self { inner })
     }
 
     /// Export to SPKI PEM format.
     pub fn to_spki_pem(&self) -> Result<String> {
-        use spki::EncodePublicKey;
         use pkcs8::LineEnding;
-        let pem = self.inner.to_public_key_pem(LineEnding::LF)
+        use spki::EncodePublicKey;
+        let pem = self
+            .inner
+            .to_public_key_pem(LineEnding::LF)
             .map_err(|_| Error::InvalidKeyFormat)?;
         Ok(pem)
     }
@@ -258,8 +273,8 @@ impl RsaPublicKey {
     /// Import from SPKI PEM format.
     pub fn from_spki_pem(pem: &str) -> Result<Self> {
         use spki::DecodePublicKey;
-        let inner = InnerPublicKey::from_public_key_pem(pem)
-            .map_err(|_| Error::InvalidKeyFormat)?;
+        let inner =
+            InnerPublicKey::from_public_key_pem(pem).map_err(|_| Error::InvalidKeyFormat)?;
         Ok(Self { inner })
     }
 

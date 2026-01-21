@@ -44,6 +44,7 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+#![allow(unused_imports, dead_code, clippy::needless_borrows_for_generic_args)]
 
 #[cfg(feature = "ed25519")]
 pub mod ed25519;
@@ -56,34 +57,33 @@ pub mod schnorr;
 
 mod traits;
 
-pub use traits::{SigningKey, VerifyingKey, Signature, BatchVerifier};
+pub use traits::{BatchVerifier, Signature, SigningKey, VerifyingKey};
 
 #[cfg(feature = "ed25519")]
-pub use ed25519::{Ed25519SigningKey, Ed25519VerifyingKey, Ed25519Signature};
+pub use ed25519::{Ed25519Signature, Ed25519SigningKey, Ed25519VerifyingKey};
 
 #[cfg(feature = "ecdsa")]
 pub use ecdsa_impl::{
-    P256SigningKey, P256VerifyingKey, P256Signature,
-    P384SigningKey, P384VerifyingKey, P384Signature,
-    Secp256k1SigningKey, Secp256k1VerifyingKey, Secp256k1Signature,
+    P256Signature, P256SigningKey, P256VerifyingKey, P384Signature, P384SigningKey,
+    P384VerifyingKey, Secp256k1Signature, Secp256k1SigningKey, Secp256k1VerifyingKey,
 };
 
 #[cfg(feature = "schnorr")]
-pub use schnorr::{SchnorrSigningKey, SchnorrVerifyingKey, SchnorrSignature};
+pub use schnorr::{SchnorrSignature, SchnorrSigningKey, SchnorrVerifyingKey};
 
 /// Prelude for convenient imports.
 pub mod prelude {
-    pub use crate::traits::{SigningKey, VerifyingKey, Signature};
+    pub use crate::traits::{Signature, SigningKey, VerifyingKey};
 
     #[cfg(feature = "ed25519")]
-    pub use crate::ed25519::{Ed25519SigningKey, Ed25519VerifyingKey, Ed25519Signature};
+    pub use crate::ed25519::{Ed25519Signature, Ed25519SigningKey, Ed25519VerifyingKey};
 
     #[cfg(feature = "ecdsa")]
     pub use crate::ecdsa_impl::{
-        P256SigningKey, P256VerifyingKey, P256Signature,
-        Secp256k1SigningKey, Secp256k1VerifyingKey, Secp256k1Signature,
+        P256Signature, P256SigningKey, P256VerifyingKey, Secp256k1Signature, Secp256k1SigningKey,
+        Secp256k1VerifyingKey,
     };
 
     #[cfg(feature = "schnorr")]
-    pub use crate::schnorr::{SchnorrSigningKey, SchnorrVerifyingKey, SchnorrSignature};
+    pub use crate::schnorr::{SchnorrSignature, SchnorrSigningKey, SchnorrVerifyingKey};
 }

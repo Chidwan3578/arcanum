@@ -27,16 +27,16 @@ impl Hmac<Sha256> {
 
     /// Compute HMAC.
     pub fn compute(key: &[u8], data: &[u8]) -> Vec<u8> {
-        let mut mac = HmacInner::<Sha256>::new_from_slice(key)
-            .expect("HMAC can take key of any size");
+        let mut mac =
+            HmacInner::<Sha256>::new_from_slice(key).expect("HMAC can take key of any size");
         mac.update(data);
         mac.finalize().into_bytes().to_vec()
     }
 
     /// Verify HMAC.
     pub fn verify(key: &[u8], data: &[u8], tag: &[u8]) -> Result<()> {
-        let mut mac = HmacInner::<Sha256>::new_from_slice(key)
-            .expect("HMAC can take key of any size");
+        let mut mac =
+            HmacInner::<Sha256>::new_from_slice(key).expect("HMAC can take key of any size");
         mac.update(data);
         mac.verify_slice(tag)
             .map_err(|_| Error::MacVerificationFailed)
@@ -44,8 +44,8 @@ impl Hmac<Sha256> {
 
     /// Compute and return as fixed-size array.
     pub fn compute_array(key: &[u8], data: &[u8]) -> [u8; 32] {
-        let mut mac = HmacInner::<Sha256>::new_from_slice(key)
-            .expect("HMAC can take key of any size");
+        let mut mac =
+            HmacInner::<Sha256>::new_from_slice(key).expect("HMAC can take key of any size");
         mac.update(data);
         mac.finalize().into_bytes().into()
     }
@@ -59,16 +59,16 @@ impl Hmac<Sha384> {
 
     /// Compute HMAC.
     pub fn compute(key: &[u8], data: &[u8]) -> Vec<u8> {
-        let mut mac = HmacInner::<Sha384>::new_from_slice(key)
-            .expect("HMAC can take key of any size");
+        let mut mac =
+            HmacInner::<Sha384>::new_from_slice(key).expect("HMAC can take key of any size");
         mac.update(data);
         mac.finalize().into_bytes().to_vec()
     }
 
     /// Verify HMAC.
     pub fn verify(key: &[u8], data: &[u8], tag: &[u8]) -> Result<()> {
-        let mut mac = HmacInner::<Sha384>::new_from_slice(key)
-            .expect("HMAC can take key of any size");
+        let mut mac =
+            HmacInner::<Sha384>::new_from_slice(key).expect("HMAC can take key of any size");
         mac.update(data);
         mac.verify_slice(tag)
             .map_err(|_| Error::MacVerificationFailed)
@@ -83,16 +83,16 @@ impl Hmac<Sha512> {
 
     /// Compute HMAC.
     pub fn compute(key: &[u8], data: &[u8]) -> Vec<u8> {
-        let mut mac = HmacInner::<Sha512>::new_from_slice(key)
-            .expect("HMAC can take key of any size");
+        let mut mac =
+            HmacInner::<Sha512>::new_from_slice(key).expect("HMAC can take key of any size");
         mac.update(data);
         mac.finalize().into_bytes().to_vec()
     }
 
     /// Verify HMAC.
     pub fn verify(key: &[u8], data: &[u8], tag: &[u8]) -> Result<()> {
-        let mut mac = HmacInner::<Sha512>::new_from_slice(key)
-            .expect("HMAC can take key of any size");
+        let mut mac =
+            HmacInner::<Sha512>::new_from_slice(key).expect("HMAC can take key of any size");
         mac.update(data);
         mac.verify_slice(tag)
             .map_err(|_| Error::MacVerificationFailed)
@@ -129,9 +129,9 @@ mod tests {
 
         let tag = Hmac::<Sha256>::compute(&key, data);
 
-        let expected = hex::decode(
-            "b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7"
-        ).unwrap();
+        let expected =
+            hex::decode("b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7")
+                .unwrap();
 
         assert_eq!(tag, expected);
     }

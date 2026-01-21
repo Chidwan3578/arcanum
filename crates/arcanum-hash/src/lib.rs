@@ -105,6 +105,7 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+#![allow(unused_variables, dead_code)]
 
 #[cfg(feature = "sha2")]
 pub mod sha2_impl;
@@ -132,7 +133,7 @@ pub mod hmac_impl;
 
 mod traits;
 
-pub use traits::{Hasher, HashOutput, KeyDerivation, PasswordHash};
+pub use traits::{HashOutput, Hasher, KeyDerivation, PasswordHash};
 
 #[cfg(feature = "sha2")]
 pub use sha2_impl::{Sha256, Sha384, Sha512};
@@ -173,7 +174,7 @@ pub use hmac_impl::Hmac;
 
 /// Prelude for convenient imports.
 pub mod prelude {
-    pub use crate::traits::{Hasher, HashOutput, KeyDerivation, PasswordHash};
+    pub use crate::traits::{HashOutput, Hasher, KeyDerivation, PasswordHash};
 
     #[cfg(feature = "sha2")]
     pub use crate::sha2_impl::{Sha256, Sha384, Sha512};

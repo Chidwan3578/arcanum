@@ -36,6 +36,7 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 #[cfg(feature = "alloc")]
+#[allow(unused_extern_crates)] // Used in no_std mode
 extern crate alloc;
 
 pub mod buffer;
@@ -44,8 +45,8 @@ pub mod error;
 pub mod key;
 pub mod nonce;
 pub mod random;
-pub mod traits;
 pub mod time;
+pub mod traits;
 pub mod version;
 
 /// Re-exports of commonly used types
@@ -61,8 +62,8 @@ pub mod prelude {
 }
 
 // Re-export for convenience
-pub use zeroize::{Zeroize, ZeroizeOnDrop};
 pub use secrecy::{ExposeSecret, SecretBox, SecretString};
+pub use zeroize::{Zeroize, ZeroizeOnDrop};
 /// Type alias for backward compatibility with older secrecy API
 pub type Secret<T> = SecretBox<T>;
 pub use subtle::{Choice, ConstantTimeEq, CtOption};

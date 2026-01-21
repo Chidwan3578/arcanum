@@ -20,7 +20,7 @@
 //! ## Why This Approach Is Slower
 //!
 //! The bottleneck is **message transposition**. To process 8 blocks in parallel with
-//! transposed state, we need word[i] from 8 different blocks in one register. This requires:
+//! transposed state, we need word\[i\] from 8 different blocks in one register. This requires:
 //!
 //! 1. Loading 8 blocks from non-contiguous memory locations
 //! 2. Transposing 8×16 = 128 u32 values
@@ -69,13 +69,13 @@ use super::blake3_simd::IV;
 // Corrected full message schedule: apply permutation iteratively
 // Permutation: [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8]
 const MSG_SCHEDULE: [[usize; 16]; 7] = [
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],      // Round 0: identity
-    [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8],      // Round 1: P^1
-    [3, 4, 10, 12, 0, 2, 13, 14, 6, 5, 1, 7, 11, 15, 8, 9],      // Round 2: P^2
-    [10, 13, 12, 1, 2, 3, 14, 15, 4, 7, 6, 0, 5, 8, 9, 11],      // Round 3: P^3
-    [12, 14, 1, 6, 3, 10, 15, 8, 13, 0, 4, 2, 7, 9, 11, 5],      // Round 4: P^4
-    [1, 15, 6, 4, 10, 12, 8, 9, 14, 2, 13, 3, 0, 11, 5, 7],      // Round 5: P^5
-    [6, 8, 4, 13, 12, 1, 9, 11, 15, 3, 14, 10, 2, 5, 7, 0],      // Round 6: P^6
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], // Round 0: identity
+    [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8], // Round 1: P^1
+    [3, 4, 10, 12, 0, 2, 13, 14, 6, 5, 1, 7, 11, 15, 8, 9], // Round 2: P^2
+    [10, 13, 12, 1, 2, 3, 14, 15, 4, 7, 6, 0, 5, 8, 9, 11], // Round 3: P^3
+    [12, 14, 1, 6, 3, 10, 15, 8, 13, 0, 4, 2, 7, 9, 11, 5], // Round 4: P^4
+    [1, 15, 6, 4, 10, 12, 8, 9, 14, 2, 13, 3, 0, 11, 5, 7], // Round 5: P^5
+    [6, 8, 4, 13, 12, 1, 9, 11, 15, 3, 14, 10, 2, 5, 7, 0], // Round 6: P^6
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -113,22 +113,34 @@ pub mod avx2_turbo {
             self.s[a] = _mm256_add_epi32(self.s[a], _mm256_add_epi32(self.s[b], mx));
             // d = (d ^ a) >>> 16
             self.s[d] = _mm256_xor_si256(self.s[d], self.s[a]);
-            self.s[d] = _mm256_or_si256(_mm256_srli_epi32(self.s[d], 16), _mm256_slli_epi32(self.s[d], 16));
+            self.s[d] = _mm256_or_si256(
+                _mm256_srli_epi32(self.s[d], 16),
+                _mm256_slli_epi32(self.s[d], 16),
+            );
             // c = c + d
             self.s[c] = _mm256_add_epi32(self.s[c], self.s[d]);
             // b = (b ^ c) >>> 12
             self.s[b] = _mm256_xor_si256(self.s[b], self.s[c]);
-            self.s[b] = _mm256_or_si256(_mm256_srli_epi32(self.s[b], 12), _mm256_slli_epi32(self.s[b], 20));
+            self.s[b] = _mm256_or_si256(
+                _mm256_srli_epi32(self.s[b], 12),
+                _mm256_slli_epi32(self.s[b], 20),
+            );
             // a = a + b + my
             self.s[a] = _mm256_add_epi32(self.s[a], _mm256_add_epi32(self.s[b], my));
             // d = (d ^ a) >>> 8
             self.s[d] = _mm256_xor_si256(self.s[d], self.s[a]);
-            self.s[d] = _mm256_or_si256(_mm256_srli_epi32(self.s[d], 8), _mm256_slli_epi32(self.s[d], 24));
+            self.s[d] = _mm256_or_si256(
+                _mm256_srli_epi32(self.s[d], 8),
+                _mm256_slli_epi32(self.s[d], 24),
+            );
             // c = c + d
             self.s[c] = _mm256_add_epi32(self.s[c], self.s[d]);
             // b = (b ^ c) >>> 7
             self.s[b] = _mm256_xor_si256(self.s[b], self.s[c]);
-            self.s[b] = _mm256_or_si256(_mm256_srli_epi32(self.s[b], 7), _mm256_slli_epi32(self.s[b], 25));
+            self.s[b] = _mm256_or_si256(
+                _mm256_srli_epi32(self.s[b], 7),
+                _mm256_slli_epi32(self.s[b], 25),
+            );
         }
     }
 
@@ -167,10 +179,18 @@ pub mod avx2_turbo {
 
         // Helper to extract lane from __m128i (lane must be const)
         macro_rules! extract_lane {
-            ($reg:expr, 0) => { _mm_extract_epi32($reg, 0) };
-            ($reg:expr, 1) => { _mm_extract_epi32($reg, 1) };
-            ($reg:expr, 2) => { _mm_extract_epi32($reg, 2) };
-            ($reg:expr, 3) => { _mm_extract_epi32($reg, 3) };
+            ($reg:expr, 0) => {
+                _mm_extract_epi32($reg, 0)
+            };
+            ($reg:expr, 1) => {
+                _mm_extract_epi32($reg, 1)
+            };
+            ($reg:expr, 2) => {
+                _mm_extract_epi32($reg, 2)
+            };
+            ($reg:expr, 3) => {
+                _mm_extract_epi32($reg, 3)
+            };
         }
 
         // For each word position (0-15), unroll by lane
@@ -267,8 +287,14 @@ pub mod avx2_turbo {
         // Load CVs (transposed)
         for word in 0..8 {
             state.s[word] = _mm256_set_epi32(
-                cvs[7][word] as i32, cvs[6][word] as i32, cvs[5][word] as i32, cvs[4][word] as i32,
-                cvs[3][word] as i32, cvs[2][word] as i32, cvs[1][word] as i32, cvs[0][word] as i32,
+                cvs[7][word] as i32,
+                cvs[6][word] as i32,
+                cvs[5][word] as i32,
+                cvs[4][word] as i32,
+                cvs[3][word] as i32,
+                cvs[2][word] as i32,
+                cvs[1][word] as i32,
+                cvs[0][word] as i32,
             );
         }
 
@@ -279,22 +305,32 @@ pub mod avx2_turbo {
 
         // Load counters and flags
         state.s[12] = _mm256_set_epi32(
-            counters[7] as i32, counters[6] as i32, counters[5] as i32, counters[4] as i32,
-            counters[3] as i32, counters[2] as i32, counters[1] as i32, counters[0] as i32,
+            counters[7] as i32,
+            counters[6] as i32,
+            counters[5] as i32,
+            counters[4] as i32,
+            counters[3] as i32,
+            counters[2] as i32,
+            counters[1] as i32,
+            counters[0] as i32,
         );
         state.s[13] = _mm256_set_epi32(
-            (counters[7] >> 32) as i32, (counters[6] >> 32) as i32,
-            (counters[5] >> 32) as i32, (counters[4] >> 32) as i32,
-            (counters[3] >> 32) as i32, (counters[2] >> 32) as i32,
-            (counters[1] >> 32) as i32, (counters[0] >> 32) as i32,
+            (counters[7] >> 32) as i32,
+            (counters[6] >> 32) as i32,
+            (counters[5] >> 32) as i32,
+            (counters[4] >> 32) as i32,
+            (counters[3] >> 32) as i32,
+            (counters[2] >> 32) as i32,
+            (counters[1] >> 32) as i32,
+            (counters[0] >> 32) as i32,
         );
         state.s[14] = _mm256_set1_epi32(block_len as i32);
         state.s[15] = _mm256_set1_epi32(flags as i32);
 
         // Save initial CV for final XOR
         let init_cv: [__m256i; 8] = [
-            state.s[0], state.s[1], state.s[2], state.s[3],
-            state.s[4], state.s[5], state.s[6], state.s[7],
+            state.s[0], state.s[1], state.s[2], state.s[3], state.s[4], state.s[5], state.s[6],
+            state.s[7],
         ];
 
         // 7 rounds with direct-load message schedule
@@ -384,8 +420,12 @@ pub mod avx2_turbo {
 
             // Build flags
             let mut block_flags = base_flags;
-            if is_first { block_flags |= CHUNK_START; }
-            if is_last { block_flags |= CHUNK_END; }
+            if is_first {
+                block_flags |= CHUNK_START;
+            }
+            if is_last {
+                block_flags |= CHUNK_END;
+            }
 
             // Get block pointers
             let offset = block_idx * 64;
@@ -449,14 +489,24 @@ pub mod avx2_turbo {
 
         // Counters and flags
         state.s[12] = _mm256_set_epi32(
-            counters[7] as i32, counters[6] as i32, counters[5] as i32, counters[4] as i32,
-            counters[3] as i32, counters[2] as i32, counters[1] as i32, counters[0] as i32,
+            counters[7] as i32,
+            counters[6] as i32,
+            counters[5] as i32,
+            counters[4] as i32,
+            counters[3] as i32,
+            counters[2] as i32,
+            counters[1] as i32,
+            counters[0] as i32,
         );
         state.s[13] = _mm256_set_epi32(
-            (counters[7] >> 32) as i32, (counters[6] >> 32) as i32,
-            (counters[5] >> 32) as i32, (counters[4] >> 32) as i32,
-            (counters[3] >> 32) as i32, (counters[2] >> 32) as i32,
-            (counters[1] >> 32) as i32, (counters[0] >> 32) as i32,
+            (counters[7] >> 32) as i32,
+            (counters[6] >> 32) as i32,
+            (counters[5] >> 32) as i32,
+            (counters[4] >> 32) as i32,
+            (counters[3] >> 32) as i32,
+            (counters[2] >> 32) as i32,
+            (counters[1] >> 32) as i32,
+            (counters[0] >> 32) as i32,
         );
         state.s[14] = _mm256_set1_epi32(block_len as i32);
         state.s[15] = _mm256_set1_epi32(flags as i32);
@@ -543,23 +593,41 @@ pub fn hash_turbo(data: &[u8]) -> [u8; 32] {
     while offset + BATCH_BYTES <= data.len() {
         let chunks: [[u8; 1024]; 8] = [
             data[offset..offset + CHUNK_LEN].try_into().unwrap(),
-            data[offset + CHUNK_LEN..offset + 2 * CHUNK_LEN].try_into().unwrap(),
-            data[offset + 2 * CHUNK_LEN..offset + 3 * CHUNK_LEN].try_into().unwrap(),
-            data[offset + 3 * CHUNK_LEN..offset + 4 * CHUNK_LEN].try_into().unwrap(),
-            data[offset + 4 * CHUNK_LEN..offset + 5 * CHUNK_LEN].try_into().unwrap(),
-            data[offset + 5 * CHUNK_LEN..offset + 6 * CHUNK_LEN].try_into().unwrap(),
-            data[offset + 6 * CHUNK_LEN..offset + 7 * CHUNK_LEN].try_into().unwrap(),
-            data[offset + 7 * CHUNK_LEN..offset + 8 * CHUNK_LEN].try_into().unwrap(),
+            data[offset + CHUNK_LEN..offset + 2 * CHUNK_LEN]
+                .try_into()
+                .unwrap(),
+            data[offset + 2 * CHUNK_LEN..offset + 3 * CHUNK_LEN]
+                .try_into()
+                .unwrap(),
+            data[offset + 3 * CHUNK_LEN..offset + 4 * CHUNK_LEN]
+                .try_into()
+                .unwrap(),
+            data[offset + 4 * CHUNK_LEN..offset + 5 * CHUNK_LEN]
+                .try_into()
+                .unwrap(),
+            data[offset + 5 * CHUNK_LEN..offset + 6 * CHUNK_LEN]
+                .try_into()
+                .unwrap(),
+            data[offset + 6 * CHUNK_LEN..offset + 7 * CHUNK_LEN]
+                .try_into()
+                .unwrap(),
+            data[offset + 7 * CHUNK_LEN..offset + 8 * CHUNK_LEN]
+                .try_into()
+                .unwrap(),
         ];
 
         let counters = [
-            chunk_counter, chunk_counter + 1, chunk_counter + 2, chunk_counter + 3,
-            chunk_counter + 4, chunk_counter + 5, chunk_counter + 6, chunk_counter + 7,
+            chunk_counter,
+            chunk_counter + 1,
+            chunk_counter + 2,
+            chunk_counter + 3,
+            chunk_counter + 4,
+            chunk_counter + 5,
+            chunk_counter + 6,
+            chunk_counter + 7,
         ];
 
-        let batch_cvs = unsafe {
-            avx2_turbo::hash_8_chunks_turbo(&IV, &chunks, &counters, 0)
-        };
+        let batch_cvs = unsafe { avx2_turbo::hash_8_chunks_turbo(&IV, &chunks, &counters, 0) };
         cvs.extend_from_slice(&batch_cvs);
 
         offset += BATCH_BYTES;
@@ -570,15 +638,19 @@ pub fn hash_turbo(data: &[u8]) -> [u8; 32] {
     if offset < data.len() {
         let remaining = &data[offset..];
         // Use existing implementation for remainder
-        let remaining_cvs = super::blake3_simd::hash_many_chunks_parallel(
-            &IV, remaining, chunk_counter, 0
-        );
+        let remaining_cvs =
+            super::blake3_simd::hash_many_chunks_parallel(&IV, remaining, chunk_counter, 0);
         cvs.extend(remaining_cvs);
     }
 
     // Merge CVs into root hash using parent compression
     if cvs.is_empty() {
-        return IV.iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>().try_into().unwrap();
+        return IV
+            .iter()
+            .flat_map(|w| w.to_le_bytes())
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
     }
 
     merge_cvs_to_root(&cvs)
@@ -593,7 +665,12 @@ fn merge_cvs_to_root(cvs: &[[u32; 8]]) -> [u8; 32] {
 
     if cvs.len() == 1 {
         // Single CV is the root
-        return cvs[0].iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>().try_into().unwrap();
+        return cvs[0]
+            .iter()
+            .flat_map(|w| w.to_le_bytes())
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
     }
 
     let mut current = cvs.to_vec();
@@ -633,7 +710,12 @@ fn merge_cvs_to_root(cvs: &[[u32; 8]]) -> [u8; 32] {
         current = next;
     }
 
-    current[0].iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>().try_into().unwrap()
+    current[0]
+        .iter()
+        .flat_map(|w| w.to_le_bytes())
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -658,7 +740,12 @@ mod tests {
             let turbo_hash = hash_turbo(&data);
             let reference_hash = blake3::hash(&data);
 
-            assert_eq!(turbo_hash, *reference_hash.as_bytes(), "Mismatch at size {}", size);
+            assert_eq!(
+                turbo_hash,
+                *reference_hash.as_bytes(),
+                "Mismatch at size {}",
+                size
+            );
         }
     }
 }

@@ -5,7 +5,9 @@
 //! - Schnorr proofs (discrete log, equality)
 //! - Pedersen commitments
 
-use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
+#![allow(clippy::redundant_closure)]
+
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bulletproofs Range Proof Benchmarks
@@ -19,24 +21,32 @@ fn bench_range_proofs(c: &mut Criterion) {
 
     // Benchmark proving with various bit ranges
     for n_bits in [8, 16, 32, 64].iter() {
-        let value = if *n_bits < 64 { 1u64 << (*n_bits - 1) } else { u64::MAX / 2 };
+        let value = if *n_bits < 64 {
+            1u64 << (*n_bits - 1)
+        } else {
+            u64::MAX / 2
+        };
 
         group.bench_with_input(
             BenchmarkId::new("prove", format!("{}_bits", n_bits)),
             n_bits,
-            |b, &n_bits| b.iter(|| RangeProof::prove(value, n_bits))
+            |b, &n_bits| b.iter(|| RangeProof::prove(value, n_bits)),
         );
     }
 
     // Benchmark verification with various bit ranges
     for n_bits in [8, 16, 32, 64].iter() {
-        let value = if *n_bits < 64 { 1u64 << (*n_bits - 1) } else { u64::MAX / 2 };
+        let value = if *n_bits < 64 {
+            1u64 << (*n_bits - 1)
+        } else {
+            u64::MAX / 2
+        };
         let proof = RangeProof::prove(value, *n_bits).unwrap();
 
         group.bench_with_input(
             BenchmarkId::new("verify", format!("{}_bits", n_bits)),
             &proof,
-            |b, proof| b.iter(|| proof.verify(*n_bits))
+            |b, proof| b.iter(|| proof.verify(*n_bits)),
         );
     }
 
@@ -45,9 +55,7 @@ fn bench_range_proofs(c: &mut Criterion) {
     let bytes = proof_32.to_bytes();
 
     group.throughput(Throughput::Bytes(bytes.len() as u64));
-    group.bench_function("serialize_32bit", |b| {
-        b.iter(|| proof_32.to_bytes())
-    });
+    group.bench_function("serialize_32bit", |b| b.iter(|| proof_32.to_bytes()));
 
     group.bench_function("deserialize_32bit", |b| {
         b.iter(|| RangeProof::from_bytes(&bytes, 32))
@@ -62,8 +70,8 @@ fn bench_range_proofs(c: &mut Criterion) {
 
 #[cfg(feature = "schnorr-proofs")]
 fn bench_schnorr_proofs(c: &mut Criterion) {
+    use arcanum_zkp::curve::{RISTRETTO_BASEPOINT_POINT, Scalar};
     use arcanum_zkp::{DiscreteLogProof, EqualityProof, SchnorrProofBuilder};
-    use arcanum_zkp::curve::{Scalar, RISTRETTO_BASEPOINT_POINT};
     use rand::RngCore;
 
     let mut group = c.benchmark_group("Schnorr");
@@ -82,9 +90,7 @@ fn bench_schnorr_proofs(c: &mut Criterion) {
 
     let dlog_proof = DiscreteLogProof::prove(&secret, &public);
 
-    group.bench_function("dlog_verify", |b| {
-        b.iter(|| dlog_proof.verify(&public))
-    });
+    group.bench_function("dlog_verify", |b| b.iter(|| dlog_proof.verify(&public)));
 
     // Benchmark equality proof (same discrete log in two groups)
     let g2 = Scalar::from(42u64) * g;
@@ -133,9 +139,7 @@ fn bench_schnorr_proofs(c: &mut Criterion) {
     let bytes = dlog_proof.to_bytes();
     group.throughput(Throughput::Bytes(bytes.len() as u64));
 
-    group.bench_function("dlog_serialize", |b| {
-        b.iter(|| dlog_proof.to_bytes())
-    });
+    group.bench_function("dlog_serialize", |b| b.iter(|| dlog_proof.to_bytes()));
 
     group.bench_function("dlog_deserialize", |b| {
         b.iter(|| DiscreteLogProof::from_bytes(&bytes))
@@ -154,9 +158,7 @@ fn bench_pedersen(c: &mut Criterion) {
     let mut group = c.benchmark_group("Pedersen");
 
     // Benchmark opening generation
-    group.bench_function("opening_random", |b| {
-        b.iter(|| PedersenOpening::random())
-    });
+    group.bench_function("opening_random", |b| b.iter(|| PedersenOpening::random()));
 
     // Benchmark commitment creation
     group.bench_function("commit", |b| {
@@ -172,9 +174,7 @@ fn bench_pedersen(c: &mut Criterion) {
     let commitment = PedersenCommitment::commit(value, &opening);
 
     // Benchmark verification
-    group.bench_function("verify", |b| {
-        b.iter(|| commitment.verify(value, &opening))
-    });
+    group.bench_function("verify", |b| b.iter(|| commitment.verify(value, &opening)));
 
     // Benchmark homomorphic addition
     let value2 = 100u64;
@@ -186,9 +186,7 @@ fn bench_pedersen(c: &mut Criterion) {
     });
 
     // Benchmark opening addition (for homomorphic verification)
-    group.bench_function("opening_add", |b| {
-        b.iter(|| opening.add(&opening2))
-    });
+    group.bench_function("opening_add", |b| b.iter(|| opening.add(&opening2)));
 
     // Verify homomorphic sum
     let sum_commitment = commitment.add(&commitment2);
@@ -203,9 +201,7 @@ fn bench_pedersen(c: &mut Criterion) {
     let bytes = commitment.to_bytes();
     group.throughput(Throughput::Bytes(bytes.len() as u64));
 
-    group.bench_function("serialize", |b| {
-        b.iter(|| commitment.to_bytes())
-    });
+    group.bench_function("serialize", |b| b.iter(|| commitment.to_bytes()));
 
     group.bench_function("deserialize", |b| {
         b.iter(|| PedersenCommitment::from_bytes(&bytes))
@@ -219,7 +215,12 @@ fn bench_pedersen(c: &mut Criterion) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 #[cfg(all(feature = "bulletproofs", feature = "schnorr-proofs"))]
-criterion_group!(benches, bench_range_proofs, bench_schnorr_proofs, bench_pedersen);
+criterion_group!(
+    benches,
+    bench_range_proofs,
+    bench_schnorr_proofs,
+    bench_pedersen
+);
 
 #[cfg(all(feature = "bulletproofs", not(feature = "schnorr-proofs")))]
 criterion_group!(benches, bench_range_proofs, bench_pedersen);
