@@ -46,7 +46,7 @@
 //! - [x] NTT constants (ZETAS from Dilithium reference)
 //! - [x] NTT implementation (forward/inverse, Montgomery arithmetic)
 //! - [x] Sampling functions (ExpandA, ExpandS, SampleInBall)
-//! - [ ] Rounding functions
+//! - [x] Rounding functions (Power2Round, Decompose, MakeHint, UseHint)
 //! - [ ] Key generation
 //! - [ ] Signing
 //! - [ ] Verification
@@ -57,6 +57,7 @@
 pub mod ntt;
 pub mod params;
 pub mod poly;
+pub mod rounding;
 pub mod sampling;
 
 #[cfg(test)]
