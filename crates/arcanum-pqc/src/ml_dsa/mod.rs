@@ -43,9 +43,9 @@
 //!
 //! - [x] Parameter definitions (params.rs)
 //! - [x] Polynomial types (poly.rs)
-//! - [ ] NTT constants generation
-//! - [ ] NTT implementation
-//! - [ ] Sampling functions
+//! - [x] NTT constants (ZETAS from Dilithium reference)
+//! - [x] NTT implementation (forward/inverse, Montgomery arithmetic)
+//! - [x] Sampling functions (ExpandA, ExpandS, SampleInBall)
 //! - [ ] Rounding functions
 //! - [ ] Key generation
 //! - [ ] Signing
@@ -57,6 +57,7 @@
 pub mod ntt;
 pub mod params;
 pub mod poly;
+pub mod sampling;
 
 #[cfg(test)]
 mod tests;
