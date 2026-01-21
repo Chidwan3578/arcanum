@@ -221,6 +221,16 @@ const fn const_assert(condition: bool, _msg: &str) {
 }
 
 /// Validate parameters at compile time
+///
+/// # Security Validation
+///
+/// This function enforces critical invariants that affect security:
+/// 1. SIMD optimization constraints (L divisibility)
+/// 2. Security dimension requirements
+/// 3. Algebraic consistency (BETA = TAU × ETA)
+/// 4. Sampling efficiency (GAMMA1 power of 2)
+/// 5. Valid coefficient bounds (ETA in {2, 4})
+/// 6. Challenge weight bounds (TAU reasonable for N=256)
 const fn validate_params<P: ArcanumDsaParams>() {
     // SIMD optimization: L must be multiple of 4
     const_assert(P::L % 4 == 0, "L must be multiple of 4 for SIMD");
@@ -242,6 +252,25 @@ const fn validate_params<P: ArcanumDsaParams>() {
         P::GAMMA1.is_power_of_two(),
         "GAMMA1 must be power of 2"
     );
+
+    // ETA must be 2 or 4 (FIPS 204 defined values)
+    const_assert(
+        P::ETA == 2 || P::ETA == 4,
+        "ETA must be 2 or 4 per FIPS 204"
+    );
+
+    // TAU must be positive and less than N (at most N non-zero challenge coeffs)
+    const_assert(
+        P::TAU > 0 && P::TAU < N,
+        "TAU must be in range (0, N)"
+    );
+
+    // K and L must be positive
+    const_assert(P::K > 0, "K must be positive");
+    const_assert(P::L > 0, "L must be positive");
+
+    // OMEGA must be positive (hint weight bound)
+    const_assert(P::OMEGA > 0, "OMEGA must be positive");
 }
 
 // Trigger compile-time validation for all parameter sets

@@ -31,10 +31,15 @@ use crate::ml_dsa::{MlDsa, MlDsaError, MlDsaNative, MlDsaSignature, MlDsaSigning
 /// Dimension: 2048 (same as ML-DSA-44)
 pub type ArcanumDsa44 = MlDsaNative<Params44>;
 
-/// Arcanum-DSA-65: NIST Level 3 equivalent with +9% security margin
+/// Arcanum-DSA-65: NIST Level 3 equivalent with SIMD optimization
 ///
-/// K=4, L=8 (SIMD-optimized from ML-DSA-65's K=6, L=5)
-/// Dimension: 3072 vs ML-DSA-65's 2816
+/// K=7, L=4 (SIMD-optimized from ML-DSA-65's K=6, L=5)
+/// Dimension: 2816 (same as ML-DSA-65)
+///
+/// Key insight: L is *reduced* from 5 to 4, giving:
+/// - 20% less ExpandMask work
+/// - Perfect 4-way SIMD batching
+/// - 19% smaller signatures (2670 vs 3309 bytes)
 pub type ArcanumDsa65 = MlDsaNative<Params65>;
 
 /// Arcanum-DSA-87: NIST Level 5 equivalent with +7% security margin

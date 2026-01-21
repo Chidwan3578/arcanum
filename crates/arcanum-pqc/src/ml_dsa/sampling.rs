@@ -546,10 +546,28 @@ pub fn expand_mask<P: MlDsaParams>(seed: &[u8], nonce: u16, gamma1: u32) -> Vec<
 ///
 /// Processes 4 polynomials in parallel using 4-way Keccak.
 /// Only used when L is a multiple of 4 (Arcanum-DSA parameters).
+///
+/// # Safety
+///
+/// Requires AVX2 support. Caller must verify `is_x86_feature_detected!("avx2")`.
+///
+/// # Security Notes
+///
+/// - Buffer sizing: 680 bytes (5 × 136) is sufficient for both gamma1 values:
+///   - gamma1 = 2^17: needs 576 bytes (256 × 18 bits / 8)
+///   - gamma1 = 2^19: needs 640 bytes (256 × 20 bits / 8)
+/// - No rejection sampling: data extraction is deterministic and constant-time
+/// - The nonce addition is checked for overflow (debug builds)
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]
 #[target_feature(enable = "avx2")]
 unsafe fn expand_mask_x4<P: MlDsaParams>(seed: &[u8], nonce: u16, gamma1: u32) -> Vec<Poly> {
     use arcanum_primitives::keccak_x4::Shake256X4;
+
+    // Validate gamma1 is a supported value
+    debug_assert!(
+        gamma1 == (1 << 17) || gamma1 == (1 << 19),
+        "expand_mask_x4: unsupported gamma1 value {}", gamma1
+    );
 
     let mut y = Vec::with_capacity(P::L);
 
@@ -557,7 +575,9 @@ unsafe fn expand_mask_x4<P: MlDsaParams>(seed: &[u8], nonce: u16, gamma1: u32) -
     let num_batches = P::L / 4;
 
     for batch in 0..num_batches {
-        let base_nonce = nonce + (batch * 4) as u16;
+        // Check for nonce overflow (important for correctness)
+        let base_nonce = nonce.checked_add((batch * 4) as u16)
+            .expect("expand_mask_x4: nonce overflow");
 
         // Initialize 4-way SHAKE256
         let mut shake_x4 = Shake256X4::new();
@@ -575,6 +595,7 @@ unsafe fn expand_mask_x4<P: MlDsaParams>(seed: &[u8], nonce: u16, gamma1: u32) -
         // Squeeze and sample based on gamma1
         if gamma1 == (1 << 17) {
             // γ₁ = 2^17: need 576 bytes per polynomial (4.2 blocks of 136)
+            // Using 680 bytes (5 blocks) provides sufficient margin
             let mut bufs = [[0u8; 680]; 4];
             shake_x4.squeeze_blocks_x4(&mut bufs, 5, 4);
 
@@ -583,11 +604,19 @@ unsafe fn expand_mask_x4<P: MlDsaParams>(seed: &[u8], nonce: u16, gamma1: u32) -
             }
         } else if gamma1 == (1 << 19) {
             // γ₁ = 2^19: need 640 bytes per polynomial (4.7 blocks of 136)
+            // Using 680 bytes (5 blocks) provides sufficient margin
             let mut bufs = [[0u8; 680]; 4];
             shake_x4.squeeze_blocks_x4(&mut bufs, 5, 4);
 
             for i in 0..4 {
                 y.push(decode_gamma1_19(&bufs[i]));
+            }
+        } else {
+            // Unsupported gamma1 value - fall back to sequential
+            // This path should never be reached with valid parameters
+            for i in 0..4 {
+                let n = base_nonce + i as u16;
+                y.push(sample_poly_gamma1(seed, n, gamma1));
             }
         }
     }
