@@ -186,6 +186,97 @@ fn bench_ml_dsa_87(c: &mut Criterion) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Native ML-DSA Benchmarks (FIPS 204 Implementation)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+#[cfg(feature = "ml-dsa-native")]
+fn bench_ml_dsa_native_44(c: &mut Criterion) {
+    use arcanum_pqc::ml_dsa::{MlDsa, MlDsa44};
+
+    let mut group = c.benchmark_group("ML-DSA-44-Native");
+
+    group.bench_function("keygen", |b| b.iter(|| MlDsa44::generate_keypair()));
+
+    let (sk, vk) = MlDsa44::generate_keypair();
+    let message = b"benchmark message for native ML-DSA-44";
+
+    group.bench_function("sign", |b| b.iter(|| MlDsa44::sign(&sk, message)));
+
+    let signature = MlDsa44::sign(&sk, message);
+
+    group.bench_function("verify", |b| {
+        b.iter(|| MlDsa44::verify(&vk, message, &signature))
+    });
+
+    group.bench_function("sign_verify_cycle", |b| {
+        b.iter(|| {
+            let sig = MlDsa44::sign(&sk, message);
+            MlDsa44::verify(&vk, message, &sig).unwrap();
+        })
+    });
+
+    group.finish();
+}
+
+#[cfg(feature = "ml-dsa-native")]
+fn bench_ml_dsa_native_65(c: &mut Criterion) {
+    use arcanum_pqc::ml_dsa::{MlDsa, MlDsa65};
+
+    let mut group = c.benchmark_group("ML-DSA-65-Native");
+
+    group.bench_function("keygen", |b| b.iter(|| MlDsa65::generate_keypair()));
+
+    let (sk, vk) = MlDsa65::generate_keypair();
+    let message = b"benchmark message for native ML-DSA-65";
+
+    group.bench_function("sign", |b| b.iter(|| MlDsa65::sign(&sk, message)));
+
+    let signature = MlDsa65::sign(&sk, message);
+
+    group.bench_function("verify", |b| {
+        b.iter(|| MlDsa65::verify(&vk, message, &signature))
+    });
+
+    group.bench_function("sign_verify_cycle", |b| {
+        b.iter(|| {
+            let sig = MlDsa65::sign(&sk, message);
+            MlDsa65::verify(&vk, message, &sig).unwrap();
+        })
+    });
+
+    group.finish();
+}
+
+#[cfg(feature = "ml-dsa-native")]
+fn bench_ml_dsa_native_87(c: &mut Criterion) {
+    use arcanum_pqc::ml_dsa::{MlDsa, MlDsa87};
+
+    let mut group = c.benchmark_group("ML-DSA-87-Native");
+
+    group.bench_function("keygen", |b| b.iter(|| MlDsa87::generate_keypair()));
+
+    let (sk, vk) = MlDsa87::generate_keypair();
+    let message = b"benchmark message for native ML-DSA-87";
+
+    group.bench_function("sign", |b| b.iter(|| MlDsa87::sign(&sk, message)));
+
+    let signature = MlDsa87::sign(&sk, message);
+
+    group.bench_function("verify", |b| {
+        b.iter(|| MlDsa87::verify(&vk, message, &signature))
+    });
+
+    group.bench_function("sign_verify_cycle", |b| {
+        b.iter(|| {
+            let sig = MlDsa87::sign(&sk, message);
+            MlDsa87::verify(&vk, message, &sig).unwrap();
+        })
+    });
+
+    group.finish();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Hybrid X25519-ML-KEM-768 Benchmarks
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -387,7 +478,7 @@ criterion_group!(
 );
 
 // ml-kem only
-#[cfg(all(feature = "ml-kem", not(feature = "ml-dsa"), not(feature = "slh-dsa")))]
+#[cfg(all(feature = "ml-kem", not(feature = "ml-dsa"), not(feature = "ml-dsa-native"), not(feature = "slh-dsa")))]
 criterion_group!(
     benches,
     bench_ml_kem_512,
@@ -414,8 +505,29 @@ criterion_group!(benches, bench_ml_dsa_44, bench_ml_dsa_65, bench_ml_dsa_87,);
 #[cfg(all(feature = "slh-dsa", not(feature = "ml-kem"), not(feature = "ml-dsa")))]
 criterion_group!(benches, bench_slh_dsa_128f, bench_slh_dsa_128s,);
 
+// ml-dsa-native only
+#[cfg(all(feature = "ml-dsa-native", not(feature = "ml-kem"), not(feature = "ml-dsa"), not(feature = "slh-dsa")))]
+criterion_group!(
+    benches,
+    bench_ml_dsa_native_44,
+    bench_ml_dsa_native_65,
+    bench_ml_dsa_native_87,
+);
+
+// ml-kem + ml-dsa-native
+#[cfg(all(feature = "ml-kem", feature = "ml-dsa-native", not(feature = "ml-dsa"), not(feature = "slh-dsa")))]
+criterion_group!(
+    benches,
+    bench_ml_kem_512,
+    bench_ml_kem_768,
+    bench_ml_kem_1024,
+    bench_ml_dsa_native_44,
+    bench_ml_dsa_native_65,
+    bench_ml_dsa_native_87,
+);
+
 // No features enabled
-#[cfg(not(any(feature = "ml-kem", feature = "ml-dsa", feature = "slh-dsa")))]
+#[cfg(not(any(feature = "ml-kem", feature = "ml-dsa", feature = "ml-dsa-native", feature = "slh-dsa")))]
 criterion_group!(benches,);
 
 criterion_main!(benches);
