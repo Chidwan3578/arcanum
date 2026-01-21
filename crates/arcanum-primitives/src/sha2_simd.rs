@@ -93,7 +93,7 @@ pub mod sha_ni {
     ///
     /// Caller must ensure the CPU supports SHA-NI (`has_sha_ni()` returns true).
     ///
-    /// Reference: https://github.com/noloader/SHA-Intrinsics/blob/master/sha256-x86.c
+    /// Reference: <https://github.com/noloader/SHA-Intrinsics/blob/master/sha256-x86.c>
     #[target_feature(enable = "sha", enable = "sse4.1")]
     pub unsafe fn compress_block_sha_ni(state: &mut [u32; 8], block: &[u8; 64]) {
         // Load state: [A, B, C, D] and [E, F, G, H]
@@ -722,7 +722,7 @@ pub mod sha512_avx2 {
 
 /// Compress a SHA-512 block with automatic dispatch.
 ///
-/// NOTE: SHA-512's message schedule has tight data dependencies (w[i] depends on w[i-2])
+/// NOTE: SHA-512's message schedule has tight data dependencies (w\[i\] depends on w\[i-2\])
 /// that prevent effective SIMD parallelization for single-message hashing.
 /// The portable implementation matches the speed of RustCrypto's optimized version.
 /// For true SIMD acceleration, multi-message parallel hashing would be needed.

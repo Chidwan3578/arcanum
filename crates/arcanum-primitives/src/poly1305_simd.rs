@@ -62,9 +62,9 @@ pub struct Poly1305Powers {
     pub r: [u64; 5],
     /// r² in 5x26-bit limb form
     pub r2: [u64; 5],
-    /// 5*r[1], 5*r[2], 5*r[3], 5*r[4] for reduction
+    /// 5\*r\[1\], 5\*r\[2\], 5\*r\[3\], 5\*r\[4\] for reduction
     pub s: [u64; 4],
-    /// 5*r²[1], 5*r²[2], 5*r²[3], 5*r²[4] for reduction
+    /// 5\*r²\[1\], 5\*r²\[2\], 5\*r²\[3\], 5\*r²\[4\] for reduction
     pub s2: [u64; 4],
 }
 

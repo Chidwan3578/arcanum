@@ -10,7 +10,7 @@
 //!   and decryption are implemented in constant time to prevent timing attacks.
 //!
 //! - **Memory zeroization**: All secret key material is automatically zeroized
-//!   when dropped using the `zeroize` crate via [`SecretBytes`](arcanum_core::SecretBytes).
+//!   when dropped using the `zeroize` crate via `SecretBytes`.
 //!
 //! - **Authenticated encryption**: All AEAD ciphers provide both confidentiality
 //!   and integrity. Any tampering with ciphertext or AAD is detected on decryption.

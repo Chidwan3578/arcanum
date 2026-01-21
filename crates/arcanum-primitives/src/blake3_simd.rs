@@ -838,7 +838,7 @@ const MSG_SCHEDULE_SSE: [[usize; 16]; 7] = [
 ///
 /// This processes 4 independent blocks simultaneously by storing corresponding
 /// state elements from all 4 blocks in the same __m128i register.
-/// E.g., state_0 = [block0.state[0], block1.state[0], block2.state[0], block3.state[0]]
+/// E.g., state_0 = \[block0.state\[0\], block1.state\[0\], block2.state\[0\], block3.state\[0\]\]
 #[cfg(target_arch = "x86_64")]
 pub mod parallel4 {
     use super::*;

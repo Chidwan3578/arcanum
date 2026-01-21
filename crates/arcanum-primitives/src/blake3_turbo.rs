@@ -20,7 +20,7 @@
 //! ## Why This Approach Is Slower
 //!
 //! The bottleneck is **message transposition**. To process 8 blocks in parallel with
-//! transposed state, we need word[i] from 8 different blocks in one register. This requires:
+//! transposed state, we need word\[i\] from 8 different blocks in one register. This requires:
 //!
 //! 1. Loading 8 blocks from non-contiguous memory locations
 //! 2. Transposing 8×16 = 128 u32 values
