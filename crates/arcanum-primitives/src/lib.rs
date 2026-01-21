@@ -62,6 +62,11 @@ pub mod shake;
 #[allow(unsafe_code)]
 pub mod keccak_avx2;
 
+// 4-way parallel Keccak for batch operations (ML-DSA ExpandA)
+#[cfg(all(feature = "shake", feature = "simd", target_arch = "x86_64"))]
+#[allow(unsafe_code)]
+pub mod keccak_x4;
+
 // SIMD-accelerated SHA-2 (SHA-NI)
 #[cfg(all(feature = "sha2", feature = "simd"))]
 #[allow(unsafe_code)]
