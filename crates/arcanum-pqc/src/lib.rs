@@ -63,6 +63,13 @@ pub mod dsa;
 #[cfg(feature = "ml-dsa-native")]
 pub mod ml_dsa;
 
+/// Arcanum-DSA: SIMD-optimized digital signatures (experimental)
+///
+/// Variant of ML-DSA with parameters optimized for modern SIMD architectures.
+/// Maintains equivalent or stronger security while enabling efficient batching.
+#[cfg(feature = "ml-dsa-native")]
+pub mod arcanum_dsa;
+
 #[cfg(feature = "slh-dsa")]
 pub mod slh_dsa;
 
