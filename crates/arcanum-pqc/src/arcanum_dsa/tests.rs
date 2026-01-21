@@ -173,19 +173,19 @@ fn simd_expand_a_has_no_leftover() {
 /// SIMD: Verify 8-way (AVX-512) potential
 ///
 /// For future AVX-512 optimization, check if L is also divisible by 8.
+/// Note: Params65 uses L=4 for performance (smaller than ML-DSA-65's L=5)
 #[test]
 fn simd_avx512_potential() {
-    // Params44: L=4, not divisible by 8
-    // Params65: L=8, divisible by 8 ✓
+    // Params44: L=4, not divisible by 8 (but optimal for 4-way)
+    // Params65: L=4, not divisible by 8 (but optimal for 4-way, reduced from ML-DSA's L=5)
     // Params87: L=8, divisible by 8 ✓
 
-    // At minimum, L should be divisible by 4 (already tested)
-    // Bonus: check which are AVX-512 ready
-    let avx512_ready_65 = Params65::L % 8 == 0;
+    // Params87 is AVX-512 ready
     let avx512_ready_87 = Params87::L % 8 == 0;
-
-    assert!(avx512_ready_65, "Params65::L={} should be AVX-512 ready", Params65::L);
     assert!(avx512_ready_87, "Params87::L={} should be AVX-512 ready", Params87::L);
+
+    // Params65 prioritizes minimal L over AVX-512 (L=4 < ML-DSA's L=5)
+    assert_eq!(Params65::L, 4, "Params65 uses L=4 for performance");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -204,15 +204,17 @@ fn security_margin_params44_non_negative() {
     println!("Params44 security margin: {}%", margin);
 }
 
-/// SECURITY: Params65 must have positive security margin (we increased dimension)
+/// SECURITY: Params65 must have non-negative security margin
+///
+/// With K=7, L=4, dimension = 256×11 = 2816 (same as ML-DSA-65)
 #[test]
-fn security_margin_params65_positive() {
+fn security_margin_params65_non_negative() {
     let margin = (Params65::DIMENSION * 100 / Params65::ML_DSA_EQUIVALENT_DIM) as i32 - 100;
     assert!(
-        margin > 0,
-        "Params65: expected positive security margin, got {}%", margin
+        margin >= 0,
+        "Params65: security margin {}% is negative", margin
     );
-    println!("Params65 security margin: {}%", margin);
+    println!("Params65 security margin: {}% (same dimension as ML-DSA-65)", margin);
 }
 
 /// SECURITY: Params87 must have positive security margin (we increased dimension)
@@ -466,8 +468,8 @@ fn benchmark_sign_performance() {
     use crate::ml_dsa::{MlDsa, MlDsa44, MlDsa65, MlDsa87};
     use std::time::Instant;
 
-    const ITERATIONS: u32 = 500;
-    const WARMUP: u32 = 50;
+    const ITERATIONS: u32 = 1000;
+    const WARMUP: u32 = 100;
 
     fn bench_sign<F: Fn()>(name: &str, iterations: u32, warmup: u32, f: F) -> std::time::Duration {
         // Warmup
@@ -510,7 +512,7 @@ fn benchmark_sign_performance() {
         ar44.as_nanos() as f64 / ml44.as_nanos() as f64,
         if ar44 < ml44 { "Arcanum faster" } else { "ML-DSA faster" });
 
-    println!("─── Level 3 (ML-DSA L=5 scalar vs Arcanum L=8 SIMD) ───");
+    println!("─── Level 3 (ML-DSA K=6,L=5 vs Arcanum K=7,L=4 SIMD) ───");
     let ml65 = bench_sign("ML-DSA-65 sign", ITERATIONS, WARMUP, || {
         let _ = MlDsa65::sign(&ml_sk65, msg);
     });

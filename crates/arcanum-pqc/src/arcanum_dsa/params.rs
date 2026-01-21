@@ -106,22 +106,27 @@ impl MlDsaParams for Params44 {
 
 /// Arcanum-DSA-65: NIST Level 3 equivalent (SIMD-optimized)
 ///
-/// Modified from ML-DSA-65: K=6,L=5 → K=4,L=8
+/// Modified from ML-DSA-65: K=6,L=5 → K=7,L=4
 ///
 /// # Security
 /// - ML-DSA-65 dimension: 2816 (256 × 11)
-/// - Arcanum-65 dimension: 3072 (256 × 12)
-/// - Security margin: +9% over ML-DSA-65
+/// - Arcanum-65 dimension: 2816 (256 × 11) - SAME!
+/// - Security margin: 0% (identical dimension)
 ///
 /// # SIMD Benefit
-/// - expand_mask: 2 full batches of 4 (was 1 batch + 1 leftover)
-/// - expand_a: 8 batches of 4 (was ~8 batches with uneven distribution)
+/// - expand_mask: 1 full batch of 4 (was 1 batch + 1 leftover)
+/// - L REDUCED from 5 to 4 (-20% work in expand_mask!)
+/// - expand_a: 7 batches of 4 (K×L=28, perfectly divisible)
+///
+/// # Trade-offs
+/// - Smaller signatures (L=4 vs L=5): 2670 bytes vs 3309 bytes (-19%)
+/// - Larger public key (K=7 vs K=6): 2272 bytes vs 1952 bytes (+16%)
 #[derive(Clone, Copy, Debug)]
 pub struct Params65;
 
 impl ArcanumDsaParams for Params65 {
-    const K: usize = 4;
-    const L: usize = 8;  // SIMD-optimized (was 5)
+    const K: usize = 7;
+    const L: usize = 4;  // SIMD-optimized (down from 5!)
     const ETA: usize = 4;
     const TAU: usize = 49;
     const BETA: u32 = 196;  // TAU * ETA
@@ -132,10 +137,10 @@ impl ArcanumDsaParams for Params65 {
     const ML_DSA_EQUIVALENT_DIM: usize = 2816;  // 256 * (6+5)
 }
 
-// Implement MlDsaParams for Params65 (K=4, L=8 variant)
+// Implement MlDsaParams for Params65 (K=7, L=4 variant)
 impl MlDsaParams for Params65 {
-    const K: usize = 4;
-    const L: usize = 8;
+    const K: usize = 7;
+    const L: usize = 4;
     const ETA: usize = 4;
     const BETA: u32 = 196;
     const GAMMA1: u32 = 1 << 19;
@@ -143,13 +148,13 @@ impl MlDsaParams for Params65 {
     const TAU: usize = 49;
     const LAMBDA: usize = 192;  // bits (48 bytes)
     const OMEGA: usize = 55;
-    // PK: ρ (32) + t₁ (K×320) = 32 + 4×320 = 1312
-    const PK_SIZE: usize = 1312;
+    // PK: ρ (32) + t₁ (K×320) = 32 + 7×320 = 2272
+    const PK_SIZE: usize = 2272;
     // SK: ρ (32) + K (32) + tr (64) + s₁ (L×128) + s₂ (K×128) + t₀ (K×416)
-    //   = 32 + 32 + 64 + 8×128 + 4×128 + 4×416 = 3328
-    const SK_SIZE: usize = 3328;
-    // SIG: c̃ (48) + z (L×640) + h (ω+K) = 48 + 8×640 + 59 = 5227
-    const SIG_SIZE: usize = 5227;
+    //   = 32 + 32 + 64 + 4×128 + 7×128 + 7×416 = 4448
+    const SK_SIZE: usize = 4448;
+    // SIG: c̃ (48) + z (L×640) + h (ω+K) = 48 + 4×640 + 62 = 2670
+    const SIG_SIZE: usize = 2670;
     const ALGORITHM: &'static str = "Arcanum-DSA-65";
     const SECURITY_LEVEL: usize = 3;
 }
