@@ -121,9 +121,7 @@ pub use params::{ArcanumDsaParams, Params44, Params65, Params87};
 
 // Re-export API types
 pub use api::{
-    ArcanumDsa, ArcanumDsa44, ArcanumDsa65, ArcanumDsa87,
-    ArcanumDsaError,
-    ArcanumSignature44, ArcanumSignature65, ArcanumSignature87,
-    ArcanumSigningKey44, ArcanumSigningKey65, ArcanumSigningKey87,
-    ArcanumVerifyingKey44, ArcanumVerifyingKey65, ArcanumVerifyingKey87,
+    ArcanumDsa, ArcanumDsa44, ArcanumDsa65, ArcanumDsa87, ArcanumDsaError, ArcanumSignature44,
+    ArcanumSignature65, ArcanumSignature87, ArcanumSigningKey44, ArcanumSigningKey65,
+    ArcanumSigningKey87, ArcanumVerifyingKey44, ArcanumVerifyingKey65, ArcanumVerifyingKey87,
 };

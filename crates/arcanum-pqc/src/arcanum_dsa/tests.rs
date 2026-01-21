@@ -28,9 +28,24 @@ use super::params::*;
 /// Non-multiple-of-4 values cause inefficient partial batches.
 #[test]
 fn invariant_l_is_multiple_of_4() {
-    assert_eq!(Params44::L % 4, 0, "Params44::L={} not divisible by 4", Params44::L);
-    assert_eq!(Params65::L % 4, 0, "Params65::L={} not divisible by 4", Params65::L);
-    assert_eq!(Params87::L % 4, 0, "Params87::L={} not divisible by 4", Params87::L);
+    assert_eq!(
+        Params44::L % 4,
+        0,
+        "Params44::L={} not divisible by 4",
+        Params44::L
+    );
+    assert_eq!(
+        Params65::L % 4,
+        0,
+        "Params65::L={} not divisible by 4",
+        Params65::L
+    );
+    assert_eq!(
+        Params87::L % 4,
+        0,
+        "Params87::L={} not divisible by 4",
+        Params87::L
+    );
 }
 
 /// INVARIANT: K×L must be a multiple of 4 for expand_a batching
@@ -39,16 +54,22 @@ fn invariant_l_is_multiple_of_4() {
 #[test]
 fn invariant_k_times_l_is_multiple_of_4() {
     assert_eq!(
-        (Params44::K * Params44::L) % 4, 0,
-        "Params44: K×L={} not divisible by 4", Params44::K * Params44::L
+        (Params44::K * Params44::L) % 4,
+        0,
+        "Params44: K×L={} not divisible by 4",
+        Params44::K * Params44::L
     );
     assert_eq!(
-        (Params65::K * Params65::L) % 4, 0,
-        "Params65: K×L={} not divisible by 4", Params65::K * Params65::L
+        (Params65::K * Params65::L) % 4,
+        0,
+        "Params65: K×L={} not divisible by 4",
+        Params65::K * Params65::L
     );
     assert_eq!(
-        (Params87::K * Params87::L) % 4, 0,
-        "Params87: K×L={} not divisible by 4", Params87::K * Params87::L
+        (Params87::K * Params87::L) % 4,
+        0,
+        "Params87: K×L={} not divisible by 4",
+        Params87::K * Params87::L
     );
 }
 
@@ -61,17 +82,20 @@ fn invariant_dimension_meets_security_level() {
     assert!(
         Params44::DIMENSION >= Params44::ML_DSA_EQUIVALENT_DIM,
         "Params44: dimension {} < ML-DSA equivalent {}",
-        Params44::DIMENSION, Params44::ML_DSA_EQUIVALENT_DIM
+        Params44::DIMENSION,
+        Params44::ML_DSA_EQUIVALENT_DIM
     );
     assert!(
         Params65::DIMENSION >= Params65::ML_DSA_EQUIVALENT_DIM,
         "Params65: dimension {} < ML-DSA equivalent {}",
-        Params65::DIMENSION, Params65::ML_DSA_EQUIVALENT_DIM
+        Params65::DIMENSION,
+        Params65::ML_DSA_EQUIVALENT_DIM
     );
     assert!(
         Params87::DIMENSION >= Params87::ML_DSA_EQUIVALENT_DIM,
         "Params87: dimension {} < ML-DSA equivalent {}",
-        Params87::DIMENSION, Params87::ML_DSA_EQUIVALENT_DIM
+        Params87::DIMENSION,
+        Params87::ML_DSA_EQUIVALENT_DIM
     );
 }
 
@@ -82,16 +106,25 @@ fn invariant_dimension_meets_security_level() {
 #[test]
 fn invariant_beta_equals_tau_times_eta() {
     assert_eq!(
-        Params44::BETA, (Params44::TAU * Params44::ETA) as u32,
-        "Params44: BETA={} != TAU×ETA={}", Params44::BETA, Params44::TAU * Params44::ETA
+        Params44::BETA,
+        (Params44::TAU * Params44::ETA) as u32,
+        "Params44: BETA={} != TAU×ETA={}",
+        Params44::BETA,
+        Params44::TAU * Params44::ETA
     );
     assert_eq!(
-        Params65::BETA, (Params65::TAU * Params65::ETA) as u32,
-        "Params65: BETA={} != TAU×ETA={}", Params65::BETA, Params65::TAU * Params65::ETA
+        Params65::BETA,
+        (Params65::TAU * Params65::ETA) as u32,
+        "Params65: BETA={} != TAU×ETA={}",
+        Params65::BETA,
+        Params65::TAU * Params65::ETA
     );
     assert_eq!(
-        Params87::BETA, (Params87::TAU * Params87::ETA) as u32,
-        "Params87: BETA={} != TAU×ETA={}", Params87::BETA, Params87::TAU * Params87::ETA
+        Params87::BETA,
+        (Params87::TAU * Params87::ETA) as u32,
+        "Params87: BETA={} != TAU×ETA={}",
+        Params87::BETA,
+        Params87::TAU * Params87::ETA
     );
 }
 
@@ -102,15 +135,18 @@ fn invariant_beta_equals_tau_times_eta() {
 fn invariant_gamma1_is_power_of_2() {
     assert!(
         Params44::GAMMA1.is_power_of_two(),
-        "Params44::GAMMA1={} not power of 2", Params44::GAMMA1
+        "Params44::GAMMA1={} not power of 2",
+        Params44::GAMMA1
     );
     assert!(
         Params65::GAMMA1.is_power_of_two(),
-        "Params65::GAMMA1={} not power of 2", Params65::GAMMA1
+        "Params65::GAMMA1={} not power of 2",
+        Params65::GAMMA1
     );
     assert!(
         Params87::GAMMA1.is_power_of_two(),
-        "Params87::GAMMA1={} not power of 2", Params87::GAMMA1
+        "Params87::GAMMA1={} not power of 2",
+        Params87::GAMMA1
     );
 }
 
@@ -120,15 +156,18 @@ fn invariant_gamma1_is_power_of_2() {
 #[test]
 fn invariant_gamma2_divides_q_minus_1() {
     assert_eq!(
-        (Q as u32 - 1) % Params44::GAMMA2, 0,
+        (Q as u32 - 1) % Params44::GAMMA2,
+        0,
         "Params44: (Q-1) % GAMMA2 != 0"
     );
     assert_eq!(
-        (Q as u32 - 1) % Params65::GAMMA2, 0,
+        (Q as u32 - 1) % Params65::GAMMA2,
+        0,
         "Params65: (Q-1) % GAMMA2 != 0"
     );
     assert_eq!(
-        (Q as u32 - 1) % Params87::GAMMA2, 0,
+        (Q as u32 - 1) % Params87::GAMMA2,
+        0,
         "Params87: (Q-1) % GAMMA2 != 0"
     );
 }
@@ -151,9 +190,21 @@ fn simd_expand_mask_has_no_leftover() {
     let leftovers_65 = Params65::L % 4;
     let leftovers_87 = Params87::L % 4;
 
-    assert_eq!(leftovers_44, 0, "Params44: {} leftover elements in expand_mask", leftovers_44);
-    assert_eq!(leftovers_65, 0, "Params65: {} leftover elements in expand_mask", leftovers_65);
-    assert_eq!(leftovers_87, 0, "Params87: {} leftover elements in expand_mask", leftovers_87);
+    assert_eq!(
+        leftovers_44, 0,
+        "Params44: {} leftover elements in expand_mask",
+        leftovers_44
+    );
+    assert_eq!(
+        leftovers_65, 0,
+        "Params65: {} leftover elements in expand_mask",
+        leftovers_65
+    );
+    assert_eq!(
+        leftovers_87, 0,
+        "Params87: {} leftover elements in expand_mask",
+        leftovers_87
+    );
 }
 
 /// SIMD: Verify expand_a batch efficiency
@@ -165,9 +216,27 @@ fn simd_expand_a_has_no_leftover() {
     let total_65 = Params65::K * Params65::L;
     let total_87 = Params87::K * Params87::L;
 
-    assert_eq!(total_44 % 4, 0, "Params44: K×L={} has {} leftovers", total_44, total_44 % 4);
-    assert_eq!(total_65 % 4, 0, "Params65: K×L={} has {} leftovers", total_65, total_65 % 4);
-    assert_eq!(total_87 % 4, 0, "Params87: K×L={} has {} leftovers", total_87, total_87 % 4);
+    assert_eq!(
+        total_44 % 4,
+        0,
+        "Params44: K×L={} has {} leftovers",
+        total_44,
+        total_44 % 4
+    );
+    assert_eq!(
+        total_65 % 4,
+        0,
+        "Params65: K×L={} has {} leftovers",
+        total_65,
+        total_65 % 4
+    );
+    assert_eq!(
+        total_87 % 4,
+        0,
+        "Params87: K×L={} has {} leftovers",
+        total_87,
+        total_87 % 4
+    );
 }
 
 /// SIMD: Verify 8-way (AVX-512) potential
@@ -182,7 +251,11 @@ fn simd_avx512_potential() {
 
     // Params87 is AVX-512 ready
     let avx512_ready_87 = Params87::L % 8 == 0;
-    assert!(avx512_ready_87, "Params87::L={} should be AVX-512 ready", Params87::L);
+    assert!(
+        avx512_ready_87,
+        "Params87::L={} should be AVX-512 ready",
+        Params87::L
+    );
 
     // Params65 prioritizes minimal L over AVX-512 (L=4 < ML-DSA's L=5)
     assert_eq!(Params65::L, 4, "Params65 uses L=4 for performance");
@@ -199,7 +272,8 @@ fn security_margin_params44_non_negative() {
     let margin = (Params44::DIMENSION * 100 / Params44::ML_DSA_EQUIVALENT_DIM) as i32 - 100;
     assert!(
         margin >= 0,
-        "Params44: security margin {}% is negative", margin
+        "Params44: security margin {}% is negative",
+        margin
     );
     println!("Params44 security margin: {}%", margin);
 }
@@ -212,9 +286,13 @@ fn security_margin_params65_non_negative() {
     let margin = (Params65::DIMENSION * 100 / Params65::ML_DSA_EQUIVALENT_DIM) as i32 - 100;
     assert!(
         margin >= 0,
-        "Params65: security margin {}% is negative", margin
+        "Params65: security margin {}% is negative",
+        margin
     );
-    println!("Params65 security margin: {}% (same dimension as ML-DSA-65)", margin);
+    println!(
+        "Params65 security margin: {}% (same dimension as ML-DSA-65)",
+        margin
+    );
 }
 
 /// SECURITY: Params87 must have positive security margin (we increased dimension)
@@ -223,7 +301,8 @@ fn security_margin_params87_positive() {
     let margin = (Params87::DIMENSION * 100 / Params87::ML_DSA_EQUIVALENT_DIM) as i32 - 100;
     assert!(
         margin > 0,
-        "Params87: expected positive security margin, got {}%", margin
+        "Params87: expected positive security margin, got {}%",
+        margin
     );
     println!("Params87 security margin: {}%", margin);
 }
@@ -234,12 +313,14 @@ fn security_dimensions_strictly_increasing() {
     assert!(
         Params65::DIMENSION > Params44::DIMENSION,
         "Params65 dimension {} should exceed Params44 dimension {}",
-        Params65::DIMENSION, Params44::DIMENSION
+        Params65::DIMENSION,
+        Params44::DIMENSION
     );
     assert!(
         Params87::DIMENSION > Params65::DIMENSION,
         "Params87 dimension {} should exceed Params65 dimension {}",
-        Params87::DIMENSION, Params65::DIMENSION
+        Params87::DIMENSION,
+        Params65::DIMENSION
     );
 }
 
@@ -261,7 +342,10 @@ fn size_document_public_key_impact() {
 
     println!("ML-DSA-65 public key: {} bytes", ml_dsa_65_pk);
     println!("Arcanum-65 public key: {} bytes", arcanum_65_pk);
-    println!("Difference: {} bytes", arcanum_65_pk as i32 - ml_dsa_65_pk as i32);
+    println!(
+        "Difference: {} bytes",
+        arcanum_65_pk as i32 - ml_dsa_65_pk as i32
+    );
 
     // ML-DSA-87: K=8, pk = 32 + 8*320 = 2592 bytes
     // Arcanum-87: K=8, pk = 32 + 8*320 = 2592 bytes (same)
@@ -286,7 +370,10 @@ fn size_document_secret_key_impact() {
 
     println!("ML-DSA-65 s₁ size: {} bytes", ml_dsa_65_s1_size);
     println!("Arcanum-65 s₁ size: {} bytes", arcanum_65_s1_size);
-    println!("s₁ increase: {} bytes", arcanum_65_s1_size as i32 - ml_dsa_65_s1_size as i32);
+    println!(
+        "s₁ increase: {} bytes",
+        arcanum_65_s1_size as i32 - ml_dsa_65_s1_size as i32
+    );
 
     // ML-DSA-87: L=7
     let ml_dsa_87_s1_size = 7 * 64; // η=2 uses 64 bytes
@@ -312,7 +399,10 @@ fn size_document_signature_impact() {
 
     println!("ML-DSA-65 z size: {} bytes", ml_dsa_65_z_size);
     println!("Arcanum-65 z size: {} bytes", arcanum_65_z_size);
-    println!("z increase: {} bytes", arcanum_65_z_size as i32 - ml_dsa_65_z_size as i32);
+    println!(
+        "z increase: {} bytes",
+        arcanum_65_z_size as i32 - ml_dsa_65_z_size as i32
+    );
 
     // ML-DSA-87: L=7
     let ml_dsa_87_z_size = 7 * bytes_per_poly_gamma19;
@@ -390,10 +480,7 @@ fn functional_wrong_key_rejected() {
 
     // Verify with wrong key should fail
     let result = ArcanumDsa65::verify(&vk2, msg, &sig);
-    assert!(
-        result.is_err(),
-        "Verification should fail with wrong key"
-    );
+    assert!(result.is_err(), "Verification should fail with wrong key");
 }
 
 /// FUNCTIONAL: Empty message should work
@@ -488,7 +575,10 @@ fn benchmark_sign_performance() {
     }
 
     println!("\n╔════════════════════════════════════════════════════════════╗");
-    println!("║          SIGN PERFORMANCE BENCHMARK ({} iterations)       ║", ITERATIONS);
+    println!(
+        "║          SIGN PERFORMANCE BENCHMARK ({} iterations)       ║",
+        ITERATIONS
+    );
     println!("╚════════════════════════════════════════════════════════════╝\n");
 
     // Pre-generate keys to isolate sign performance
@@ -508,9 +598,15 @@ fn benchmark_sign_performance() {
     let ar44 = bench_sign("Arcanum-44 sign", ITERATIONS, WARMUP, || {
         let _ = ArcanumDsa44::sign(&ar_sk44, msg);
     });
-    println!("  Ratio: {:.2}x ({})\n",
+    println!(
+        "  Ratio: {:.2}x ({})\n",
         ar44.as_nanos() as f64 / ml44.as_nanos() as f64,
-        if ar44 < ml44 { "Arcanum faster" } else { "ML-DSA faster" });
+        if ar44 < ml44 {
+            "Arcanum faster"
+        } else {
+            "ML-DSA faster"
+        }
+    );
 
     println!("─── Level 3 (ML-DSA K=6,L=5 vs Arcanum K=7,L=4 SIMD) ───");
     let ml65 = bench_sign("ML-DSA-65 sign", ITERATIONS, WARMUP, || {
@@ -519,9 +615,15 @@ fn benchmark_sign_performance() {
     let ar65 = bench_sign("Arcanum-65 sign", ITERATIONS, WARMUP, || {
         let _ = ArcanumDsa65::sign(&ar_sk65, msg);
     });
-    println!("  Ratio: {:.2}x ({})\n",
+    println!(
+        "  Ratio: {:.2}x ({})\n",
         ar65.as_nanos() as f64 / ml65.as_nanos() as f64,
-        if ar65 < ml65 { "Arcanum faster" } else { "ML-DSA faster" });
+        if ar65 < ml65 {
+            "Arcanum faster"
+        } else {
+            "ML-DSA faster"
+        }
+    );
 
     println!("─── Level 5 (ML-DSA L=7 scalar vs Arcanum L=8 SIMD) ───");
     let ml87 = bench_sign("ML-DSA-87 sign", ITERATIONS, WARMUP, || {
@@ -530,7 +632,13 @@ fn benchmark_sign_performance() {
     let ar87 = bench_sign("Arcanum-87 sign", ITERATIONS, WARMUP, || {
         let _ = ArcanumDsa87::sign(&ar_sk87, msg);
     });
-    println!("  Ratio: {:.2}x ({})\n",
+    println!(
+        "  Ratio: {:.2}x ({})\n",
         ar87.as_nanos() as f64 / ml87.as_nanos() as f64,
-        if ar87 < ml87 { "Arcanum faster" } else { "ML-DSA faster" });
+        if ar87 < ml87 {
+            "Arcanum faster"
+        } else {
+            "ML-DSA faster"
+        }
+    );
 }

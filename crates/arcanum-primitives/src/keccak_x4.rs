@@ -207,10 +207,7 @@ impl KeccakStateX4 {
         for x in 0..5 {
             let c_plus = c[(x + 1) % 5];
             // ROL64 by 1: (c << 1) | (c >> 63)
-            let rol1 = _mm256_or_si256(
-                _mm256_slli_epi64(c_plus, 1),
-                _mm256_srli_epi64(c_plus, 63),
-            );
+            let rol1 = _mm256_or_si256(_mm256_slli_epi64(c_plus, 1), _mm256_srli_epi64(c_plus, 63));
             d[x] = _mm256_xor_si256(c[(x + 4) % 5], rol1);
         }
 
@@ -297,26 +294,11 @@ impl KeccakStateX4 {
             let t4 = self.state[4][y];
 
             // A[x,y] ^= (~A[x+1,y]) & A[x+2,y]
-            self.state[0][y] = _mm256_xor_si256(
-                t0,
-                _mm256_andnot_si256(t1, t2),
-            );
-            self.state[1][y] = _mm256_xor_si256(
-                t1,
-                _mm256_andnot_si256(t2, t3),
-            );
-            self.state[2][y] = _mm256_xor_si256(
-                t2,
-                _mm256_andnot_si256(t3, t4),
-            );
-            self.state[3][y] = _mm256_xor_si256(
-                t3,
-                _mm256_andnot_si256(t4, t0),
-            );
-            self.state[4][y] = _mm256_xor_si256(
-                t4,
-                _mm256_andnot_si256(t0, t1),
-            );
+            self.state[0][y] = _mm256_xor_si256(t0, _mm256_andnot_si256(t1, t2));
+            self.state[1][y] = _mm256_xor_si256(t1, _mm256_andnot_si256(t2, t3));
+            self.state[2][y] = _mm256_xor_si256(t2, _mm256_andnot_si256(t3, t4));
+            self.state[3][y] = _mm256_xor_si256(t3, _mm256_andnot_si256(t4, t0));
+            self.state[4][y] = _mm256_xor_si256(t4, _mm256_andnot_si256(t0, t1));
         }
     }
 
@@ -359,7 +341,8 @@ impl Shake128X4 {
             let remaining = Self::RATE - self.absorbed[state_idx];
             let to_absorb = remaining.min(data.len() - pos);
 
-            self.state.xor_bytes(state_idx, &data[pos..pos + to_absorb], Self::RATE);
+            self.state
+                .xor_bytes(state_idx, &data[pos..pos + to_absorb], Self::RATE);
             self.absorbed[state_idx] += to_absorb;
             pos += to_absorb;
 
@@ -390,7 +373,8 @@ impl Shake128X4 {
         let mut pos = 0;
         while pos < output.len() {
             let to_squeeze = Self::RATE.min(output.len() - pos);
-            self.state.extract_bytes(state_idx, &mut output[pos..pos + to_squeeze], Self::RATE);
+            self.state
+                .extract_bytes(state_idx, &mut output[pos..pos + to_squeeze], Self::RATE);
             pos += to_squeeze;
 
             if pos < output.len() {
@@ -412,7 +396,8 @@ impl Shake128X4 {
             for (i, output) in outputs.iter_mut().enumerate() {
                 if pos < output.len() {
                     let to_squeeze = chunk.min(output.len() - pos);
-                    self.state.extract_bytes(i, &mut output[pos..pos + to_squeeze], Self::RATE);
+                    self.state
+                        .extract_bytes(i, &mut output[pos..pos + to_squeeze], Self::RATE);
                 }
             }
             pos += chunk;
@@ -444,7 +429,8 @@ impl Shake128X4 {
         for block in 0..num_blocks {
             let offset = block * Self::RATE;
             for b in 0..batch_size {
-                self.state.extract_bytes(b, &mut bufs[b][offset..offset + Self::RATE], Self::RATE);
+                self.state
+                    .extract_bytes(b, &mut bufs[b][offset..offset + Self::RATE], Self::RATE);
             }
             if block < num_blocks - 1 {
                 self.state.permute();
@@ -491,7 +477,8 @@ impl Shake256X4 {
             let remaining = Self::RATE - self.absorbed[state_idx];
             let to_absorb = remaining.min(data.len() - pos);
 
-            self.state.xor_bytes(state_idx, &data[pos..pos + to_absorb], Self::RATE);
+            self.state
+                .xor_bytes(state_idx, &data[pos..pos + to_absorb], Self::RATE);
             self.absorbed[state_idx] += to_absorb;
             pos += to_absorb;
 
@@ -520,7 +507,8 @@ impl Shake256X4 {
         let mut pos = 0;
         while pos < output.len() {
             let to_squeeze = Self::RATE.min(output.len() - pos);
-            self.state.extract_bytes(state_idx, &mut output[pos..pos + to_squeeze], Self::RATE);
+            self.state
+                .extract_bytes(state_idx, &mut output[pos..pos + to_squeeze], Self::RATE);
             pos += to_squeeze;
 
             if pos < output.len() {
@@ -545,7 +533,8 @@ impl Shake256X4 {
         for block in 0..num_blocks {
             let offset = block * Self::RATE;
             for b in 0..batch_size {
-                self.state.extract_bytes(b, &mut bufs[b][offset..offset + Self::RATE], Self::RATE);
+                self.state
+                    .extract_bytes(b, &mut bufs[b][offset..offset + Self::RATE], Self::RATE);
             }
             if block < num_blocks - 1 {
                 self.state.permute();
@@ -591,13 +580,21 @@ mod tests {
             // All outputs should be different
             for i in 0..4 {
                 for j in (i + 1)..4 {
-                    assert_ne!(outputs[i], outputs[j], "States {} and {} produced same output", i, j);
+                    assert_ne!(
+                        outputs[i], outputs[j],
+                        "States {} and {} produced same output",
+                        i, j
+                    );
                 }
             }
 
             // Outputs should be non-zero
             for (i, output) in outputs.iter().enumerate() {
-                assert!(output.iter().any(|&b| b != 0), "State {} produced all zeros", i);
+                assert!(
+                    output.iter().any(|&b| b != 0),
+                    "State {} produced all zeros",
+                    i
+                );
             }
         }
     }

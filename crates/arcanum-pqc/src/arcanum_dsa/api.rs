@@ -19,7 +19,9 @@
 //! ```
 
 use super::params::{Params44, Params65, Params87};
-use crate::ml_dsa::{MlDsa, MlDsaError, MlDsaNative, MlDsaSignature, MlDsaSigningKey, MlDsaVerifyingKey};
+use crate::ml_dsa::{
+    MlDsa, MlDsaError, MlDsaNative, MlDsaSignature, MlDsaSigningKey, MlDsaVerifyingKey,
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Type Aliases

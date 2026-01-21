@@ -75,15 +75,15 @@ pub struct Params44;
 
 impl ArcanumDsaParams for Params44 {
     const K: usize = 4;
-    const L: usize = 4;  // Already SIMD-optimal
+    const L: usize = 4; // Already SIMD-optimal
     const ETA: usize = 2;
     const TAU: usize = 39;
-    const BETA: u32 = 78;  // TAU * ETA
-    const GAMMA1: u32 = 1 << 17;  // 2^17
+    const BETA: u32 = 78; // TAU * ETA
+    const GAMMA1: u32 = 1 << 17; // 2^17
     const GAMMA2: u32 = (Q as u32 - 1) / 88;
     const OMEGA: usize = 80;
-    const LAMBDA: usize = 32;  // 256 bits
-    const ML_DSA_EQUIVALENT_DIM: usize = 2048;  // 256 * (4+4)
+    const LAMBDA: usize = 32; // 256 bits
+    const ML_DSA_EQUIVALENT_DIM: usize = 2048; // 256 * (4+4)
 }
 
 // Implement MlDsaParams for Params44 (identical to ML-DSA-44)
@@ -95,11 +95,11 @@ impl MlDsaParams for Params44 {
     const GAMMA1: u32 = 1 << 17;
     const GAMMA2: u32 = (Q as u32 - 1) / 88;
     const TAU: usize = 39;
-    const LAMBDA: usize = 128;  // bits
+    const LAMBDA: usize = 128; // bits
     const OMEGA: usize = 80;
-    const PK_SIZE: usize = 1312;   // 32 + 4×320
-    const SK_SIZE: usize = 2560;   // 32 + 32 + 64 + 4×96 + 4×96 + 4×416
-    const SIG_SIZE: usize = 2420;  // 32 + 4×576 + 84
+    const PK_SIZE: usize = 1312; // 32 + 4×320
+    const SK_SIZE: usize = 2560; // 32 + 32 + 64 + 4×96 + 4×96 + 4×416
+    const SIG_SIZE: usize = 2420; // 32 + 4×576 + 84
     const ALGORITHM: &'static str = "Arcanum-DSA-44";
     const SECURITY_LEVEL: usize = 2;
 }
@@ -126,15 +126,15 @@ pub struct Params65;
 
 impl ArcanumDsaParams for Params65 {
     const K: usize = 7;
-    const L: usize = 4;  // SIMD-optimized (down from 5!)
+    const L: usize = 4; // SIMD-optimized (down from 5!)
     const ETA: usize = 4;
     const TAU: usize = 49;
-    const BETA: u32 = 196;  // TAU * ETA
-    const GAMMA1: u32 = 1 << 19;  // 2^19
+    const BETA: u32 = 196; // TAU * ETA
+    const GAMMA1: u32 = 1 << 19; // 2^19
     const GAMMA2: u32 = (Q as u32 - 1) / 32;
     const OMEGA: usize = 55;
-    const LAMBDA: usize = 48;  // 384 bits
-    const ML_DSA_EQUIVALENT_DIM: usize = 2816;  // 256 * (6+5)
+    const LAMBDA: usize = 48; // 384 bits
+    const ML_DSA_EQUIVALENT_DIM: usize = 2816; // 256 * (6+5)
 }
 
 // Implement MlDsaParams for Params65 (K=7, L=4 variant)
@@ -146,7 +146,7 @@ impl MlDsaParams for Params65 {
     const GAMMA1: u32 = 1 << 19;
     const GAMMA2: u32 = (Q as u32 - 1) / 32;
     const TAU: usize = 49;
-    const LAMBDA: usize = 192;  // bits (48 bytes)
+    const LAMBDA: usize = 192; // bits (48 bytes)
     const OMEGA: usize = 55;
     // PK: ρ (32) + t₁ (K×320) = 32 + 7×320 = 2272
     const PK_SIZE: usize = 2272;
@@ -176,15 +176,15 @@ pub struct Params87;
 
 impl ArcanumDsaParams for Params87 {
     const K: usize = 8;
-    const L: usize = 8;  // SIMD-optimized (was 7)
+    const L: usize = 8; // SIMD-optimized (was 7)
     const ETA: usize = 2;
     const TAU: usize = 60;
-    const BETA: u32 = 120;  // TAU * ETA
-    const GAMMA1: u32 = 1 << 19;  // 2^19
+    const BETA: u32 = 120; // TAU * ETA
+    const GAMMA1: u32 = 1 << 19; // 2^19
     const GAMMA2: u32 = (Q as u32 - 1) / 32;
     const OMEGA: usize = 75;
-    const LAMBDA: usize = 64;  // 512 bits
-    const ML_DSA_EQUIVALENT_DIM: usize = 3840;  // 256 * (8+7)
+    const LAMBDA: usize = 64; // 512 bits
+    const ML_DSA_EQUIVALENT_DIM: usize = 3840; // 256 * (8+7)
 }
 
 // Implement MlDsaParams for Params87 (K=8, L=8 variant)
@@ -196,7 +196,7 @@ impl MlDsaParams for Params87 {
     const GAMMA1: u32 = 1 << 19;
     const GAMMA2: u32 = (Q as u32 - 1) / 32;
     const TAU: usize = 60;
-    const LAMBDA: usize = 256;  // bits (64 bytes)
+    const LAMBDA: usize = 256; // bits (64 bytes)
     const OMEGA: usize = 75;
     // PK: ρ (32) + t₁ (K×320) = 32 + 8×320 = 2592
     const PK_SIZE: usize = 2592;
@@ -238,32 +238,26 @@ const fn validate_params<P: ArcanumDsaParams>() {
     // Security: dimension must meet or exceed ML-DSA equivalent
     const_assert(
         P::DIMENSION >= P::ML_DSA_EQUIVALENT_DIM,
-        "Dimension must meet ML-DSA security level"
+        "Dimension must meet ML-DSA security level",
     );
 
     // Rejection bound consistency
     const_assert(
         P::BETA == (P::TAU * P::ETA) as u32,
-        "BETA must equal TAU * ETA"
+        "BETA must equal TAU * ETA",
     );
 
     // Gamma1 must be power of 2 for efficient sampling
-    const_assert(
-        P::GAMMA1.is_power_of_two(),
-        "GAMMA1 must be power of 2"
-    );
+    const_assert(P::GAMMA1.is_power_of_two(), "GAMMA1 must be power of 2");
 
     // ETA must be 2 or 4 (FIPS 204 defined values)
     const_assert(
         P::ETA == 2 || P::ETA == 4,
-        "ETA must be 2 or 4 per FIPS 204"
+        "ETA must be 2 or 4 per FIPS 204",
     );
 
     // TAU must be positive and less than N (at most N non-zero challenge coeffs)
-    const_assert(
-        P::TAU > 0 && P::TAU < N,
-        "TAU must be in range (0, N)"
-    );
+    const_assert(P::TAU > 0 && P::TAU < N, "TAU must be in range (0, N)");
 
     // K and L must be positive
     const_assert(P::K > 0, "K must be positive");

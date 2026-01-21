@@ -571,7 +571,8 @@ unsafe fn expand_mask_x4<P: MlDsaParams>(seed: &[u8], nonce: u16, gamma1: u32) -
     // Validate gamma1 is a supported value
     debug_assert!(
         gamma1 == (1 << 17) || gamma1 == (1 << 19),
-        "expand_mask_x4: unsupported gamma1 value {}", gamma1
+        "expand_mask_x4: unsupported gamma1 value {}",
+        gamma1
     );
 
     let mut y = Vec::with_capacity(P::L);
@@ -581,7 +582,8 @@ unsafe fn expand_mask_x4<P: MlDsaParams>(seed: &[u8], nonce: u16, gamma1: u32) -
 
     for batch in 0..num_batches {
         // Check for nonce overflow (important for correctness)
-        let base_nonce = nonce.checked_add((batch * 4) as u16)
+        let base_nonce = nonce
+            .checked_add((batch * 4) as u16)
             .expect("expand_mask_x4: nonce overflow");
 
         // SAFETY: All operations below require AVX2, which is guaranteed by
