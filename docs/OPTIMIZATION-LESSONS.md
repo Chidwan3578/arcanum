@@ -1,7 +1,7 @@
 # Optimization Lessons Learned
 
 **Repository:** Arcanum Cryptographic Library
-**Last Updated:** 2026-01-20
+**Last Updated:** 2026-01-21
 **Purpose:** Document failed optimization attempts and why they didn't work
 
 This document captures optimization attempts that didn't improve performance, along with analysis of why they failed. Understanding what *doesn't* work is as valuable as knowing what does. These lessons can save future contributors significant time.
@@ -15,6 +15,8 @@ This document captures optimization attempts that didn't improve performance, al
 3. [Adaptive Prefetch Distance](#3-adaptive-prefetch-distance)
 4. [Batch SHA-256 with SSE2 (Horizontal SIMD)](#4-batch-sha-256-with-sse2-horizontal-simd)
 5. [Non-Temporal Stores Without Alignment Checks](#5-non-temporal-stores-without-alignment-checks)
+6. [Rayon Parallelization for ML-DSA](#6-rayon-parallelization-for-ml-dsa)
+7. [True SIMD Montgomery Multiplication](#7-true-simd-montgomery-multiplication)
 
 ---
 
@@ -291,6 +293,134 @@ if use_nt && (ptr as usize) % 64 == 0 {
     _mm512_storeu_si512(ptr, value);  // Unaligned regular store
 }
 ```
+
+---
+
+## 6. Rayon Parallelization for ML-DSA
+
+**Date:** 2026-01-21
+**Module:** `ml_dsa/sampling.rs`
+**Expected Gain:** 2-4x for ExpandA (30 independent Keccak instances)
+**Actual Result:** **50-100% slower** in microbenchmarks
+
+### The Idea
+
+Parallelize the ExpandA matrix generation using Rayon, since each A[i][j] entry is independently sampled via Keccak:
+
+```rust
+// Parallel ExpandA using Rayon
+let flat_polys: Vec<(usize, usize, Poly)> = indices
+    .into_par_iter()
+    .map(|(i, j)| {
+        let mut poly = sample_poly_uniform(rho, i as u8, j as u8);
+        poly.ntt();
+        (i, j, poly)
+    })
+    .collect();
+```
+
+### Why It Failed
+
+1. **Thread pool initialization overhead**: Rayon's thread pool has startup costs that dominate for single-operation microbenchmarks. The first sign operation pays the full thread pool creation cost.
+
+2. **Work stealing overhead**: With only 30 tasks (K×L = 6×5 for ML-DSA-65), the overhead of distributing work across threads exceeds the parallel speedup.
+
+3. **Memory allocation pressure**: Parallel execution creates temporary allocations in parallel, increasing memory pressure and cache contention.
+
+4. **Microbenchmark vs real-world**: In a real application signing many messages, the thread pool would be warm and amortized. Microbenchmarks hit worst-case.
+
+### Benchmark Evidence
+
+```
+| Feature       | DSA-65 keygen | DSA-65 sign | DSA-65 verify |
+|---------------|---------------|-------------|---------------|
+| simd only     | 182µs         | 365µs       | 138µs         |
+| simd+parallel | 366µs         | 1.3ms       | 282µs         |
+                  ^^^^^^^^^^^^^^ ~2x SLOWER with parallel!
+```
+
+### Lesson Learned
+
+> **Parallelization has overhead that can dominate for fine-grained work.** Thread creation, synchronization, and work stealing all have costs. For cryptographic operations that complete in microseconds, serial execution with SIMD is often faster than parallel execution. Reserve parallelization for batch operations or when individual operations take milliseconds.
+
+### When Parallelization WOULD Help
+
+- Batch signing (sign 100+ messages at once)
+- Long-running operations (>1ms per operation)
+- Pre-warmed thread pools in server applications
+- Operations with significant I/O or memory latency
+
+---
+
+## 7. True SIMD Montgomery Multiplication
+
+**Date:** 2026-01-21
+**Module:** `ml_dsa/ntt_avx2.rs`
+**Expected Gain:** 2-4x for NTT butterfly operations
+**Actual Result:** **2.3x slower** (sign: 386µs → 903µs)
+
+### The Idea
+
+Implement Montgomery reduction entirely in SIMD, avoiding scalar extraction:
+
+```rust
+unsafe fn mont_mul_simd(a: __m256i, b: __m256i) -> __m256i {
+    // 32-bit × 32-bit → 64-bit products using _mm256_mul_epi32
+    let a_lo = a;
+    let a_hi = _mm256_srli_epi64(a, 32);
+    let b_lo = b;
+    let b_hi = _mm256_srli_epi64(b, 32);
+
+    // Compute products (only gets even/odd lanes)
+    let prod_even = _mm256_mul_epi32(a_lo, b_lo);
+    let prod_odd = _mm256_mul_epi32(a_hi, b_hi);
+
+    // Montgomery reduction in SIMD...
+    // Complex lane shuffling to combine results
+}
+```
+
+### Why It Failed
+
+1. **`_mm256_mul_epi32` only processes 4 of 8 lanes**: AVX2's 32×32→64 multiply only operates on lanes 0,2,4,6 OR 1,3,5,7. To process all 8 values requires two multiplies plus complex shuffling to recombine.
+
+2. **Lane shuffling overhead**: AVX2 has limited cross-lane shuffle support. Recombining the even/odd results requires `_mm256_permutevar8x32_epi32` which has 3-cycle latency.
+
+3. **64-bit intermediate values**: Montgomery reduction needs 64-bit precision. AVX2's 64-bit operations are less efficient than its 32-bit operations.
+
+4. **Scalar Montgomery is already fast**: LLVM generates excellent code for scalar Montgomery reduction. The scalar loop with manual unrolling achieved better throughput than the complex SIMD version.
+
+### The Working Alternative
+
+Extract to array, compute scalar Montgomery, repack:
+
+```rust
+unsafe fn mont_mul_scalar(a: __m256i, zeta: i32) -> __m256i {
+    let mut arr = [0i32; 8];
+    _mm256_storeu_si256(arr.as_mut_ptr() as *mut __m256i, a);
+
+    // Unrolled scalar Montgomery - LLVM optimizes this well
+    for i in 0..8 {
+        let prod = arr[i] as i64 * zeta as i64;
+        let t = (prod as i32).wrapping_mul(QINV);
+        let t = prod.wrapping_sub((t as i64).wrapping_mul(Q as i64));
+        arr[i] = (t >> 32) as i32;
+    }
+
+    _mm256_loadu_si256(arr.as_ptr() as *const __m256i)
+}
+```
+
+### Lesson Learned
+
+> **Not all operations map efficiently to SIMD.** Montgomery multiplication's 64-bit intermediate values and complex reduction don't fit well in AVX2's 32-bit-oriented design. Sometimes "SIMD for data movement + scalar for computation" outperforms "all SIMD." Profile the actual generated assembly before assuming SIMD will be faster.
+
+### When Full SIMD Montgomery WOULD Help
+
+- AVX-512 with native 64-bit multiply (`_mm512_mullox_epi64`)
+- Algorithms using smaller moduli that fit in 32 bits
+- When many independent Montgomery multiplications can be batched
+- Custom hardware (FPGA/ASIC) with native wide multipliers
 
 ---
 
