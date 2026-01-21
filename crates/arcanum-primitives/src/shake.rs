@@ -39,6 +39,12 @@
 //! ```
 
 #![allow(dead_code)]
+// Allow unsafe code when SIMD is enabled for optimized Keccak
+#![cfg_attr(all(feature = "simd", target_arch = "x86_64"), allow(unsafe_code))]
+
+// Import AVX2 Keccak when available
+#[cfg(all(feature = "simd", target_arch = "x86_64"))]
+use crate::keccak_avx2::{has_avx2, keccak_p_avx2};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Constants
@@ -156,7 +162,18 @@ fn iota(a: &mut KeccakState, round: usize) {
 }
 
 /// Keccak-p[1600,24] permutation
+///
+/// Uses AVX2 SIMD when the `simd` feature is enabled and hardware supports it.
 pub fn keccak_p(state: &mut KeccakState) {
+    #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+    {
+        if has_avx2() {
+            unsafe { keccak_p_avx2(state); }
+            return;
+        }
+    }
+
+    // Scalar fallback
     for round in 0..ROUNDS {
         theta(state);
         rho_pi(state);

@@ -23,7 +23,7 @@ ml-dsa-native = ["arcanum-primitives/shake"]
 slh-dsa = []
 hybrid = ["ml-kem"]
 # Optimization features
-simd = ["std"]  # Enable SIMD optimizations (AVX2/NEON)
+simd = ["std", "arcanum-primitives/simd"]  # Enable SIMD optimizations (AVX2/NEON)
 parallel = ["dep:rayon", "std"]  # Enable parallel processing
 optimized = ["simd", "parallel"]  # All optimizations
 all = ["ml-kem", "ml-dsa", "ml-dsa-native", "slh-dsa", "hybrid"]

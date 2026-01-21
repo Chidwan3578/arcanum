@@ -57,6 +57,11 @@ pub mod sha2;
 #[cfg(feature = "shake")]
 pub mod shake;
 
+// SIMD-accelerated Keccak permutation for SHAKE
+#[cfg(all(feature = "shake", feature = "simd", target_arch = "x86_64"))]
+#[allow(unsafe_code)]
+pub mod keccak_avx2;
+
 // SIMD-accelerated SHA-2 (SHA-NI)
 #[cfg(all(feature = "sha2", feature = "simd"))]
 #[allow(unsafe_code)]
