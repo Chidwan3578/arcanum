@@ -55,6 +55,9 @@
 
 pub mod keygen;
 pub mod ntt;
+#[cfg(all(feature = "simd", target_arch = "x86_64"))]
+#[allow(unsafe_code)]
+pub mod ntt_avx2;
 pub mod params;
 pub mod poly;
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]

@@ -20,6 +20,10 @@ use super::params::{N, Q};
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]
 use super::poly_simd::{has_avx2, poly_add_avx2, poly_sub_avx2, poly_reduce_avx2};
 
+// Import AVX2 NTT when feature is enabled
+#[cfg(all(feature = "simd", target_arch = "x86_64"))]
+use super::ntt_avx2::{ntt_avx2, inv_ntt_avx2};
+
 /// A polynomial in R_q with 256 coefficients
 ///
 /// The struct is aligned to 32 bytes for efficient AVX2 SIMD operations.
@@ -108,12 +112,34 @@ impl Poly {
     }
 
     /// Compute forward NTT in place
+    ///
+    /// Uses AVX2 SIMD when the `simd` feature is enabled and hardware supports it.
     pub fn ntt(&mut self) {
+        #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+        {
+            if has_avx2() {
+                unsafe { ntt_avx2(&mut self.coeffs); }
+                return;
+            }
+        }
+
+        // Scalar fallback
         ntt(&mut self.coeffs);
     }
 
     /// Compute inverse NTT in place
+    ///
+    /// Uses AVX2 SIMD when the `simd` feature is enabled and hardware supports it.
     pub fn inv_ntt(&mut self) {
+        #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+        {
+            if has_avx2() {
+                unsafe { inv_ntt_avx2(&mut self.coeffs); }
+                return;
+            }
+        }
+
+        // Scalar fallback
         inv_ntt(&mut self.coeffs);
     }
 
