@@ -168,8 +168,14 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Fors<P, H> {
         } else {
             // Internal node: H(pk_seed, adrs, left || right)
             let left = Self::fors_node(sk_seed, pk_seed, tree_idx, 2 * node_idx, height - 1, adrs);
-            let right =
-                Self::fors_node(sk_seed, pk_seed, tree_idx, 2 * node_idx + 1, height - 1, adrs);
+            let right = Self::fors_node(
+                sk_seed,
+                pk_seed,
+                tree_idx,
+                2 * node_idx + 1,
+                height - 1,
+                adrs,
+            );
 
             let mut tree_adrs = *adrs;
             tree_adrs.set_type(AddressType::ForsTree);
@@ -274,9 +280,7 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Fors<P, H> {
                 let mut tree_adrs = *adrs;
                 tree_adrs.set_type(AddressType::ForsTree);
                 tree_adrs.set_tree_height(height as u32 + 1);
-                tree_adrs.set_tree_index(
-                    tree_idx as u32 * (1 << (P::A - height - 1)) + k / 2,
-                );
+                tree_adrs.set_tree_index(tree_idx as u32 * (1 << (P::A - height - 1)) + k / 2);
 
                 let sibling = &sig.auth_paths[tree_idx][height];
 
@@ -467,7 +471,8 @@ mod tests {
     #[test]
     fn test_fors_signature_size() {
         // Size should be: k * n + k * a * n = k * n * (1 + a)
-        let expected_size = Sha2_128f::K * Sha2_128f::N + Sha2_128f::K * Sha2_128f::A * Sha2_128f::N;
+        let expected_size =
+            Sha2_128f::K * Sha2_128f::N + Sha2_128f::K * Sha2_128f::A * Sha2_128f::N;
         assert_eq!(ForsSignature::<Sha2_128f>::size(), expected_size);
     }
 

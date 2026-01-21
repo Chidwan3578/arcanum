@@ -16,7 +16,7 @@
 #![allow(dead_code)]
 
 use super::keygen::unpack_pk;
-use super::params::{MlDsaParams, D, N, Q};
+use super::params::{D, MlDsaParams, N, Q};
 use super::poly::Poly;
 use super::rounding::use_hint;
 use super::sampling::{expand_a, sample_in_ball};
@@ -34,11 +34,7 @@ use arcanum_primitives::shake::Shake256;
 /// # Returns
 ///
 /// `true` if signature is valid, `false` otherwise
-pub fn verify_internal<P: MlDsaParams>(
-    pk_bytes: &[u8],
-    message: &[u8],
-    sig_bytes: &[u8],
-) -> bool {
+pub fn verify_internal<P: MlDsaParams>(pk_bytes: &[u8], message: &[u8], sig_bytes: &[u8]) -> bool {
     // Unpack public key
     let (rho, t1) = match unpack_pk::<P>(pk_bytes) {
         Some(pk) => pk,
@@ -230,10 +226,10 @@ fn pack_w1_4bits(poly: &Poly) -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::keygen::{generate_keypair_internal, pack_pk, pack_sk};
     use super::super::params::{Params44, Params65, Params87};
     use super::super::sign::sign_internal;
+    use super::*;
 
     fn get_test_keypair<P: MlDsaParams>() -> (Vec<u8>, Vec<u8>) {
         let seed = [0x42u8; 32];
@@ -298,10 +294,10 @@ mod tests {
         let (pk, sk) = get_test_keypair::<Params44>();
 
         let messages: &[&[u8]] = &[
-            b"",                           // Empty message
-            b"A",                          // Single byte
-            b"Test message",               // Short message
-            b"Test message for ML-DSA-44", // Medium message
+            b"",                                                        // Empty message
+            b"A",                                                       // Single byte
+            b"Test message",                                            // Short message
+            b"Test message for ML-DSA-44",                              // Medium message
             b"The quick brown fox jumps over the lazy dog. 0123456789", // Longer message
         ];
 

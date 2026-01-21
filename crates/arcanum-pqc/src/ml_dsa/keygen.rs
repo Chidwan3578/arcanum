@@ -346,7 +346,14 @@ fn pack_t0_poly(bytes: &mut Vec<u8>, poly: &Poly) {
 #[allow(clippy::type_complexity)]
 pub fn unpack_sk<P: MlDsaParams>(
     bytes: &[u8],
-) -> Option<([u8; 32], [u8; 32], [u8; 64], Vec<Poly>, Vec<Poly>, Vec<Poly>)> {
+) -> Option<(
+    [u8; 32],
+    [u8; 32],
+    [u8; 64],
+    Vec<Poly>,
+    Vec<Poly>,
+    Vec<Poly>,
+)> {
     if bytes.len() != P::SK_SIZE {
         return None;
     }
@@ -460,8 +467,8 @@ fn unpack_t0_poly(bytes: &[u8], poly: &mut Poly) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::params::{Params44, Params65, Params87};
+    use super::*;
 
     #[test]
     fn test_keygen_44_produces_valid_sizes() {

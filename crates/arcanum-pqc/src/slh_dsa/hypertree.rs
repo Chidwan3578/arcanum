@@ -117,8 +117,7 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Hypertree<P, H> {
             adrs.set_tree_address(tree_addr);
 
             // Sign current message
-            let xmss_sig =
-                Xmss::<P, H>::xmss_sign(&current_msg, sk_seed, pk_seed, leaf_idx, &adrs);
+            let xmss_sig = Xmss::<P, H>::xmss_sign(&current_msg, sk_seed, pk_seed, leaf_idx, &adrs);
             xmss_sigs.push(xmss_sig.clone());
 
             // Compute the root for the next layer's message
@@ -244,12 +243,7 @@ mod tests {
         let pk_root = TestHt::ht_root(&sk_seed, &pk_seed);
 
         // Test with different tree/leaf indices
-        let test_cases = [
-            (0u64, 0u32),
-            (0u64, 1u32),
-            (1u64, 0u32),
-            (0u64, 3u32),
-        ];
+        let test_cases = [(0u64, 0u32), (0u64, 1u32), (1u64, 0u32), (0u64, 3u32)];
 
         for (idx_tree, idx_leaf) in test_cases {
             let sig = TestHt::ht_sign(&msg, &sk_seed, &pk_seed, idx_tree, idx_leaf);

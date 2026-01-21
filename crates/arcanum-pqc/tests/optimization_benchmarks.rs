@@ -20,10 +20,10 @@
 
 use std::time::{Duration, Instant};
 
-use arcanum_pqc::ml_dsa::{MlDsa, MlDsa44, MlDsa65, MlDsa87};
 use arcanum_pqc::ml_dsa::keygen::generate_keypair_internal;
 use arcanum_pqc::ml_dsa::params::{Params44, Params65, Params87};
 use arcanum_pqc::ml_dsa::poly::Poly;
+use arcanum_pqc::ml_dsa::{MlDsa, MlDsa44, MlDsa65, MlDsa87};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Constants: Performance Targets from SPEC-OPT-MLDSA-001
@@ -85,7 +85,8 @@ fn random_poly(seed: u32) -> Poly {
     let mut poly = Poly::zero();
     for i in 0..256 {
         // Deterministic pseudo-random coefficients
-        poly.coeffs[i] = ((seed.wrapping_mul(i as u32 + 1).wrapping_add(0x9e3779b9)) % 8380417) as i32;
+        poly.coeffs[i] =
+            ((seed.wrapping_mul(i as u32 + 1).wrapping_add(0x9e3779b9)) % 8380417) as i32;
     }
     poly
 }
@@ -111,13 +112,19 @@ fn benchmark<F: FnMut()>(mut f: F, iterations: u32) -> Duration {
 /// Record baseline keygen performance (informational, always passes)
 #[test]
 fn baseline_mldsa65_keygen() {
-    let elapsed = benchmark(|| {
-        let _ = MlDsa65::generate_keypair();
-    }, 50);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa65::generate_keypair();
+        },
+        50,
+    );
 
     println!("BASELINE ML-DSA-65 keygen: {:?}", elapsed);
     println!("  MVO target: {:?}", mvo_targets::KEYGEN_65);
-    println!("  Gap: {:.2}x", elapsed.as_nanos() as f64 / mvo_targets::KEYGEN_65.as_nanos() as f64);
+    println!(
+        "  Gap: {:.2}x",
+        elapsed.as_nanos() as f64 / mvo_targets::KEYGEN_65.as_nanos() as f64
+    );
 }
 
 /// Record baseline sign performance
@@ -126,13 +133,19 @@ fn baseline_mldsa65_sign() {
     let (sk, _) = MlDsa65::generate_keypair();
     let msg = b"benchmark message for signing performance test";
 
-    let elapsed = benchmark(|| {
-        let _ = MlDsa65::sign(&sk, msg);
-    }, 50);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa65::sign(&sk, msg);
+        },
+        50,
+    );
 
     println!("BASELINE ML-DSA-65 sign: {:?}", elapsed);
     println!("  MVO target: {:?}", mvo_targets::SIGN_65);
-    println!("  Gap: {:.2}x", elapsed.as_nanos() as f64 / mvo_targets::SIGN_65.as_nanos() as f64);
+    println!(
+        "  Gap: {:.2}x",
+        elapsed.as_nanos() as f64 / mvo_targets::SIGN_65.as_nanos() as f64
+    );
 }
 
 /// Record baseline verify performance
@@ -142,13 +155,19 @@ fn baseline_mldsa65_verify() {
     let msg = b"benchmark message for verification performance test";
     let sig = MlDsa65::sign(&sk, msg);
 
-    let elapsed = benchmark(|| {
-        let _ = MlDsa65::verify(&vk, msg, &sig);
-    }, 100);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa65::verify(&vk, msg, &sig);
+        },
+        100,
+    );
 
     println!("BASELINE ML-DSA-65 verify: {:?}", elapsed);
     println!("  MVO target: {:?}", mvo_targets::VERIFY_65);
-    println!("  Gap: {:.2}x", elapsed.as_nanos() as f64 / mvo_targets::VERIFY_65.as_nanos() as f64);
+    println!(
+        "  Gap: {:.2}x",
+        elapsed.as_nanos() as f64 / mvo_targets::VERIFY_65.as_nanos() as f64
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -159,14 +178,18 @@ fn baseline_mldsa65_verify() {
 #[test]
 #[ignore = "RED PHASE: Optimization not yet implemented"]
 fn target_mldsa44_keygen_mvo() {
-    let elapsed = benchmark(|| {
-        let _ = MlDsa44::generate_keypair();
-    }, 100);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa44::generate_keypair();
+        },
+        100,
+    );
 
     assert!(
         elapsed < mvo_targets::KEYGEN_44,
         "ML-DSA-44 keygen {:?} exceeds MVO target {:?} (gap: {:.2}x)",
-        elapsed, mvo_targets::KEYGEN_44,
+        elapsed,
+        mvo_targets::KEYGEN_44,
         elapsed.as_nanos() as f64 / mvo_targets::KEYGEN_44.as_nanos() as f64
     );
 }
@@ -178,14 +201,18 @@ fn target_mldsa44_sign_mvo() {
     let (sk, _) = MlDsa44::generate_keypair();
     let msg = b"benchmark message";
 
-    let elapsed = benchmark(|| {
-        let _ = MlDsa44::sign(&sk, msg);
-    }, 100);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa44::sign(&sk, msg);
+        },
+        100,
+    );
 
     assert!(
         elapsed < mvo_targets::SIGN_44,
         "ML-DSA-44 sign {:?} exceeds MVO target {:?} (gap: {:.2}x)",
-        elapsed, mvo_targets::SIGN_44,
+        elapsed,
+        mvo_targets::SIGN_44,
         elapsed.as_nanos() as f64 / mvo_targets::SIGN_44.as_nanos() as f64
     );
 }
@@ -198,14 +225,18 @@ fn target_mldsa44_verify_mvo() {
     let msg = b"benchmark message";
     let sig = MlDsa44::sign(&sk, msg);
 
-    let elapsed = benchmark(|| {
-        let _ = MlDsa44::verify(&vk, msg, &sig);
-    }, 100);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa44::verify(&vk, msg, &sig);
+        },
+        100,
+    );
 
     assert!(
         elapsed < mvo_targets::VERIFY_44,
         "ML-DSA-44 verify {:?} exceeds MVO target {:?} (gap: {:.2}x)",
-        elapsed, mvo_targets::VERIFY_44,
+        elapsed,
+        mvo_targets::VERIFY_44,
         elapsed.as_nanos() as f64 / mvo_targets::VERIFY_44.as_nanos() as f64
     );
 }
@@ -214,14 +245,18 @@ fn target_mldsa44_verify_mvo() {
 #[test]
 #[ignore = "RED PHASE: Optimization not yet implemented"]
 fn target_mldsa65_keygen_mvo() {
-    let elapsed = benchmark(|| {
-        let _ = MlDsa65::generate_keypair();
-    }, 100);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa65::generate_keypair();
+        },
+        100,
+    );
 
     assert!(
         elapsed < mvo_targets::KEYGEN_65,
         "ML-DSA-65 keygen {:?} exceeds MVO target {:?} (gap: {:.2}x)",
-        elapsed, mvo_targets::KEYGEN_65,
+        elapsed,
+        mvo_targets::KEYGEN_65,
         elapsed.as_nanos() as f64 / mvo_targets::KEYGEN_65.as_nanos() as f64
     );
 }
@@ -233,14 +268,18 @@ fn target_mldsa65_sign_mvo() {
     let (sk, _) = MlDsa65::generate_keypair();
     let msg = b"benchmark message";
 
-    let elapsed = benchmark(|| {
-        let _ = MlDsa65::sign(&sk, msg);
-    }, 100);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa65::sign(&sk, msg);
+        },
+        100,
+    );
 
     assert!(
         elapsed < mvo_targets::SIGN_65,
         "ML-DSA-65 sign {:?} exceeds MVO target {:?} (gap: {:.2}x)",
-        elapsed, mvo_targets::SIGN_65,
+        elapsed,
+        mvo_targets::SIGN_65,
         elapsed.as_nanos() as f64 / mvo_targets::SIGN_65.as_nanos() as f64
     );
 }
@@ -253,14 +292,18 @@ fn target_mldsa65_verify_mvo() {
     let msg = b"benchmark message";
     let sig = MlDsa65::sign(&sk, msg);
 
-    let elapsed = benchmark(|| {
-        let _ = MlDsa65::verify(&vk, msg, &sig);
-    }, 100);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa65::verify(&vk, msg, &sig);
+        },
+        100,
+    );
 
     assert!(
         elapsed < mvo_targets::VERIFY_65,
         "ML-DSA-65 verify {:?} exceeds MVO target {:?} (gap: {:.2}x)",
-        elapsed, mvo_targets::VERIFY_65,
+        elapsed,
+        mvo_targets::VERIFY_65,
         elapsed.as_nanos() as f64 / mvo_targets::VERIFY_65.as_nanos() as f64
     );
 }
@@ -269,14 +312,18 @@ fn target_mldsa65_verify_mvo() {
 #[test]
 #[ignore = "RED PHASE: Optimization not yet implemented"]
 fn target_mldsa87_keygen_mvo() {
-    let elapsed = benchmark(|| {
-        let _ = MlDsa87::generate_keypair();
-    }, 50);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa87::generate_keypair();
+        },
+        50,
+    );
 
     assert!(
         elapsed < mvo_targets::KEYGEN_87,
         "ML-DSA-87 keygen {:?} exceeds MVO target {:?} (gap: {:.2}x)",
-        elapsed, mvo_targets::KEYGEN_87,
+        elapsed,
+        mvo_targets::KEYGEN_87,
         elapsed.as_nanos() as f64 / mvo_targets::KEYGEN_87.as_nanos() as f64
     );
 }
@@ -288,14 +335,18 @@ fn target_mldsa87_sign_mvo() {
     let (sk, _) = MlDsa87::generate_keypair();
     let msg = b"benchmark message";
 
-    let elapsed = benchmark(|| {
-        let _ = MlDsa87::sign(&sk, msg);
-    }, 50);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa87::sign(&sk, msg);
+        },
+        50,
+    );
 
     assert!(
         elapsed < mvo_targets::SIGN_87,
         "ML-DSA-87 sign {:?} exceeds MVO target {:?} (gap: {:.2}x)",
-        elapsed, mvo_targets::SIGN_87,
+        elapsed,
+        mvo_targets::SIGN_87,
         elapsed.as_nanos() as f64 / mvo_targets::SIGN_87.as_nanos() as f64
     );
 }
@@ -308,14 +359,18 @@ fn target_mldsa87_verify_mvo() {
     let msg = b"benchmark message";
     let sig = MlDsa87::sign(&sk, msg);
 
-    let elapsed = benchmark(|| {
-        let _ = MlDsa87::verify(&vk, msg, &sig);
-    }, 50);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa87::verify(&vk, msg, &sig);
+        },
+        50,
+    );
 
     assert!(
         elapsed < mvo_targets::VERIFY_87,
         "ML-DSA-87 verify {:?} exceeds MVO target {:?} (gap: {:.2}x)",
-        elapsed, mvo_targets::VERIFY_87,
+        elapsed,
+        mvo_targets::VERIFY_87,
         elapsed.as_nanos() as f64 / mvo_targets::VERIFY_87.as_nanos() as f64
     );
 }
@@ -330,10 +385,13 @@ fn target_mldsa87_verify_mvo() {
 fn target_ntt_single() {
     let mut poly = random_poly(12345);
 
-    let elapsed = benchmark(|| {
-        poly.ntt();
-        poly.inv_ntt();
-    }, 1000);
+    let elapsed = benchmark(
+        || {
+            poly.ntt();
+            poly.inv_ntt();
+        },
+        1000,
+    );
 
     // Divide by 2 since we did both NTT and InvNTT
     let per_transform = elapsed / 2;
@@ -341,7 +399,8 @@ fn target_ntt_single() {
     assert!(
         per_transform < component_targets::NTT_SINGLE,
         "NTT {:?} exceeds target {:?} (gap: {:.2}x)",
-        per_transform, component_targets::NTT_SINGLE,
+        per_transform,
+        component_targets::NTT_SINGLE,
         per_transform.as_nanos() as f64 / component_targets::NTT_SINGLE.as_nanos() as f64
     );
 }
@@ -353,14 +412,18 @@ fn target_poly_add() {
     let a = random_poly(111);
     let b = random_poly(222);
 
-    let elapsed = benchmark(|| {
-        let _ = a.add(&b);
-    }, 10000);
+    let elapsed = benchmark(
+        || {
+            let _ = a.add(&b);
+        },
+        10000,
+    );
 
     assert!(
         elapsed < component_targets::POLY_ADD,
         "poly_add {:?} exceeds target {:?} (gap: {:.2}x)",
-        elapsed, component_targets::POLY_ADD,
+        elapsed,
+        component_targets::POLY_ADD,
         elapsed.as_nanos() as f64 / component_targets::POLY_ADD.as_nanos() as f64
     );
 }
@@ -373,14 +436,18 @@ fn target_poly_add() {
 #[test]
 #[ignore = "STRETCH GOAL: Requires all optimizations"]
 fn target_mldsa65_keygen_stretch() {
-    let elapsed = benchmark(|| {
-        let _ = MlDsa65::generate_keypair();
-    }, 100);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa65::generate_keypair();
+        },
+        100,
+    );
 
     assert!(
         elapsed < stretch_targets::KEYGEN_65,
         "ML-DSA-65 keygen {:?} exceeds stretch target {:?}",
-        elapsed, stretch_targets::KEYGEN_65
+        elapsed,
+        stretch_targets::KEYGEN_65
     );
 }
 
@@ -391,14 +458,18 @@ fn target_mldsa65_sign_stretch() {
     let (sk, _) = MlDsa65::generate_keypair();
     let msg = b"benchmark message";
 
-    let elapsed = benchmark(|| {
-        let _ = MlDsa65::sign(&sk, msg);
-    }, 100);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa65::sign(&sk, msg);
+        },
+        100,
+    );
 
     assert!(
         elapsed < stretch_targets::SIGN_65,
         "ML-DSA-65 sign {:?} exceeds stretch target {:?}",
-        elapsed, stretch_targets::SIGN_65
+        elapsed,
+        stretch_targets::SIGN_65
     );
 }
 
@@ -410,14 +481,18 @@ fn target_mldsa65_verify_stretch() {
     let msg = b"benchmark message";
     let sig = MlDsa65::sign(&sk, msg);
 
-    let elapsed = benchmark(|| {
-        let _ = MlDsa65::verify(&vk, msg, &sig);
-    }, 100);
+    let elapsed = benchmark(
+        || {
+            let _ = MlDsa65::verify(&vk, msg, &sig);
+        },
+        100,
+    );
 
     assert!(
         elapsed < stretch_targets::VERIFY_65,
         "ML-DSA-65 verify {:?} exceeds stretch target {:?}",
-        elapsed, stretch_targets::VERIFY_65
+        elapsed,
+        stretch_targets::VERIFY_65
     );
 }
 
@@ -482,54 +557,138 @@ fn report_performance_summary() {
     println!("╚══════════════════════════════════════════════════════════════╝\n");
 
     // ML-DSA-44
-    let keygen44 = benchmark(|| { let _ = MlDsa44::generate_keypair(); }, 50);
+    let keygen44 = benchmark(
+        || {
+            let _ = MlDsa44::generate_keypair();
+        },
+        50,
+    );
     let (sk44, vk44) = MlDsa44::generate_keypair();
-    let sign44 = benchmark(|| { let _ = MlDsa44::sign(&sk44, b"msg"); }, 50);
+    let sign44 = benchmark(
+        || {
+            let _ = MlDsa44::sign(&sk44, b"msg");
+        },
+        50,
+    );
     let sig44 = MlDsa44::sign(&sk44, b"msg");
-    let verify44 = benchmark(|| { let _ = MlDsa44::verify(&vk44, b"msg", &sig44); }, 100);
+    let verify44 = benchmark(
+        || {
+            let _ = MlDsa44::verify(&vk44, b"msg", &sig44);
+        },
+        100,
+    );
 
     // ML-DSA-65
-    let keygen65 = benchmark(|| { let _ = MlDsa65::generate_keypair(); }, 50);
+    let keygen65 = benchmark(
+        || {
+            let _ = MlDsa65::generate_keypair();
+        },
+        50,
+    );
     let (sk65, vk65) = MlDsa65::generate_keypair();
-    let sign65 = benchmark(|| { let _ = MlDsa65::sign(&sk65, b"msg"); }, 50);
+    let sign65 = benchmark(
+        || {
+            let _ = MlDsa65::sign(&sk65, b"msg");
+        },
+        50,
+    );
     let sig65 = MlDsa65::sign(&sk65, b"msg");
-    let verify65 = benchmark(|| { let _ = MlDsa65::verify(&vk65, b"msg", &sig65); }, 100);
+    let verify65 = benchmark(
+        || {
+            let _ = MlDsa65::verify(&vk65, b"msg", &sig65);
+        },
+        100,
+    );
 
     // ML-DSA-87
-    let keygen87 = benchmark(|| { let _ = MlDsa87::generate_keypair(); }, 30);
+    let keygen87 = benchmark(
+        || {
+            let _ = MlDsa87::generate_keypair();
+        },
+        30,
+    );
     let (sk87, vk87) = MlDsa87::generate_keypair();
-    let sign87 = benchmark(|| { let _ = MlDsa87::sign(&sk87, b"msg"); }, 30);
+    let sign87 = benchmark(
+        || {
+            let _ = MlDsa87::sign(&sk87, b"msg");
+        },
+        30,
+    );
     let sig87 = MlDsa87::sign(&sk87, b"msg");
-    let verify87 = benchmark(|| { let _ = MlDsa87::verify(&vk87, b"msg", &sig87); }, 50);
+    let verify87 = benchmark(
+        || {
+            let _ = MlDsa87::verify(&vk87, b"msg", &sig87);
+        },
+        50,
+    );
 
     println!("┌──────────────┬────────────┬────────────┬────────────┐");
     println!("│ Operation    │  Current   │ MVO Target │    Gap     │");
     println!("├──────────────┼────────────┼────────────┼────────────┤");
 
     let gap = |current: Duration, target: Duration| -> String {
-        format!("{:.2}x", current.as_nanos() as f64 / target.as_nanos() as f64)
+        format!(
+            "{:.2}x",
+            current.as_nanos() as f64 / target.as_nanos() as f64
+        )
     };
 
-    println!("│ DSA-44 keygen│ {:>8.1?} │ {:>8.1?} │ {:>10} │",
-        keygen44, mvo_targets::KEYGEN_44, gap(keygen44, mvo_targets::KEYGEN_44));
-    println!("│ DSA-44 sign  │ {:>8.1?} │ {:>8.1?} │ {:>10} │",
-        sign44, mvo_targets::SIGN_44, gap(sign44, mvo_targets::SIGN_44));
-    println!("│ DSA-44 verify│ {:>8.1?} │ {:>8.1?} │ {:>10} │",
-        verify44, mvo_targets::VERIFY_44, gap(verify44, mvo_targets::VERIFY_44));
+    println!(
+        "│ DSA-44 keygen│ {:>8.1?} │ {:>8.1?} │ {:>10} │",
+        keygen44,
+        mvo_targets::KEYGEN_44,
+        gap(keygen44, mvo_targets::KEYGEN_44)
+    );
+    println!(
+        "│ DSA-44 sign  │ {:>8.1?} │ {:>8.1?} │ {:>10} │",
+        sign44,
+        mvo_targets::SIGN_44,
+        gap(sign44, mvo_targets::SIGN_44)
+    );
+    println!(
+        "│ DSA-44 verify│ {:>8.1?} │ {:>8.1?} │ {:>10} │",
+        verify44,
+        mvo_targets::VERIFY_44,
+        gap(verify44, mvo_targets::VERIFY_44)
+    );
     println!("├──────────────┼────────────┼────────────┼────────────┤");
-    println!("│ DSA-65 keygen│ {:>8.1?} │ {:>8.1?} │ {:>10} │",
-        keygen65, mvo_targets::KEYGEN_65, gap(keygen65, mvo_targets::KEYGEN_65));
-    println!("│ DSA-65 sign  │ {:>8.1?} │ {:>8.1?} │ {:>10} │",
-        sign65, mvo_targets::SIGN_65, gap(sign65, mvo_targets::SIGN_65));
-    println!("│ DSA-65 verify│ {:>8.1?} │ {:>8.1?} │ {:>10} │",
-        verify65, mvo_targets::VERIFY_65, gap(verify65, mvo_targets::VERIFY_65));
+    println!(
+        "│ DSA-65 keygen│ {:>8.1?} │ {:>8.1?} │ {:>10} │",
+        keygen65,
+        mvo_targets::KEYGEN_65,
+        gap(keygen65, mvo_targets::KEYGEN_65)
+    );
+    println!(
+        "│ DSA-65 sign  │ {:>8.1?} │ {:>8.1?} │ {:>10} │",
+        sign65,
+        mvo_targets::SIGN_65,
+        gap(sign65, mvo_targets::SIGN_65)
+    );
+    println!(
+        "│ DSA-65 verify│ {:>8.1?} │ {:>8.1?} │ {:>10} │",
+        verify65,
+        mvo_targets::VERIFY_65,
+        gap(verify65, mvo_targets::VERIFY_65)
+    );
     println!("├──────────────┼────────────┼────────────┼────────────┤");
-    println!("│ DSA-87 keygen│ {:>8.1?} │ {:>8.1?} │ {:>10} │",
-        keygen87, mvo_targets::KEYGEN_87, gap(keygen87, mvo_targets::KEYGEN_87));
-    println!("│ DSA-87 sign  │ {:>8.1?} │ {:>8.1?} │ {:>10} │",
-        sign87, mvo_targets::SIGN_87, gap(sign87, mvo_targets::SIGN_87));
-    println!("│ DSA-87 verify│ {:>8.1?} │ {:>8.1?} │ {:>10} │",
-        verify87, mvo_targets::VERIFY_87, gap(verify87, mvo_targets::VERIFY_87));
+    println!(
+        "│ DSA-87 keygen│ {:>8.1?} │ {:>8.1?} │ {:>10} │",
+        keygen87,
+        mvo_targets::KEYGEN_87,
+        gap(keygen87, mvo_targets::KEYGEN_87)
+    );
+    println!(
+        "│ DSA-87 sign  │ {:>8.1?} │ {:>8.1?} │ {:>10} │",
+        sign87,
+        mvo_targets::SIGN_87,
+        gap(sign87, mvo_targets::SIGN_87)
+    );
+    println!(
+        "│ DSA-87 verify│ {:>8.1?} │ {:>8.1?} │ {:>10} │",
+        verify87,
+        mvo_targets::VERIFY_87,
+        gap(verify87, mvo_targets::VERIFY_87)
+    );
     println!("└──────────────┴────────────┴────────────┴────────────┘");
 
     println!("\nTarget Status: MVO = Minimum Viable Optimization");

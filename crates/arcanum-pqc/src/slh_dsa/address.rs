@@ -262,9 +262,9 @@ impl Address {
     /// while preserving necessary domain separation.
     pub fn to_compressed(&self) -> [u8; 22] {
         let mut adrs_c = [0u8; 22];
-        adrs_c[0] = self.data[3];            // ADRS[3]: Layer LSB
+        adrs_c[0] = self.data[3]; // ADRS[3]: Layer LSB
         adrs_c[1..9].copy_from_slice(&self.data[8..16]); // ADRS[8:16]
-        adrs_c[9] = self.data[19];           // ADRS[19]: Keypair LSB
+        adrs_c[9] = self.data[19]; // ADRS[19]: Keypair LSB
         adrs_c[10..22].copy_from_slice(&self.data[20..32]); // ADRS[20:32]
         adrs_c
     }

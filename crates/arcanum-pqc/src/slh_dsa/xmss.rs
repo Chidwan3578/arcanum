@@ -200,8 +200,8 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> Xmss<P, H> {
         wots_adrs.set_type(AddressType::WotsHash);
         wots_adrs.set_keypair_address(idx);
 
-        let wots_sig = WotsSignature::<P>::from_bytes(sig.wots_sig())
-            .expect("Invalid WOTS+ signature length");
+        let wots_sig =
+            WotsSignature::<P>::from_bytes(sig.wots_sig()).expect("Invalid WOTS+ signature length");
         let mut node = Wots::<P, H>::pk_from_sig(&wots_sig, msg, pk_seed, &wots_adrs);
 
         // Climb the tree using authentication path

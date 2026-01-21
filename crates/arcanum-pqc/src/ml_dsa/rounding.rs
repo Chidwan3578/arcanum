@@ -204,11 +204,7 @@ pub fn use_hint(h: bool, r: i32, gamma2: i32) -> i32 {
     // Adjust r₁ based on sign of r₀
     // (r1 + 1) mod (m + 1) or (r1 - 1) mod (m + 1)
     if r0 > 0 {
-        if r1 == m {
-            0
-        } else {
-            r1 + 1
-        }
+        if r1 == m { 0 } else { r1 + 1 }
     } else if r1 == 0 {
         m
     } else {

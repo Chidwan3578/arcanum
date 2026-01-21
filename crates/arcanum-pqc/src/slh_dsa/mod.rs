@@ -364,8 +364,8 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> SlhDsa<P, H> {
         )
         .expect("Invalid seed lengths");
 
-        let vk =
-            SlhDsaVerifyingKey::from_components(pk_seed.to_vec(), pk_root).expect("Invalid lengths");
+        let vk = SlhDsaVerifyingKey::from_components(pk_seed.to_vec(), pk_root)
+            .expect("Invalid lengths");
 
         (sk, vk)
     }
@@ -411,7 +411,8 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> SlhDsa<P, H> {
 
         // Extract tree index (h - h' bits) and leaf index (h' bits)
         let tree_bits = P::H - P::H_PRIME;
-        let (idx_tree, idx_leaf) = Self::extract_indices(&digest[fors_bytes..], tree_bits, P::H_PRIME);
+        let (idx_tree, idx_leaf) =
+            Self::extract_indices(&digest[fors_bytes..], tree_bits, P::H_PRIME);
 
         // Step 4: Set up FORS address
         let mut fors_adrs = Address::new();
@@ -427,13 +428,8 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> SlhDsa<P, H> {
         let fors_pk = Fors::<P, H>::fors_pk_from_sig(md, &fors_sig, sk.pk_seed(), &fors_adrs);
 
         // Step 7: Generate hypertree signature
-        let ht_sig = Hypertree::<P, H>::ht_sign(
-            &fors_pk,
-            sk.sk_seed(),
-            sk.pk_seed(),
-            idx_tree,
-            idx_leaf,
-        );
+        let ht_sig =
+            Hypertree::<P, H>::ht_sign(&fors_pk, sk.sk_seed(), sk.pk_seed(), idx_tree, idx_leaf);
 
         // Step 8: Assemble signature: R || FORS_SIG || HT_SIG
         let mut data = Vec::with_capacity(P::SIG_SIZE);
@@ -500,7 +496,8 @@ impl<P: SlhDsaParams, H: SlhDsaHash<P>> SlhDsa<P, H> {
         let md = &digest[0..fors_bytes];
 
         let tree_bits = P::H - P::H_PRIME;
-        let (idx_tree, idx_leaf) = Self::extract_indices(&digest[fors_bytes..], tree_bits, P::H_PRIME);
+        let (idx_tree, idx_leaf) =
+            Self::extract_indices(&digest[fors_bytes..], tree_bits, P::H_PRIME);
 
         // Step 4: Parse FORS and HT signatures from sig
         let fors_sig_start = P::N; // After R

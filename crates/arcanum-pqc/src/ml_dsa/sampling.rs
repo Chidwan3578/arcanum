@@ -10,7 +10,7 @@
 
 #![allow(dead_code)]
 
-use super::params::{MlDsaParams, Params44, Params65, Params87, N, Q};
+use super::params::{MlDsaParams, N, Params44, Params65, Params87, Q};
 use super::poly::Poly;
 use arcanum_primitives::shake::{Shake128, Shake256};
 
@@ -135,9 +135,7 @@ pub fn expand_a_parallel<P: MlDsaParams>(rho: &[u8; 32]) -> Vec<Vec<Poly>> {
         .collect();
 
     // Reconstruct matrix structure
-    let mut a: Vec<Vec<Poly>> = (0..P::K)
-        .map(|_| Vec::with_capacity(P::L))
-        .collect();
+    let mut a: Vec<Vec<Poly>> = (0..P::K).map(|_| Vec::with_capacity(P::L)).collect();
 
     // Initialize with zero polys
     for row in &mut a {
@@ -434,8 +432,18 @@ mod tests {
         let poly = sample_poly_uniform(&rho, 1, 2);
 
         for i in 0..N {
-            assert!(poly.coeffs[i] >= 0, "Coefficient {} is negative: {}", i, poly.coeffs[i]);
-            assert!(poly.coeffs[i] < Q, "Coefficient {} >= q: {}", i, poly.coeffs[i]);
+            assert!(
+                poly.coeffs[i] >= 0,
+                "Coefficient {} is negative: {}",
+                i,
+                poly.coeffs[i]
+            );
+            assert!(
+                poly.coeffs[i] < Q,
+                "Coefficient {} >= q: {}",
+                i,
+                poly.coeffs[i]
+            );
         }
     }
 
@@ -466,19 +474,19 @@ mod tests {
     fn test_sample_eta2() {
         // Test the η=2 mapping function: coeff = 2 - (t mod 5)
         // t in [0,14] maps to [-2, 2]
-        assert_eq!(sample_eta2(0), 2);   // 2 - 0 = 2
-        assert_eq!(sample_eta2(1), 1);   // 2 - 1 = 1
-        assert_eq!(sample_eta2(2), 0);   // 2 - 2 = 0
-        assert_eq!(sample_eta2(3), -1);  // 2 - 3 = -1
-        assert_eq!(sample_eta2(4), -2);  // 2 - 4 = -2
-        assert_eq!(sample_eta2(5), 2);   // 2 - 0 = 2
-        assert_eq!(sample_eta2(6), 1);   // 2 - 1 = 1
-        assert_eq!(sample_eta2(7), 0);   // 2 - 2 = 0
-        assert_eq!(sample_eta2(8), -1);  // 2 - 3 = -1
-        assert_eq!(sample_eta2(9), -2);  // 2 - 4 = -2
-        assert_eq!(sample_eta2(10), 2);  // 2 - 0 = 2
-        assert_eq!(sample_eta2(11), 1);  // 2 - 1 = 1
-        assert_eq!(sample_eta2(12), 0);  // 2 - 2 = 0
+        assert_eq!(sample_eta2(0), 2); // 2 - 0 = 2
+        assert_eq!(sample_eta2(1), 1); // 2 - 1 = 1
+        assert_eq!(sample_eta2(2), 0); // 2 - 2 = 0
+        assert_eq!(sample_eta2(3), -1); // 2 - 3 = -1
+        assert_eq!(sample_eta2(4), -2); // 2 - 4 = -2
+        assert_eq!(sample_eta2(5), 2); // 2 - 0 = 2
+        assert_eq!(sample_eta2(6), 1); // 2 - 1 = 1
+        assert_eq!(sample_eta2(7), 0); // 2 - 2 = 0
+        assert_eq!(sample_eta2(8), -1); // 2 - 3 = -1
+        assert_eq!(sample_eta2(9), -2); // 2 - 4 = -2
+        assert_eq!(sample_eta2(10), 2); // 2 - 0 = 2
+        assert_eq!(sample_eta2(11), 1); // 2 - 1 = 1
+        assert_eq!(sample_eta2(12), 0); // 2 - 2 = 0
         assert_eq!(sample_eta2(13), -1); // 2 - 3 = -1
         assert_eq!(sample_eta2(14), -2); // 2 - 4 = -2
     }
@@ -490,8 +498,18 @@ mod tests {
         let poly = sample_poly_eta(&seed, 0, 2);
 
         for i in 0..N {
-            assert!(poly.coeffs[i] >= -2, "Coefficient {} < -2: {}", i, poly.coeffs[i]);
-            assert!(poly.coeffs[i] <= 2, "Coefficient {} > 2: {}", i, poly.coeffs[i]);
+            assert!(
+                poly.coeffs[i] >= -2,
+                "Coefficient {} < -2: {}",
+                i,
+                poly.coeffs[i]
+            );
+            assert!(
+                poly.coeffs[i] <= 2,
+                "Coefficient {} > 2: {}",
+                i,
+                poly.coeffs[i]
+            );
         }
     }
 
@@ -502,8 +520,18 @@ mod tests {
         let poly = sample_poly_eta(&seed, 0, 4);
 
         for i in 0..N {
-            assert!(poly.coeffs[i] >= -4, "Coefficient {} < -4: {}", i, poly.coeffs[i]);
-            assert!(poly.coeffs[i] <= 4, "Coefficient {} > 4: {}", i, poly.coeffs[i]);
+            assert!(
+                poly.coeffs[i] >= -4,
+                "Coefficient {} < -4: {}",
+                i,
+                poly.coeffs[i]
+            );
+            assert!(
+                poly.coeffs[i] <= 4,
+                "Coefficient {} > 4: {}",
+                i,
+                poly.coeffs[i]
+            );
         }
     }
 
@@ -550,11 +578,16 @@ mod tests {
                 assert!(
                     poly.coeffs[i] == 1 || poly.coeffs[i] == -1,
                     "Non-zero coefficient {} is not +/-1: {}",
-                    i, poly.coeffs[i]
+                    i,
+                    poly.coeffs[i]
                 );
             }
         }
-        assert_eq!(count, tau, "Expected {} non-zero coefficients, got {}", tau, count);
+        assert_eq!(
+            count, tau,
+            "Expected {} non-zero coefficients, got {}",
+            tau, count
+        );
     }
 
     #[test]
@@ -565,7 +598,11 @@ mod tests {
         for tau in [39usize, 49, 60] {
             let poly = sample_in_ball(&seed, tau);
             let count: usize = poly.coeffs.iter().filter(|&&c| c != 0).count();
-            assert_eq!(count, tau, "τ={}: expected {} non-zero, got {}", tau, tau, count);
+            assert_eq!(
+                count, tau,
+                "τ={}: expected {} non-zero, got {}",
+                tau, tau, count
+            );
         }
     }
 

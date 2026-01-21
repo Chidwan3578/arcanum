@@ -344,7 +344,10 @@ mod tests {
     #[test]
     fn test_zetas_not_zero() {
         // Verify ZETAS are properly initialized (index 0 is unused, but others should be non-zero)
-        assert!(ZETAS[1..].iter().any(|&z| z != 0), "ZETAS must be initialized");
+        assert!(
+            ZETAS[1..].iter().any(|&z| z != 0),
+            "ZETAS must be initialized"
+        );
     }
 
     #[test]

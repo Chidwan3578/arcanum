@@ -17,27 +17,39 @@ use super::shake::KeccakState;
 
 /// Round constants for ι (iota) step
 const RC: [u64; 24] = [
-    0x0000000000000001, 0x0000000000008082,
-    0x800000000000808a, 0x8000000080008000,
-    0x000000000000808b, 0x0000000080000001,
-    0x8000000080008081, 0x8000000000008009,
-    0x000000000000008a, 0x0000000000000088,
-    0x0000000080008009, 0x000000008000000a,
-    0x000000008000808b, 0x800000000000008b,
-    0x8000000000008089, 0x8000000000008003,
-    0x8000000000008002, 0x8000000000000080,
-    0x000000000000800a, 0x800000008000000a,
-    0x8000000080008081, 0x8000000000008080,
-    0x0000000080000001, 0x8000000080008008,
+    0x0000000000000001,
+    0x0000000000008082,
+    0x800000000000808a,
+    0x8000000080008000,
+    0x000000000000808b,
+    0x0000000080000001,
+    0x8000000080008081,
+    0x8000000000008009,
+    0x000000000000008a,
+    0x0000000000000088,
+    0x0000000080008009,
+    0x000000008000000a,
+    0x000000008000808b,
+    0x800000000000008b,
+    0x8000000000008089,
+    0x8000000000008003,
+    0x8000000000008002,
+    0x8000000000000080,
+    0x000000000000800a,
+    0x800000008000000a,
+    0x8000000080008081,
+    0x8000000000008080,
+    0x0000000080000001,
+    0x8000000080008008,
 ];
 
 /// Rotation offsets for ρ (rho) step - flattened for easier access
 const RHO_OFFSETS: [u32; 25] = [
-     0, 36,  3, 41, 18,  // x=0, y=0..4
-     1, 44, 10, 45,  2,  // x=1, y=0..4
-    62,  6, 43, 15, 61,  // x=2, y=0..4
-    28, 55, 25, 21, 56,  // x=3, y=0..4
-    27, 20, 39,  8, 14,  // x=4, y=0..4
+    0, 36, 3, 41, 18, // x=0, y=0..4
+    1, 44, 10, 45, 2, // x=1, y=0..4
+    62, 6, 43, 15, 61, // x=2, y=0..4
+    28, 55, 25, 21, 56, // x=3, y=0..4
+    27, 20, 39, 8, 14, // x=4, y=0..4
 ];
 
 /// Check if AVX2 is available at runtime
@@ -103,7 +115,11 @@ unsafe fn theta_avx2(lanes: &mut [u64; 25]) {
         // Compute column parities C[x] = A[x,0] ^ A[x,1] ^ A[x,2] ^ A[x,3] ^ A[x,4]
         let mut c = [0u64; 5];
         for x in 0..5 {
-            c[x] = lanes[x * 5] ^ lanes[x * 5 + 1] ^ lanes[x * 5 + 2] ^ lanes[x * 5 + 3] ^ lanes[x * 5 + 4];
+            c[x] = lanes[x * 5]
+                ^ lanes[x * 5 + 1]
+                ^ lanes[x * 5 + 2]
+                ^ lanes[x * 5 + 3]
+                ^ lanes[x * 5 + 4];
         }
 
         // Compute D[x] = C[x-1] ^ ROL(C[x+1], 1)
@@ -211,7 +227,13 @@ pub unsafe fn keccak_p_avx2_v2(state: &mut KeccakState) {
 
             // χ (chi)
             for y in 0..5 {
-                let t = [state[0][y], state[1][y], state[2][y], state[3][y], state[4][y]];
+                let t = [
+                    state[0][y],
+                    state[1][y],
+                    state[2][y],
+                    state[3][y],
+                    state[4][y],
+                ];
                 for x in 0..5 {
                     state[x][y] = t[x] ^ ((!t[(x + 1) % 5]) & t[(x + 2) % 5]);
                 }
@@ -251,7 +273,9 @@ mod tests {
 
             // Run both implementations
             keccak_p(&mut state_scalar);
-            unsafe { keccak_p_avx2(&mut state_avx2); }
+            unsafe {
+                keccak_p_avx2(&mut state_avx2);
+            }
 
             // Compare
             for x in 0..5 {
@@ -278,7 +302,9 @@ mod tests {
         // Multiple permutations
         for _ in 0..10 {
             keccak_p(&mut state_scalar);
-            unsafe { keccak_p_avx2(&mut state_avx2); }
+            unsafe {
+                keccak_p_avx2(&mut state_avx2);
+            }
         }
 
         assert_eq!(state_scalar, state_avx2, "Multi-round mismatch");

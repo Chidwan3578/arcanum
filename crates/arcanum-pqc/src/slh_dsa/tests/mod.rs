@@ -29,7 +29,11 @@ mod integration {
 
         // Verification should succeed
         let result = SlhDsaSha2_128f::verify(&vk, message, &signature);
-        assert!(result.is_ok(), "Signature verification failed: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "Signature verification failed: {:?}",
+            result
+        );
     }
 
     /// Test basic sign/verify roundtrip for SHA2-128s

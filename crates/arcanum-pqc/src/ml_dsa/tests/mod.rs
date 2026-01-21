@@ -139,10 +139,18 @@ mod kat {
         let sk = pack_sk::<Params44>(&kp.rho, &kp.key, &kp.tr, &kp.s1, &kp.s2, &kp.t0);
 
         // Verify public key size
-        assert_eq!(pk.len(), Params44::PK_SIZE, "ML-DSA-44 public key size mismatch");
+        assert_eq!(
+            pk.len(),
+            Params44::PK_SIZE,
+            "ML-DSA-44 public key size mismatch"
+        );
 
         // Verify secret key size
-        assert_eq!(sk.len(), Params44::SK_SIZE, "ML-DSA-44 secret key size mismatch");
+        assert_eq!(
+            sk.len(),
+            Params44::SK_SIZE,
+            "ML-DSA-44 secret key size mismatch"
+        );
 
         // Verify first 32 bytes of pk is rho
         assert_eq!(&pk[..32], &kp.rho, "ML-DSA-44 pk should start with rho");
@@ -172,7 +180,11 @@ mod kat {
         let sig = sign_internal::<Params44>(&sk, &msg).expect("Signing should succeed");
 
         // Verify signature size
-        assert_eq!(sig.len(), Params44::SIG_SIZE, "ML-DSA-44 signature size mismatch");
+        assert_eq!(
+            sig.len(),
+            Params44::SIG_SIZE,
+            "ML-DSA-44 signature size mismatch"
+        );
 
         // Verify our signature is valid
         assert!(
@@ -197,8 +209,16 @@ mod kat {
         let sk = pack_sk::<Params65>(&kp.rho, &kp.key, &kp.tr, &kp.s1, &kp.s2, &kp.t0);
 
         // Verify sizes
-        assert_eq!(pk.len(), Params65::PK_SIZE, "ML-DSA-65 public key size mismatch");
-        assert_eq!(sk.len(), Params65::SK_SIZE, "ML-DSA-65 secret key size mismatch");
+        assert_eq!(
+            pk.len(),
+            Params65::PK_SIZE,
+            "ML-DSA-65 public key size mismatch"
+        );
+        assert_eq!(
+            sk.len(),
+            Params65::SK_SIZE,
+            "ML-DSA-65 secret key size mismatch"
+        );
 
         // Verify first 32 bytes of pk is rho
         assert_eq!(&pk[..32], &kp.rho, "ML-DSA-65 pk should start with rho");
@@ -246,8 +266,16 @@ mod kat {
         let sk = pack_sk::<Params87>(&kp.rho, &kp.key, &kp.tr, &kp.s1, &kp.s2, &kp.t0);
 
         // Verify sizes
-        assert_eq!(pk.len(), Params87::PK_SIZE, "ML-DSA-87 public key size mismatch");
-        assert_eq!(sk.len(), Params87::SK_SIZE, "ML-DSA-87 secret key size mismatch");
+        assert_eq!(
+            pk.len(),
+            Params87::PK_SIZE,
+            "ML-DSA-87 public key size mismatch"
+        );
+        assert_eq!(
+            sk.len(),
+            Params87::SK_SIZE,
+            "ML-DSA-87 secret key size mismatch"
+        );
 
         // Verify first 32 bytes of pk is rho
         assert_eq!(&pk[..32], &kp.rho, "ML-DSA-87 pk should start with rho");
@@ -300,7 +328,10 @@ mod kat {
         let pk1 = pack_pk::<Params44>(&kp1.rho, &kp1.t1);
         let pk2 = pack_pk::<Params44>(&kp2.rho, &kp2.t1);
 
-        assert_ne!(pk1, pk2, "Different seeds should produce different public keys");
+        assert_ne!(
+            pk1, pk2,
+            "Different seeds should produce different public keys"
+        );
     }
 
     /// Test that key generation is deterministic
@@ -326,7 +357,7 @@ mod ntt_kat {
     //!
     //! Verify NTT implementation against known values.
 
-    use crate::ml_dsa::ntt::{ntt, inv_ntt};
+    use crate::ml_dsa::ntt::{inv_ntt, ntt};
     use crate::ml_dsa::params::N;
 
     /// Test NTT produces consistent results
@@ -347,7 +378,11 @@ mod ntt_kat {
         ntt(&mut coeffs2);
 
         for i in 0..N {
-            assert_eq!(coeffs1[i], coeffs2[i], "NTT should be deterministic at index {}", i);
+            assert_eq!(
+                coeffs1[i], coeffs2[i],
+                "NTT should be deterministic at index {}",
+                i
+            );
         }
     }
 
@@ -371,7 +406,11 @@ mod ntt_kat {
 
         // Inverse NTT of zero should be zero
         for i in 0..N {
-            assert_eq!(coeffs[i], 0, "Inverse NTT of zero should be zero at index {}", i);
+            assert_eq!(
+                coeffs[i], 0,
+                "Inverse NTT of zero should be zero at index {}",
+                i
+            );
         }
     }
 
@@ -401,9 +440,9 @@ mod ntt_kat {
 mod acvp_debug {
     //! Debug tests to trace ACVP divergence
 
-    use arcanum_primitives::shake::Shake256;
     use crate::ml_dsa::keygen::generate_keypair_internal;
     use crate::ml_dsa::params::Params44;
+    use arcanum_primitives::shake::Shake256;
 
     fn hex_decode(s: &str) -> Vec<u8> {
         (0..s.len())
@@ -444,28 +483,34 @@ mod acvp_debug {
         println!("Expected rho: {}", expected_rho);
         println!("Our rho:      {}", hex_encode(&our_rho));
 
-        assert_eq!(hex_encode(&our_rho), expected_rho,
-            "FIPS 204 seed expansion doesn't match expected rho");
+        assert_eq!(
+            hex_encode(&our_rho),
+            expected_rho,
+            "FIPS 204 seed expansion doesn't match expected rho"
+        );
     }
-    
+
     #[test]
     fn debug_keygen_rho() {
         // NIST KAT seed (xi)
         let seed = hex_decode("f696484048ec21f96cf50a56d0759c448f3779752f0383d37449690694cf7a68");
         let mut seed_arr = [0u8; 32];
         seed_arr.copy_from_slice(&seed);
-        
+
         // Expected rho from NIST KAT
         let expected_rho = "bd4e96f9a038ab5e36214fe69c0b1cb835ef9d7c8417e76aecd152f5cddebec8";
-        
+
         let kp = generate_keypair_internal::<Params44>(&seed_arr);
-        
+
         println!("\n=== KeyGen Rho Debug ===");
         println!("Expected rho:    {}", expected_rho);
         println!("Our keygen rho:  {}", hex_encode(&kp.rho));
 
-        assert_eq!(hex_encode(&kp.rho), expected_rho,
-            "KeyGen rho doesn't match expected");
+        assert_eq!(
+            hex_encode(&kp.rho),
+            expected_rho,
+            "KeyGen rho doesn't match expected"
+        );
     }
 
     /// Verify SHAKE256 against NIST test vector
@@ -487,7 +532,11 @@ mod acvp_debug {
         println!("Expected: {}", expected);
         println!("Got:      {}", hex_encode(&output));
 
-        assert_eq!(hex_encode(&output), expected, "SHAKE256 implementation is incorrect!");
+        assert_eq!(
+            hex_encode(&output),
+            expected,
+            "SHAKE256 implementation is incorrect!"
+        );
     }
 
     /// Debug test for ML-DSA-87 sign/verify with deterministic seed
@@ -516,7 +565,11 @@ mod acvp_debug {
         let sig = sign_internal::<Params87>(&sk, &msg);
         match sig {
             Some(s) => {
-                println!("Signature size: {} (expected {})", s.len(), Params87::SIG_SIZE);
+                println!(
+                    "Signature size: {} (expected {})",
+                    s.len(),
+                    Params87::SIG_SIZE
+                );
                 let result = verify_internal::<Params87>(&pk, &msg, &s);
                 println!("Verification result: {}", result);
             }
@@ -550,22 +603,30 @@ mod acvp_debug {
             }
         }
 
-        println!("\nML-DSA-87: {} failures out of {} iterations ({:.1}%)",
-            failures, iterations, (failures as f64 / iterations as f64) * 100.0);
+        println!(
+            "\nML-DSA-87: {} failures out of {} iterations ({:.1}%)",
+            failures,
+            iterations,
+            (failures as f64 / iterations as f64) * 100.0
+        );
 
         // Should have 0 failures
-        assert_eq!(failures, 0, "ML-DSA-87 has {} verification failures out of {}", failures, iterations);
+        assert_eq!(
+            failures, 0,
+            "ML-DSA-87 has {} verification failures out of {}",
+            failures, iterations
+        );
     }
 
     /// Test the hint mechanism directly - this isolates the use_hint/make_hint functions
     #[test]
     fn test_hint_mechanism_gamma2_261888() {
-        use crate::ml_dsa::rounding::{decompose, high_bits, make_hint, use_hint};
         use crate::ml_dsa::params::Q;
+        use crate::ml_dsa::rounding::{decompose, high_bits, make_hint, use_hint};
 
         // GAMMA2 for ML-DSA-65/87
-        let gamma2 = (Q - 1) / 32;  // 261888
-        let alpha = 2 * gamma2;     // 523776
+        let gamma2 = (Q - 1) / 32; // 261888
+        let alpha = 2 * gamma2; // 523776
 
         println!("\n=== Hint Mechanism Test ===");
         println!("GAMMA2 = {}", gamma2);
@@ -577,11 +638,13 @@ mod acvp_debug {
 
         // Test the key property: UseHint(MakeHint(z, r), r) = HighBits(r + z)
         // when |z| < gamma2
-        for z in [-gamma2/2, -1000, -100, 0, 100, 1000, gamma2/2] {
-            for r_base in [0, alpha/4, alpha/2, 3*alpha/4, alpha - 1] {
+        for z in [-gamma2 / 2, -1000, -100, 0, 100, 1000, gamma2 / 2] {
+            for r_base in [0, alpha / 4, alpha / 2, 3 * alpha / 4, alpha - 1] {
                 for k in [0, 5, 10, 15] {
                     let r = k * alpha + r_base;
-                    if r >= Q { continue; }
+                    if r >= Q {
+                        continue;
+                    }
 
                     tests += 1;
 
@@ -592,25 +655,30 @@ mod acvp_debug {
                     if result != expected {
                         failures += 1;
                         let (r1, r0) = decompose(r, gamma2);
-                        println!("FAILURE: z={}, r={} (r1={}, r0={}), h={}, result={}, expected={}",
-                            z, r, r1, r0, h, result, expected);
+                        println!(
+                            "FAILURE: z={}, r={} (r1={}, r0={}), h={}, result={}, expected={}",
+                            z, r, r1, r0, h, result, expected
+                        );
                     }
                 }
             }
         }
 
-        println!("Hint mechanism: {} failures out of {} tests", failures, tests);
+        println!(
+            "Hint mechanism: {} failures out of {} tests",
+            failures, tests
+        );
         assert_eq!(failures, 0, "Hint mechanism has {} failures", failures);
     }
 
     /// Test edge cases in decompose function
     #[test]
     fn test_decompose_edge_cases() {
-        use crate::ml_dsa::rounding::decompose;
         use crate::ml_dsa::params::Q;
+        use crate::ml_dsa::rounding::decompose;
 
-        let gamma2 = (Q - 1) / 32;  // 261888
-        let alpha = 2 * gamma2;     // 523776
+        let gamma2 = (Q - 1) / 32; // 261888
+        let alpha = 2 * gamma2; // 523776
 
         println!("\n=== Decompose Edge Cases ===");
 
@@ -632,9 +700,11 @@ mod acvp_debug {
             // Verify reconstruction: r1*alpha + r0 = val (mod Q)
             let reconstructed = r1 as i64 * alpha as i64 + r0 as i64;
             let reconstructed_mod = ((reconstructed % Q as i64) + Q as i64) % Q as i64;
-            assert_eq!(reconstructed_mod as i32, val,
+            assert_eq!(
+                reconstructed_mod as i32, val,
                 "Decompose reconstruction failed for val={}: got {} but expected {}",
-                val, reconstructed_mod, val);
+                val, reconstructed_mod, val
+            );
         }
     }
 
@@ -642,12 +712,12 @@ mod acvp_debug {
     #[test]
     fn trace_ml_dsa_87_sign_verify() {
         use crate::ml_dsa::keygen::{generate_keypair_internal, pack_pk, pack_sk, unpack_pk};
-        use crate::ml_dsa::params::{MlDsaParams, Params87, N, Q, D};
-        use crate::ml_dsa::sign::{sign_internal, unpack_signature};
-        use crate::ml_dsa::verify::verify_internal;
+        use crate::ml_dsa::params::{D, MlDsaParams, N, Params87, Q};
+        use crate::ml_dsa::poly::Poly;
         use crate::ml_dsa::rounding::{decompose, high_bits, use_hint};
         use crate::ml_dsa::sampling::{expand_a, sample_in_ball};
-        use crate::ml_dsa::poly::Poly;
+        use crate::ml_dsa::sign::{sign_internal, unpack_signature};
+        use crate::ml_dsa::verify::verify_internal;
         use arcanum_primitives::shake::Shake256;
 
         println!("\n=== ML-DSA-87 Sign/Verify Trace ===");
@@ -785,9 +855,9 @@ mod spec_invariants {
     //! 2. UseHint(MakeHint(-ct₀, r), r) = HighBits(r + (-ct₀)) (Section 5.6.2-5.6.3)
     //! 3. After rejection: HighBits(w - cs₂) = HighBits(w) (Section 5.6.4)
 
-    use crate::ml_dsa::params::{MlDsaParams, Params44, Params65, Params87, N, Q};
-    use crate::ml_dsa::rounding::{decompose, high_bits, make_hint, use_hint};
+    use crate::ml_dsa::params::{MlDsaParams, N, Params44, Params65, Params87, Q};
     use crate::ml_dsa::poly::Poly;
+    use crate::ml_dsa::rounding::{decompose, high_bits, make_hint, use_hint};
 
     /// Spec Invariant 5.6.2: MakeHint(z, r) returns 1 iff HighBits(r) ≠ HighBits(r + z)
     ///
@@ -795,16 +865,18 @@ mod spec_invariants {
     #[test]
     fn spec_make_hint_definition() {
         for gamma2 in [(Q - 1) / 88, (Q - 1) / 32] {
-            for z in [-gamma2/2, -100, 0, 100, gamma2/2] {
-                for r in [0, gamma2, 2*gamma2, Q/2, Q - 1] {
+            for z in [-gamma2 / 2, -100, 0, 100, gamma2 / 2] {
+                for r in [0, gamma2, 2 * gamma2, Q / 2, Q - 1] {
                     let h = make_hint(z, r, gamma2);
                     let hb_r = high_bits(r, gamma2);
                     let hb_r_plus_z = high_bits(r + z, gamma2);
 
                     let expected = hb_r != hb_r_plus_z;
-                    assert_eq!(h, expected,
+                    assert_eq!(
+                        h, expected,
                         "MakeHint({}, {}, {}) = {} but HighBits differ = {}",
-                        z, r, gamma2, h, expected);
+                        z, r, gamma2, h, expected
+                    );
                 }
             }
         }
@@ -823,12 +895,22 @@ mod spec_invariants {
             let mut tests = 0;
 
             // Test z values within the valid range |z| < gamma2
-            for z in [-gamma2/2, -gamma2/4, -100, 0, 100, gamma2/4, gamma2/2] {
+            for z in [
+                -gamma2 / 2,
+                -gamma2 / 4,
+                -100,
+                0,
+                100,
+                gamma2 / 4,
+                gamma2 / 2,
+            ] {
                 // Test r values across the range [0, q)
-                for r1 in [0, 1, max_r1/2, max_r1 - 1] {
-                    for r0_offset in [-gamma2/2, 0, gamma2/2] {
+                for r1 in [0, 1, max_r1 / 2, max_r1 - 1] {
+                    for r0_offset in [-gamma2 / 2, 0, gamma2 / 2] {
                         let r = (r1 * alpha + r0_offset).rem_euclid(Q);
-                        if r < 0 || r >= Q { continue; }
+                        if r < 0 || r >= Q {
+                            continue;
+                        }
 
                         tests += 1;
 
@@ -840,17 +922,21 @@ mod spec_invariants {
                             failures += 1;
                             if failures <= 5 {
                                 let (r1_decomp, r0_decomp) = decompose(r, gamma2);
-                                println!("FAIL: z={}, r={} (r1={}, r0={}), h={}, got={}, expected={}",
-                                    z, r, r1_decomp, r0_decomp, h, result, expected);
+                                println!(
+                                    "FAIL: z={}, r={} (r1={}, r0={}), h={}, got={}, expected={}",
+                                    z, r, r1_decomp, r0_decomp, h, result, expected
+                                );
                             }
                         }
                     }
                 }
             }
 
-            assert_eq!(failures, 0,
+            assert_eq!(
+                failures, 0,
                 "UseHint invariant: {} failures out of {} tests for gamma2={}",
-                failures, tests, gamma2);
+                failures, tests, gamma2
+            );
         }
     }
 
@@ -871,15 +957,16 @@ mod spec_invariants {
         let mut tests = 0;
 
         // Test with various simulated values
-        for w in [gamma2, 2*gamma2, Q/2, Q - 100].iter() {
+        for w in [gamma2, 2 * gamma2, Q / 2, Q - 100].iter() {
             for cs2 in [-50, 0, 50, 100].iter() {
-                for ct0 in [-gamma2/4, 0, gamma2/4].iter() {
+                for ct0 in [-gamma2 / 4, 0, gamma2 / 4].iter() {
                     let w = *w;
                     let cs2 = *cs2;
                     let ct0 = *ct0;
 
                     // w_cs2_ct0 = w - cs2 + ct0 (what signing computes and verification reconstructs)
-                    let w_cs2_ct0 = ((w as i64 - cs2 as i64 + ct0 as i64).rem_euclid(Q as i64)) as i32;
+                    let w_cs2_ct0 =
+                        ((w as i64 - cs2 as i64 + ct0 as i64).rem_euclid(Q as i64)) as i32;
 
                     // neg_ct0 = -ct0
                     let neg_ct0 = -ct0;
@@ -901,15 +988,21 @@ mod spec_invariants {
                         if failures <= 10 {
                             println!("FAIL: w={}, cs2={}, ct0={}", w, cs2, ct0);
                             println!("  w_cs2_ct0={}, neg_ct0={}, h={}", w_cs2_ct0, neg_ct0, h);
-                            println!("  UseHint result={}, expected HighBits(w-cs2)={}", w_prime_1, expected);
+                            println!(
+                                "  UseHint result={}, expected HighBits(w-cs2)={}",
+                                w_prime_1, expected
+                            );
                         }
                     }
                 }
             }
         }
 
-        assert_eq!(failures, 0,
-            "Hint verification invariant: {} failures out of {} tests", failures, tests);
+        assert_eq!(
+            failures, 0,
+            "Hint verification invariant: {} failures out of {} tests",
+            failures, tests
+        );
     }
 
     /// Spec Invariant 5.7: Decompose corner case when r - r₀ = q - 1
@@ -930,18 +1023,28 @@ mod spec_invariants {
 
             // Verify reconstruction: r₁ * α + r₀ ≡ r (mod q)
             let reconstructed = (r1 as i64 * alpha as i64 + r0 as i64).rem_euclid(Q as i64);
-            assert_eq!(reconstructed as i32, r,
+            assert_eq!(
+                reconstructed as i32, r,
                 "Decompose reconstruction failed for r=Q-1: r1={}, r0={}, reconstructed={}",
-                r1, r0, reconstructed);
+                r1, r0, reconstructed
+            );
 
             // Verify r₀ is in valid range (-γ₂, γ₂]
-            assert!(r0 > -gamma2 && r0 <= gamma2,
-                "Decompose r0={} out of range for r=Q-1, gamma2={}", r0, gamma2);
+            assert!(
+                r0 > -gamma2 && r0 <= gamma2,
+                "Decompose r0={} out of range for r=Q-1, gamma2={}",
+                r0,
+                gamma2
+            );
 
             // Verify r₁ is in valid range [0, m] where m = (q-1)/α - 1
             let m = (Q - 1) / alpha - 1;
-            assert!(r1 >= 0 && r1 <= m,
-                "Decompose r1={} out of range [0, {}] for r=Q-1", r1, m);
+            assert!(
+                r1 >= 0 && r1 <= m,
+                "Decompose r1={} out of range [0, {}] for r=Q-1",
+                r1,
+                m
+            );
         }
     }
 
@@ -955,8 +1058,8 @@ mod spec_invariants {
         // Test that HighBits produces same result for equivalent values mod q
         let test_values = [
             (0, 0),
-            (Q, 0),  // Q ≡ 0 (mod q)
-            (-1, Q - 1),  // -1 ≡ Q - 1 (mod q)
+            (Q, 0),      // Q ≡ 0 (mod q)
+            (-1, Q - 1), // -1 ≡ Q - 1 (mod q)
             (Q + 100, 100),
             (-100, Q - 100),
         ];
@@ -970,9 +1073,11 @@ mod spec_invariants {
                 // HighBits should be the same
                 let hb1 = high_bits(r1, gamma2);
                 let hb2 = high_bits(r2, gamma2);
-                assert_eq!(hb1, hb2,
+                assert_eq!(
+                    hb1, hb2,
                     "HighBits({}) = {} but HighBits({}) = {} (both ≡ {} mod q)",
-                    v1, hb1, v2, hb2, r1);
+                    v1, hb1, v2, hb2, r1
+                );
             }
         }
     }
@@ -996,12 +1101,18 @@ mod spec_invariants {
         for gamma2 in [gamma2_44, gamma2_65] {
             let m = (Q - 1) / (2 * gamma2) - 1;
 
-            for r in [0, gamma2, 2*gamma2, Q/2, Q - 1] {
+            for r in [0, gamma2, 2 * gamma2, Q / 2, Q - 1] {
                 for h in [false, true] {
                     let result = use_hint(h, r, gamma2);
-                    assert!(result >= 0 && result <= m,
+                    assert!(
+                        result >= 0 && result <= m,
                         "UseHint({}, {}, {}) = {} outside [0, {}]",
-                        h, r, gamma2, result, m);
+                        h,
+                        r,
+                        gamma2,
+                        result,
+                        m
+                    );
                 }
             }
         }
@@ -1014,7 +1125,7 @@ mod spec_invariants {
     fn spec_ml_dsa_87_zero_failure_rate() {
         use crate::ml_dsa::{MlDsa, MlDsa87};
 
-        let iterations = 50;  // Fewer iterations for regular testing
+        let iterations = 50; // Fewer iterations for regular testing
         let mut failures = 0;
 
         for i in 0..iterations {
@@ -1028,9 +1139,14 @@ mod spec_invariants {
         }
 
         // MUST be 0 for ACVP compliance
-        assert_eq!(failures, 0,
+        assert_eq!(
+            failures,
+            0,
             "ML-DSA-87 verification failure rate: {}/{} ({:.1}%) - MUST be 0% for ACVP",
-            failures, iterations, (failures as f64 / iterations as f64) * 100.0);
+            failures,
+            iterations,
+            (failures as f64 / iterations as f64) * 100.0
+        );
     }
 }
 
@@ -1040,12 +1156,14 @@ mod w1_divergence_debug {
     //!
     //! This module instruments the sign/verify flow to compare values.
 
-    use crate::ml_dsa::keygen::{generate_keypair_internal, pack_pk, pack_sk, unpack_pk, unpack_sk};
-    use crate::ml_dsa::params::{MlDsaParams, Params87, N, Q, D};
-    use crate::ml_dsa::sign::{sign_internal, unpack_signature};
-    use crate::ml_dsa::sampling::{expand_a, expand_mask, sample_in_ball};
-    use crate::ml_dsa::rounding::{high_bits, use_hint};
+    use crate::ml_dsa::keygen::{
+        generate_keypair_internal, pack_pk, pack_sk, unpack_pk, unpack_sk,
+    };
+    use crate::ml_dsa::params::{D, MlDsaParams, N, Params87, Q};
     use crate::ml_dsa::poly::Poly;
+    use crate::ml_dsa::rounding::{high_bits, use_hint};
+    use crate::ml_dsa::sampling::{expand_a, expand_mask, sample_in_ball};
+    use crate::ml_dsa::sign::{sign_internal, unpack_signature};
     use arcanum_primitives::shake::Shake256;
 
     /// Capture and compare w1 from signing vs w'1 from verification
@@ -1183,7 +1301,8 @@ mod w1_divergence_debug {
                 }
 
                 // Check hint count
-                let hint_count: usize = h.iter()
+                let hint_count: usize = h
+                    .iter()
                     .map(|p| p.coeffs.iter().filter(|&&c| c != 0).count())
                     .sum();
                 println!("Hint count: {} (max {})", hint_count, Params87::OMEGA);
@@ -1192,10 +1311,10 @@ mod w1_divergence_debug {
                 println!("Sample w' values:");
                 for i in 0..2 {
                     for j in 0..4 {
-                        println!("  w'[{}][{}] = {}, h = {}, w'1 = {}",
-                            i, j, w_prime[i].coeffs[j],
-                            h[i].coeffs[j],
-                            w_prime_1[i].coeffs[j]);
+                        println!(
+                            "  w'[{}][{}] = {}, h = {}, w'1 = {}",
+                            i, j, w_prime[i].coeffs[j], h[i].coeffs[j], w_prime_1[i].coeffs[j]
+                        );
                     }
                 }
 
@@ -1244,16 +1363,16 @@ mod w1_divergence_debug {
     #[test]
     fn test_w_prime_computation_consistency() {
         use crate::ml_dsa::keygen::{generate_keypair_internal, pack_pk, pack_sk, unpack_sk};
-        use crate::ml_dsa::params::{MlDsaParams, Params87, N, Q, D};
-        use crate::ml_dsa::sampling::{expand_a, expand_mask, sample_in_ball};
-        use crate::ml_dsa::rounding::{high_bits, poly_power2round};
+        use crate::ml_dsa::params::{D, MlDsaParams, N, Params87, Q};
         use crate::ml_dsa::poly::Poly;
+        use crate::ml_dsa::rounding::{high_bits, poly_power2round};
+        use crate::ml_dsa::sampling::{expand_a, expand_mask, sample_in_ball};
         use arcanum_primitives::shake::Shake256;
 
         println!("\n=== Testing w' computation consistency ===");
 
         let mut seed = [0u8; 32];
-        seed[0] = 7;  // Known failing case
+        seed[0] = 7; // Known failing case
 
         let kp = generate_keypair_internal::<Params87>(&seed);
 
@@ -1272,7 +1391,7 @@ mod w1_divergence_debug {
         // Generate a random y (using fixed seed for reproducibility)
         let mut mask_seed = Vec::with_capacity(96);
         mask_seed.extend_from_slice(&kp.key);
-        mask_seed.extend_from_slice(&[0u8; 64]);  // dummy mu
+        mask_seed.extend_from_slice(&[0u8; 64]); // dummy mu
         let y = expand_mask::<Params87>(&mask_seed, 0, Params87::GAMMA1);
 
         // Convert to NTT for computations
@@ -1282,11 +1401,21 @@ mod w1_divergence_debug {
         let mut t1_ntt: Vec<Poly> = t1.clone();
         let mut y_ntt = y.clone();
 
-        for poly in &mut s1_ntt { poly.ntt(); }
-        for poly in &mut s2_ntt { poly.ntt(); }
-        for poly in &mut t0_ntt { poly.ntt(); }
-        for poly in &mut t1_ntt { poly.ntt(); }
-        for poly in &mut y_ntt { poly.ntt(); }
+        for poly in &mut s1_ntt {
+            poly.ntt();
+        }
+        for poly in &mut s2_ntt {
+            poly.ntt();
+        }
+        for poly in &mut t0_ntt {
+            poly.ntt();
+        }
+        for poly in &mut t1_ntt {
+            poly.ntt();
+        }
+        for poly in &mut y_ntt {
+            poly.ntt();
+        }
 
         // Compute w = Ay
         let mut w_ntt = vec![Poly::zero(); Params87::K];
@@ -1337,14 +1466,17 @@ mod w1_divergence_debug {
         let mut w_prime_method1 = vec![Poly::zero(); Params87::K];
         for i in 0..Params87::K {
             for j in 0..N {
-                let val = (w[i].coeffs[j] as i64) - (cs2[i].coeffs[j] as i64) + (ct0[i].coeffs[j] as i64);
+                let val =
+                    (w[i].coeffs[j] as i64) - (cs2[i].coeffs[j] as i64) + (ct0[i].coeffs[j] as i64);
                 w_prime_method1[i].coeffs[j] = ((val % (Q as i64)) + (Q as i64)) as i32 % Q;
             }
         }
 
         // === Method 2: Az - ct1·2^d (verification method) ===
         let mut z_ntt = z.clone();
-        for poly in &mut z_ntt { poly.ntt(); }
+        for poly in &mut z_ntt {
+            poly.ntt();
+        }
 
         let mut az_ntt = vec![Poly::zero(); Params87::K];
         for i in 0..Params87::K {
@@ -1384,18 +1516,26 @@ mod w1_divergence_debug {
             for j in 0..N {
                 if w_prime_method1[i].coeffs[j] != w_prime_method2[i].coeffs[j] {
                     if mismatches < 10 {
-                        println!("Mismatch at [{}][{}]: method1={}, method2={}",
-                            i, j, w_prime_method1[i].coeffs[j], w_prime_method2[i].coeffs[j]);
+                        println!(
+                            "Mismatch at [{}][{}]: method1={}, method2={}",
+                            i, j, w_prime_method1[i].coeffs[j], w_prime_method2[i].coeffs[j]
+                        );
                     }
                     mismatches += 1;
                 }
             }
         }
 
-        println!("Total mismatches: {} out of {} coefficients", mismatches, Params87::K * N);
+        println!(
+            "Total mismatches: {} out of {} coefficients",
+            mismatches,
+            Params87::K * N
+        );
 
         if mismatches > 0 {
-            println!("\n*** w' computation methods DIFFER - this explains verification failures! ***");
+            println!(
+                "\n*** w' computation methods DIFFER - this explains verification failures! ***"
+            );
         } else {
             println!("\n*** w' computation methods MATCH - bug must be elsewhere ***");
         }
@@ -1409,10 +1549,10 @@ mod w1_divergence_debug {
     #[test]
     fn test_signing_invariant_full_loop() {
         use crate::ml_dsa::keygen::generate_keypair_internal;
-        use crate::ml_dsa::params::{MlDsaParams, Params87, N, Q};
-        use crate::ml_dsa::sampling::{expand_a, expand_mask, sample_in_ball};
-        use crate::ml_dsa::rounding::{high_bits, decompose};
+        use crate::ml_dsa::params::{MlDsaParams, N, Params87, Q};
         use crate::ml_dsa::poly::Poly;
+        use crate::ml_dsa::rounding::{decompose, high_bits};
+        use crate::ml_dsa::sampling::{expand_a, expand_mask, sample_in_ball};
         use arcanum_primitives::shake::Shake256;
 
         println!("\n=== Full Signing Loop Invariant Test ===");
@@ -1431,7 +1571,9 @@ mod w1_divergence_debug {
 
             // NTT versions
             let mut s2_ntt: Vec<Poly> = kp.s2.clone();
-            for poly in &mut s2_ntt { poly.ntt(); }
+            for poly in &mut s2_ntt {
+                poly.ntt();
+            }
 
             // Simulate multiple signing attempts
             for kappa in (0..100u16).step_by(Params87::L) {
@@ -1440,12 +1582,14 @@ mod w1_divergence_debug {
                 // Generate y
                 let mut mask_seed = Vec::with_capacity(96);
                 mask_seed.extend_from_slice(&kp.key);
-                mask_seed.extend_from_slice(&[seed_byte; 64]);  // pseudo-mu
+                mask_seed.extend_from_slice(&[seed_byte; 64]); // pseudo-mu
                 let y = expand_mask::<Params87>(&mask_seed, kappa, Params87::GAMMA1);
 
                 // y to NTT
                 let mut y_ntt = y.clone();
-                for poly in &mut y_ntt { poly.ntt(); }
+                for poly in &mut y_ntt {
+                    poly.ntt();
+                }
 
                 // w = Ay
                 let mut w_ntt = vec![Poly::zero(); Params87::K];
@@ -1501,11 +1645,13 @@ mod w1_divergence_debug {
                             break;
                         }
                     }
-                    if !passes_rejection { break; }
+                    if !passes_rejection {
+                        break;
+                    }
                 }
 
                 if !passes_rejection {
-                    continue;  // Would be rejected, skip
+                    continue; // Would be rejected, skip
                 }
 
                 rejection_pass_count += 1;
@@ -1523,12 +1669,22 @@ mod w1_divergence_debug {
                         if hb_w != hb_w_cs2 {
                             invariant_violations += 1;
                             if invariant_violations <= 5 {
-                                println!("INVARIANT VIOLATION at seed={}, kappa={}, i={}, j={}:",
-                                    seed_byte, kappa, i, j);
-                                println!("  w={}, cs2={}, w-cs2={}", w[i].coeffs[j], cs2[i].coeffs[j], w_cs2_normalized);
+                                println!(
+                                    "INVARIANT VIOLATION at seed={}, kappa={}, i={}, j={}:",
+                                    seed_byte, kappa, i, j
+                                );
+                                println!(
+                                    "  w={}, cs2={}, w-cs2={}",
+                                    w[i].coeffs[j], cs2[i].coeffs[j], w_cs2_normalized
+                                );
                                 println!("  HighBits(w)={}, HighBits(w-cs2)={}", hb_w, hb_w_cs2);
                                 let (_r1, r0) = decompose(w_minus_cs2[i].coeffs[j], gamma2);
-                                println!("  r0={}, |r0|={}, threshold={}", r0, r0.abs(), gamma2_minus_beta);
+                                println!(
+                                    "  r0={}, |r0|={}, threshold={}",
+                                    r0,
+                                    r0.abs(),
+                                    gamma2_minus_beta
+                                );
                             }
                         }
                     }
@@ -1542,7 +1698,10 @@ mod w1_divergence_debug {
         println!("  Invariant violations: {}", invariant_violations);
 
         if invariant_violations > 0 {
-            println!("\n*** FOUND BUG: {} cases where HighBits(w) ≠ HighBits(w-cs2) ***", invariant_violations);
+            println!(
+                "\n*** FOUND BUG: {} cases where HighBits(w) ≠ HighBits(w-cs2) ***",
+                invariant_violations
+            );
             println!("*** This explains the verification failures! ***");
         } else {
             println!("\n*** No invariant violations - bug is NOT in HighBits equality ***");
@@ -1556,8 +1715,8 @@ mod w1_divergence_debug {
     fn test_highbits_invariant_hypothesis() {
         use crate::ml_dsa::rounding::{decompose, high_bits};
 
-        let gamma2 = ((Q - 1) / 32) as i32;  // ML-DSA-65/87
-        let beta = 120i32;  // ML-DSA-87
+        let gamma2 = ((Q - 1) / 32) as i32; // ML-DSA-65/87
+        let beta = 120i32; // ML-DSA-87
         let gamma2_minus_beta = gamma2 - beta;
 
         println!("\n=== Testing HighBits Invariant ===");
@@ -1574,7 +1733,9 @@ mod w1_divergence_debug {
         for w_high in [0, 5, 10, 15] {
             for w_low_offset in [-gamma2 + 1, -gamma2 / 2, 0, gamma2 / 2, gamma2] {
                 let w = w_high * alpha + w_low_offset;
-                if w < 0 || w >= Q { continue; }
+                if w < 0 || w >= Q {
+                    continue;
+                }
 
                 let w_normalized = w.rem_euclid(Q);
                 let hb_w = high_bits(w_normalized, gamma2 as i32);
@@ -1597,9 +1758,15 @@ mod w1_divergence_debug {
                         boundary_crossings += 1;
                         if passes_rejection {
                             invariant_violations += 1;
-                            println!("VIOLATION: w={}, cs2={}, w-cs2={}", w_normalized, cs2, w_minus_cs2_normalized);
+                            println!(
+                                "VIOLATION: w={}, cs2={}, w-cs2={}",
+                                w_normalized, cs2, w_minus_cs2_normalized
+                            );
                             println!("  HighBits(w)={}, HighBits(w-cs2)={}", hb_w, hb_w_minus_cs2);
-                            println!("  r0={}, |r0|={}, threshold={}", r0, r0_norm, gamma2_minus_beta);
+                            println!(
+                                "  r0={}, |r0|={}, threshold={}",
+                                r0, r0_norm, gamma2_minus_beta
+                            );
                         } else {
                             rejection_failures += 1;
                         }
@@ -1611,12 +1778,17 @@ mod w1_divergence_debug {
         println!("\nResults:");
         println!("  Boundary crossings: {}", boundary_crossings);
         println!("  Would be rejected: {}", rejection_failures);
-        println!("  INVARIANT VIOLATIONS (passes rejection but highbits differ): {}", invariant_violations);
+        println!(
+            "  INVARIANT VIOLATIONS (passes rejection but highbits differ): {}",
+            invariant_violations
+        );
 
         // The hypothesis is that invariant_violations should be > 0 for ML-DSA-87
         // If so, this explains the verification failures
         if invariant_violations > 0 {
-            println!("\n*** CONFIRMED: Rejection check does NOT ensure HighBits(w) = HighBits(w-cs2) ***");
+            println!(
+                "\n*** CONFIRMED: Rejection check does NOT ensure HighBits(w) = HighBits(w-cs2) ***"
+            );
         } else {
             println!("\n*** Hypothesis NOT confirmed - rejection check seems sufficient ***");
         }
@@ -1628,12 +1800,14 @@ mod w1_divergence_debug {
     /// then runs verification to capture w'1, and compares them.
     #[test]
     fn capture_and_compare_w1_vs_w1_prime() {
-        use crate::ml_dsa::keygen::{generate_keypair_internal, pack_pk, pack_sk, unpack_pk, unpack_sk};
-        use crate::ml_dsa::params::{MlDsaParams, Params87, N, Q, D};
-        use crate::ml_dsa::sign::unpack_signature;
-        use crate::ml_dsa::sampling::{expand_a, expand_mask, sample_in_ball};
-        use crate::ml_dsa::rounding::{high_bits, make_hint, use_hint, poly_decompose};
+        use crate::ml_dsa::keygen::{
+            generate_keypair_internal, pack_pk, pack_sk, unpack_pk, unpack_sk,
+        };
+        use crate::ml_dsa::params::{D, MlDsaParams, N, Params87, Q};
         use crate::ml_dsa::poly::Poly;
+        use crate::ml_dsa::rounding::{high_bits, make_hint, poly_decompose, use_hint};
+        use crate::ml_dsa::sampling::{expand_a, expand_mask, sample_in_ball};
+        use crate::ml_dsa::sign::unpack_signature;
         use arcanum_primitives::shake::Shake256;
 
         println!("\n=== Instrumented w1 vs w'1 Comparison ===");
@@ -1658,12 +1832,18 @@ mod w1_divergence_debug {
             // Convert s1, s2 to NTT domain
             let mut s1_ntt: Vec<Poly> = s1.clone();
             let mut s2_ntt: Vec<Poly> = s2.clone();
-            for poly in &mut s1_ntt { poly.ntt(); }
-            for poly in &mut s2_ntt { poly.ntt(); }
+            for poly in &mut s1_ntt {
+                poly.ntt();
+            }
+            for poly in &mut s2_ntt {
+                poly.ntt();
+            }
 
             // Convert t0 to NTT domain
             let mut t0_ntt: Vec<Poly> = t0.clone();
-            for poly in &mut t0_ntt { poly.ntt(); }
+            for poly in &mut t0_ntt {
+                poly.ntt();
+            }
 
             // Step 2: μ ← H(tr || M)
             let mut shake = Shake256::new();
@@ -1689,7 +1869,9 @@ mod w1_divergence_debug {
 
                 // Step 5b: w ← Ay
                 let mut y_ntt = y.clone();
-                for poly in &mut y_ntt { poly.ntt(); }
+                for poly in &mut y_ntt {
+                    poly.ntt();
+                }
 
                 let mut w = vec![Poly::zero(); Params87::K];
                 for i in 0..Params87::K {
@@ -1784,7 +1966,9 @@ mod w1_divergence_debug {
                         break;
                     }
                 }
-                if !ct0_ok { continue; }
+                if !ct0_ok {
+                    continue;
+                }
 
                 // Compute hint h
                 let mut h = vec![Poly::zero(); Params87::K];
@@ -1800,7 +1984,9 @@ mod w1_divergence_debug {
                     }
                 }
 
-                if total_hints > Params87::OMEGA { continue; }
+                if total_hints > Params87::OMEGA {
+                    continue;
+                }
 
                 // Found a valid signature!
                 captured_w1 = w1.clone();
@@ -1815,7 +2001,8 @@ mod w1_divergence_debug {
                 for ii in 0..Params87::K {
                     for jj in 0..N {
                         let val = w_minus_cs2[ii].coeffs[jj] as i64 + ct0[ii].coeffs[jj] as i64;
-                        w_cs2_ct0_signing[ii].coeffs[jj] = ((val % (Q as i64)) + (Q as i64)) as i32 % Q;
+                        w_cs2_ct0_signing[ii].coeffs[jj] =
+                            ((val % (Q as i64)) + (Q as i64)) as i32 % Q;
                     }
                 }
 
@@ -1824,10 +2011,14 @@ mod w1_divergence_debug {
                 let a_dbg = expand_a::<Params87>(&rho_dbg);
 
                 let mut z_ntt_dbg = captured_z.clone();
-                for poly in &mut z_ntt_dbg { poly.ntt(); }
+                for poly in &mut z_ntt_dbg {
+                    poly.ntt();
+                }
 
                 let mut t1_ntt_dbg = t1_dbg.clone();
-                for poly in &mut t1_ntt_dbg { poly.ntt(); }
+                for poly in &mut t1_ntt_dbg {
+                    poly.ntt();
+                }
 
                 // c from c_tilde
                 let mut c_dbg = sample_in_ball(&captured_c_tilde, Params87::TAU);
@@ -1873,15 +2064,27 @@ mod w1_divergence_debug {
                 for ii in 0..Params87::K {
                     for jj in 0..N {
                         if w_prime_dbg[ii].coeffs[jj] != w_cs2_ct0_signing[ii].coeffs[jj] {
-                            w_prime_mismatches.push((ii, jj, w_cs2_ct0_signing[ii].coeffs[jj], w_prime_dbg[ii].coeffs[jj]));
+                            w_prime_mismatches.push((
+                                ii,
+                                jj,
+                                w_cs2_ct0_signing[ii].coeffs[jj],
+                                w_prime_dbg[ii].coeffs[jj],
+                            ));
                         }
                     }
                 }
 
                 if !w_prime_mismatches.is_empty() {
-                    println!("\nseed_byte={}: {} w' mismatches (signing vs verification)!", seed_byte, w_prime_mismatches.len());
+                    println!(
+                        "\nseed_byte={}: {} w' mismatches (signing vs verification)!",
+                        seed_byte,
+                        w_prime_mismatches.len()
+                    );
                     for (ii, jj, sign_val, verify_val) in w_prime_mismatches.iter().take(5) {
-                        println!("  [{}][{}]: signing w-cs2+ct0={}, verification w'={}", ii, jj, sign_val, verify_val);
+                        println!(
+                            "  [{}][{}]: signing w-cs2+ct0={}, verification w'={}",
+                            ii, jj, sign_val, verify_val
+                        );
                     }
                 }
 
@@ -1920,11 +2123,15 @@ mod w1_divergence_debug {
 
             // z to NTT
             let mut z_ntt = captured_z.clone();
-            for poly in &mut z_ntt { poly.ntt(); }
+            for poly in &mut z_ntt {
+                poly.ntt();
+            }
 
             // t1 to NTT
             let mut t1_ntt = t1.clone();
-            for poly in &mut t1_ntt { poly.ntt(); }
+            for poly in &mut t1_ntt {
+                poly.ntt();
+            }
 
             // Compute Az
             let mut az_ntt = vec![Poly::zero(); Params87::K];
@@ -1978,7 +2185,8 @@ mod w1_divergence_debug {
                 for j in 0..N {
                     if captured_w1[i].coeffs[j] != w_prime_1[i].coeffs[j] {
                         if first_mismatch.is_none() {
-                            first_mismatch = Some((i, j, captured_w1[i].coeffs[j], w_prime_1[i].coeffs[j]));
+                            first_mismatch =
+                                Some((i, j, captured_w1[i].coeffs[j], w_prime_1[i].coeffs[j]));
                         }
                         mismatches += 1;
                     }
@@ -1986,20 +2194,34 @@ mod w1_divergence_debug {
             }
 
             if mismatches > 0 {
-                println!("\nseed_byte={}: MISMATCH! {} coefficients differ", seed_byte, mismatches);
+                println!(
+                    "\nseed_byte={}: MISMATCH! {} coefficients differ",
+                    seed_byte, mismatches
+                );
                 if let Some((i, j, w1_val, w1p_val)) = first_mismatch {
-                    println!("  First mismatch at [{}][{}]: w1={}, w'1={}", i, j, w1_val, w1p_val);
-                    println!("  w'[{}][{}]={}, h={}", i, j, w_prime[i].coeffs[j], captured_h[i].coeffs[j]);
+                    println!(
+                        "  First mismatch at [{}][{}]: w1={}, w'1={}",
+                        i, j, w1_val, w1p_val
+                    );
+                    println!(
+                        "  w'[{}][{}]={}, h={}",
+                        i, j, w_prime[i].coeffs[j], captured_h[i].coeffs[j]
+                    );
 
                     // Analyze the mismatch in detail
                     let w_prime_val = w_prime[i].coeffs[j];
                     let (w_p_r1, w_p_r0) = decompose_debug(w_prime_val, Params87::GAMMA2 as i32);
                     println!("  Decompose(w'): r1={}, r0={}", w_p_r1, w_p_r0);
-                    println!("  |r0|={}, threshold={}", w_p_r0.abs(), (Params87::GAMMA2 - Params87::BETA) as i32);
+                    println!(
+                        "  |r0|={}, threshold={}",
+                        w_p_r0.abs(),
+                        (Params87::GAMMA2 - Params87::BETA) as i32
+                    );
                 }
 
                 // Compute c_tilde_prime and compare
-                let c_tilde_prime = compute_challenge_hash_internal(&mu_v, &w_prime_1, Params87::LAMBDA / 4);
+                let c_tilde_prime =
+                    compute_challenge_hash_internal(&mu_v, &w_prime_1, Params87::LAMBDA / 4);
                 println!("  c_tilde:       {:02x?}", &captured_c_tilde[..8]);
                 println!("  c_tilde_prime: {:02x?}", &c_tilde_prime[..8]);
             }
@@ -2028,7 +2250,8 @@ mod w1_divergence_debug {
     fn compute_challenge_hash_internal(mu: &[u8; 64], w1: &[Poly], len: usize) -> Vec<u8> {
         let mut shake = Shake256::new();
         shake.update(mu);
-        for poly in w1.iter().take(8) {  // K=8 for ML-DSA-87
+        for poly in w1.iter().take(8) {
+            // K=8 for ML-DSA-87
             let packed = pack_w1_4bits(poly);
             shake.update(&packed);
         }
@@ -2041,8 +2264,8 @@ mod w1_divergence_debug {
     /// Test eta polynomial packing/unpacking roundtrip
     #[test]
     fn test_eta_pack_unpack_roundtrip() {
-        use crate::ml_dsa::keygen::{pack_sk, unpack_sk, generate_keypair_internal};
-        use crate::ml_dsa::params::{Params87, N};
+        use crate::ml_dsa::keygen::{generate_keypair_internal, pack_sk, unpack_sk};
+        use crate::ml_dsa::params::{N, Params87};
 
         println!("\n=== Testing eta pack/unpack roundtrip ===\n");
 
@@ -2060,8 +2283,10 @@ mod w1_divergence_debug {
             for j in 0..N {
                 if kp.s1[i].coeffs[j] != s1_unpack[i].coeffs[j] {
                     if s1_mismatches < 5 {
-                        println!("s1 mismatch at [{}][{}]: orig={}, unpack={}",
-                                 i, j, kp.s1[i].coeffs[j], s1_unpack[i].coeffs[j]);
+                        println!(
+                            "s1 mismatch at [{}][{}]: orig={}, unpack={}",
+                            i, j, kp.s1[i].coeffs[j], s1_unpack[i].coeffs[j]
+                        );
                     }
                     s1_mismatches += 1;
                 }
@@ -2074,8 +2299,10 @@ mod w1_divergence_debug {
             for j in 0..N {
                 if kp.s2[i].coeffs[j] != s2_unpack[i].coeffs[j] {
                     if s2_mismatches < 5 {
-                        println!("s2 mismatch at [{}][{}]: orig={}, unpack={}",
-                                 i, j, kp.s2[i].coeffs[j], s2_unpack[i].coeffs[j]);
+                        println!(
+                            "s2 mismatch at [{}][{}]: orig={}, unpack={}",
+                            i, j, kp.s2[i].coeffs[j], s2_unpack[i].coeffs[j]
+                        );
                     }
                     s2_mismatches += 1;
                 }
@@ -2088,8 +2315,10 @@ mod w1_divergence_debug {
             for j in 0..N {
                 if kp.t0[i].coeffs[j] != t0_unpack[i].coeffs[j] {
                     if t0_mismatches < 5 {
-                        println!("t0 mismatch at [{}][{}]: orig={}, unpack={}",
-                                 i, j, kp.t0[i].coeffs[j], t0_unpack[i].coeffs[j]);
+                        println!(
+                            "t0 mismatch at [{}][{}]: orig={}, unpack={}",
+                            i, j, kp.t0[i].coeffs[j], t0_unpack[i].coeffs[j]
+                        );
                     }
                     t0_mismatches += 1;
                 }
@@ -2108,9 +2337,9 @@ mod w1_divergence_debug {
     /// Test z packing/unpacking roundtrip
     #[test]
     fn test_z_pack_unpack_roundtrip() {
-        use crate::ml_dsa::sign::{pack_signature, unpack_signature};
-        use crate::ml_dsa::params::{Params87, N};
+        use crate::ml_dsa::params::{N, Params87};
         use crate::ml_dsa::poly::Poly;
+        use crate::ml_dsa::sign::{pack_signature, unpack_signature};
 
         println!("\n=== Testing z pack/unpack roundtrip ===\n");
 
@@ -2133,7 +2362,8 @@ mod w1_divergence_debug {
         let sig_bytes = pack_signature::<Params87>(&c_tilde, &z_orig, &h);
 
         // Unpack signature
-        let (c_tilde_unpack, z_unpack, h_unpack) = unpack_signature::<Params87>(&sig_bytes).unwrap();
+        let (c_tilde_unpack, z_unpack, h_unpack) =
+            unpack_signature::<Params87>(&sig_bytes).unwrap();
 
         // Check z roundtrip
         let mut z_mismatches = 0;
@@ -2141,8 +2371,10 @@ mod w1_divergence_debug {
             for j in 0..N {
                 if z_orig[i].coeffs[j] != z_unpack[i].coeffs[j] {
                     if z_mismatches < 5 {
-                        println!("z mismatch at [{}][{}]: orig={}, unpack={}",
-                                 i, j, z_orig[i].coeffs[j], z_unpack[i].coeffs[j]);
+                        println!(
+                            "z mismatch at [{}][{}]: orig={}, unpack={}",
+                            i, j, z_orig[i].coeffs[j], z_unpack[i].coeffs[j]
+                        );
                     }
                     z_mismatches += 1;
                 }
@@ -2161,12 +2393,14 @@ mod w1_divergence_debug {
     /// Test the key equation: Az - ct1*2^D = w - cs2 + ct0 (with actual pack/unpack)
     #[test]
     fn test_verification_equation_with_pack_unpack() {
-        use crate::ml_dsa::keygen::{generate_keypair_internal, pack_pk, pack_sk, unpack_pk, unpack_sk};
-        use crate::ml_dsa::sign::{pack_signature, unpack_signature};
-        use crate::ml_dsa::params::{Params87, N, Q, D};
-        use crate::ml_dsa::sampling::{expand_a, expand_mask, sample_in_ball};
-        use crate::ml_dsa::rounding::poly_decompose;
+        use crate::ml_dsa::keygen::{
+            generate_keypair_internal, pack_pk, pack_sk, unpack_pk, unpack_sk,
+        };
+        use crate::ml_dsa::params::{D, N, Params87, Q};
         use crate::ml_dsa::poly::Poly;
+        use crate::ml_dsa::rounding::poly_decompose;
+        use crate::ml_dsa::sampling::{expand_a, expand_mask, sample_in_ball};
+        use crate::ml_dsa::sign::{pack_signature, unpack_signature};
         use arcanum_primitives::shake::Shake256;
 
         println!("\n=== Testing verification equation with pack/unpack ===\n");
@@ -2186,9 +2420,15 @@ mod w1_divergence_debug {
             let mut s1_ntt: Vec<Poly> = s1.clone();
             let mut s2_ntt: Vec<Poly> = s2.clone();
             let mut t0_ntt: Vec<Poly> = t0.clone();
-            for poly in &mut s1_ntt { poly.ntt(); }
-            for poly in &mut s2_ntt { poly.ntt(); }
-            for poly in &mut t0_ntt { poly.ntt(); }
+            for poly in &mut s1_ntt {
+                poly.ntt();
+            }
+            for poly in &mut s2_ntt {
+                poly.ntt();
+            }
+            for poly in &mut t0_ntt {
+                poly.ntt();
+            }
 
             // Generate y
             let mut key_mu = [0u8; 96];
@@ -2198,7 +2438,9 @@ mod w1_divergence_debug {
 
             // w = Ay
             let mut y_ntt = y.clone();
-            for poly in &mut y_ntt { poly.ntt(); }
+            for poly in &mut y_ntt {
+                poly.ntt();
+            }
 
             let mut w = vec![Poly::zero(); Params87::K];
             for i in 0..Params87::K {
@@ -2252,7 +2494,8 @@ mod w1_divergence_debug {
             let mut w_sign = vec![Poly::zero(); Params87::K];
             for i in 0..Params87::K {
                 for j in 0..N {
-                    let val = w[i].coeffs[j] as i64 - cs2[i].coeffs[j] as i64 + ct0[i].coeffs[j] as i64;
+                    let val =
+                        w[i].coeffs[j] as i64 - cs2[i].coeffs[j] as i64 + ct0[i].coeffs[j] as i64;
                     w_sign[i].coeffs[j] = ((val % (Q as i64)) + (Q as i64)) as i32 % Q;
                 }
             }
@@ -2266,11 +2509,15 @@ mod w1_divergence_debug {
             let (rho_v, t1_v) = unpack_pk::<Params87>(&pk).unwrap();
             let a_v = expand_a::<Params87>(&rho_v);
 
-            let mut z_ntt = z_unpacked.clone();  // Use UNPACKED z
-            for poly in &mut z_ntt { poly.ntt(); }
+            let mut z_ntt = z_unpacked.clone(); // Use UNPACKED z
+            for poly in &mut z_ntt {
+                poly.ntt();
+            }
 
             let mut t1_ntt = t1_v.clone();
-            for poly in &mut t1_ntt { poly.ntt(); }
+            for poly in &mut t1_ntt {
+                poly.ntt();
+            }
 
             let mut c_v = sample_in_ball(&c_tilde, Params87::TAU);
             c_v.ntt();
@@ -2319,7 +2566,13 @@ mod w1_divergence_debug {
                         total_mismatches += 1;
                         if sample_mismatches.len() < 5 {
                             let diff = w_sign[i].coeffs[j] as i64 - w_verify[i].coeffs[j] as i64;
-                            sample_mismatches.push((i, j, w_sign[i].coeffs[j], w_verify[i].coeffs[j], diff));
+                            sample_mismatches.push((
+                                i,
+                                j,
+                                w_sign[i].coeffs[j],
+                                w_verify[i].coeffs[j],
+                                diff,
+                            ));
                         }
                     }
                 }
@@ -2328,7 +2581,10 @@ mod w1_divergence_debug {
             if total_mismatches > 0 {
                 println!("seed_byte={}: {} mismatches!", seed_byte, total_mismatches);
                 for (i, j, wsign, wverify, diff) in &sample_mismatches {
-                    println!("  [{}][{}]: signing={}, verify={}, diff={}", i, j, wsign, wverify, diff);
+                    println!(
+                        "  [{}][{}]: signing={}, verify={}, diff={}",
+                        i, j, wsign, wverify, diff
+                    );
                     if *diff == (1i64 << D) || *diff == -(1i64 << D) {
                         println!("    *** diff is ±2^D ***");
                     }
@@ -2345,9 +2601,9 @@ mod w1_divergence_debug {
     #[test]
     fn test_az_equals_ay_plus_cas1() {
         use crate::ml_dsa::keygen::generate_keypair_internal;
-        use crate::ml_dsa::params::{Params87, N, Q, D};
-        use crate::ml_dsa::sampling::{expand_a, expand_mask, sample_in_ball};
+        use crate::ml_dsa::params::{D, N, Params87, Q};
         use crate::ml_dsa::poly::Poly;
+        use crate::ml_dsa::sampling::{expand_a, expand_mask, sample_in_ball};
 
         println!("\n=== Testing Az == Ay + cAs1 ===\n");
 
@@ -2474,17 +2730,30 @@ mod w1_divergence_debug {
                     if az_direct[i].coeffs[j] != ay_plus_cas1[i].coeffs[j] {
                         total_mismatches += 1;
                         if sample_mismatches.len() < 5 {
-                            let diff = az_direct[i].coeffs[j] as i64 - ay_plus_cas1[i].coeffs[j] as i64;
-                            sample_mismatches.push((i, j, az_direct[i].coeffs[j], ay_plus_cas1[i].coeffs[j], diff));
+                            let diff =
+                                az_direct[i].coeffs[j] as i64 - ay_plus_cas1[i].coeffs[j] as i64;
+                            sample_mismatches.push((
+                                i,
+                                j,
+                                az_direct[i].coeffs[j],
+                                ay_plus_cas1[i].coeffs[j],
+                                diff,
+                            ));
                         }
                     }
                 }
             }
 
             if total_mismatches > 0 {
-                println!("seed_byte={}: {} mismatches between Az and Ay + cAs1!", seed_byte, total_mismatches);
+                println!(
+                    "seed_byte={}: {} mismatches between Az and Ay + cAs1!",
+                    seed_byte, total_mismatches
+                );
                 for (i, j, az, aycas1, diff) in &sample_mismatches {
-                    println!("  [{}][{}]: Az={}, Ay+cAs1={}, diff={}", i, j, az, aycas1, diff);
+                    println!(
+                        "  [{}][{}]: Az={}, Ay+cAs1={}, diff={}",
+                        i, j, az, aycas1, diff
+                    );
                 }
             } else {
                 println!("seed_byte={}: Az == Ay + cAs1 (PASS)", seed_byte);
@@ -2499,10 +2768,10 @@ mod w1_divergence_debug {
     #[test]
     fn test_power2round_decomposition_with_ntt() {
         use crate::ml_dsa::keygen::generate_keypair_internal;
-        use crate::ml_dsa::params::{Params87, N, Q, D};
-        use crate::ml_dsa::sampling::sample_in_ball;
+        use crate::ml_dsa::params::{D, N, Params87, Q};
         use crate::ml_dsa::poly::Poly;
         use crate::ml_dsa::rounding::poly_power2round;
+        use crate::ml_dsa::sampling::sample_in_ball;
 
         println!("\n=== Testing ct1*2^D + ct0 = ct ===\n");
 
@@ -2527,7 +2796,7 @@ mod w1_divergence_debug {
             }
 
             // Create a fixed challenge c
-            let c_tilde = vec![seed_byte; 64];  // Simple deterministic c_tilde
+            let c_tilde = vec![seed_byte; 64]; // Simple deterministic c_tilde
             let mut c = sample_in_ball(&c_tilde, Params87::TAU);
             c.ntt();
 
@@ -2541,7 +2810,7 @@ mod w1_divergence_debug {
             for i in 0..Params87::K {
                 let mut ct_i = c.pointwise_mul(&t_ntt[i]);
                 ct_i.inv_ntt();
-                ct_i.reduce();  // Reduce to [0, q)
+                ct_i.reduce(); // Reduce to [0, q)
                 ct_direct[i] = ct_i;
             }
 
@@ -2556,7 +2825,7 @@ mod w1_divergence_debug {
             for i in 0..Params87::K {
                 let mut ct1_i = c.pointwise_mul(&t1_ntt[i]);
                 ct1_i.inv_ntt();
-                ct1_i.reduce_centered();  // This is what verify.rs does
+                ct1_i.reduce_centered(); // This is what verify.rs does
                 ct1[i] = ct1_i;
             }
 
@@ -2570,7 +2839,7 @@ mod w1_divergence_debug {
             for i in 0..Params87::K {
                 let mut ct0_i = c.pointwise_mul(&t0_ntt[i]);
                 ct0_i.inv_ntt();
-                ct0_i.reduce_centered();  // This is what sign.rs does
+                ct0_i.reduce_centered(); // This is what sign.rs does
                 ct0[i] = ct0_i;
             }
 
@@ -2594,25 +2863,48 @@ mod w1_divergence_debug {
                     if ct_direct[i].coeffs[j] != ct_reconstructed[i].coeffs[j] {
                         total_mismatches += 1;
                         if sample_mismatches.len() < 5 {
-                            let diff = ct_direct[i].coeffs[j] as i64 - ct_reconstructed[i].coeffs[j] as i64;
-                            sample_mismatches.push((i, j, ct_direct[i].coeffs[j], ct_reconstructed[i].coeffs[j], diff));
+                            let diff = ct_direct[i].coeffs[j] as i64
+                                - ct_reconstructed[i].coeffs[j] as i64;
+                            sample_mismatches.push((
+                                i,
+                                j,
+                                ct_direct[i].coeffs[j],
+                                ct_reconstructed[i].coeffs[j],
+                                diff,
+                            ));
                         }
                     }
                 }
             }
 
             if total_mismatches > 0 {
-                println!("seed_byte={}: {} mismatches between ct_direct and ct1*2^D + ct0!", seed_byte, total_mismatches);
+                println!(
+                    "seed_byte={}: {} mismatches between ct_direct and ct1*2^D + ct0!",
+                    seed_byte, total_mismatches
+                );
                 for (i, j, direct, recon, diff) in &sample_mismatches {
-                    println!("  [{}][{}]: ct_direct={}, ct_reconstructed={}, diff={}", i, j, direct, recon, diff);
+                    println!(
+                        "  [{}][{}]: ct_direct={}, ct_reconstructed={}, diff={}",
+                        i, j, direct, recon, diff
+                    );
                     // Check if diff is related to 2^D
                     if *diff == (1i64 << D) || *diff == -(1i64 << D) {
-                        println!("    *** diff is exactly ±2^D! This suggests ct1 is off by ±1 ***");
+                        println!(
+                            "    *** diff is exactly ±2^D! This suggests ct1 is off by ±1 ***"
+                        );
                     }
                     // Also show the ct1 and ct0 values
-                    println!("    ct1[{}][{}]={}, ct0[{}][{}]={}, t1={}, t0={}",
-                             i, j, ct1[*i].coeffs[*j], i, j, ct0[*i].coeffs[*j],
-                             kp.t1[*i].coeffs[*j], kp.t0[*i].coeffs[*j]);
+                    println!(
+                        "    ct1[{}][{}]={}, ct0[{}][{}]={}, t1={}, t0={}",
+                        i,
+                        j,
+                        ct1[*i].coeffs[*j],
+                        i,
+                        j,
+                        ct0[*i].coeffs[*j],
+                        kp.t1[*i].coeffs[*j],
+                        kp.t0[*i].coeffs[*j]
+                    );
                 }
             } else {
                 println!("seed_byte={}: ct_direct == ct1*2^D + ct0 (PASS)", seed_byte);

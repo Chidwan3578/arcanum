@@ -64,7 +64,6 @@ pub fn sign_internal<P: MlDsaParams>(sk_bytes: &[u8], message: &[u8]) -> Option<
     // Unpack secret key
     let (rho, key, tr, s1, s2, t0) = unpack_sk::<P>(sk_bytes)?;
 
-
     // Step 1: A ← ExpandA(ρ)
     let a = expand_a::<P>(&rho);
 
@@ -580,9 +579,9 @@ fn unpack_hint<P: MlDsaParams>(bytes: &[u8]) -> Option<Vec<Poly>> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::keygen::{generate_keypair_internal, pack_sk};
     use super::super::params::{Params44, Params65, Params87};
+    use super::*;
 
     fn get_test_sk<P: MlDsaParams>() -> Vec<u8> {
         let seed = [0x42u8; 32];
@@ -712,7 +711,12 @@ mod tests {
             }
         }
 
-        assert!(total <= Params44::OMEGA, "Hint weight {} > ω={}", total, Params44::OMEGA);
+        assert!(
+            total <= Params44::OMEGA,
+            "Hint weight {} > ω={}",
+            total,
+            Params44::OMEGA
+        );
     }
 
     #[test]

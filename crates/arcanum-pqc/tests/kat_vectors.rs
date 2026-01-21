@@ -12,11 +12,11 @@
 
 #![cfg(feature = "ml-dsa-native")]
 
-use arcanum_pqc::ml_dsa::{MlDsa, MlDsa44, MlDsa65, MlDsa87};
 use arcanum_pqc::ml_dsa::keygen::{generate_keypair_internal, pack_pk, pack_sk};
 use arcanum_pqc::ml_dsa::params::{MlDsaParams, Params44, Params65, Params87};
 use arcanum_pqc::ml_dsa::sign::sign_internal;
 use arcanum_pqc::ml_dsa::verify::verify_internal;
+use arcanum_pqc::ml_dsa::{MlDsa, MlDsa44, MlDsa65, MlDsa87};
 
 /// Helper to decode hex string to bytes
 fn hex_decode(s: &str) -> Vec<u8> {
@@ -65,7 +65,8 @@ const MSG_4: &str = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1
 
 /// Expected rho (first 32 bytes of pk) for ML-DSA-44 with SEED_1
 /// This is derived from SHAKE256(seed || K=4 || L=4)
-const ML_DSA_44_SEED1_RHO: &str = "bd4e96f9a038ab5e36214fe69c0b1cb835ef9d7c8417e76aecd152f5cddebec8";
+const ML_DSA_44_SEED1_RHO: &str =
+    "bd4e96f9a038ab5e36214fe69c0b1cb835ef9d7c8417e76aecd152f5cddebec8";
 
 #[test]
 fn ml_dsa_44_keygen_seed1_rho() {
@@ -140,7 +141,8 @@ fn ml_dsa_44_keygen_different_seeds() {
 
 /// Expected rho for ML-DSA-65 with SEED_1
 /// SHAKE256(seed || K=6 || L=5)
-const ML_DSA_65_SEED1_RHO: &str = "e50d03fff3b3a70961abbb92a390008dec1283f603f50cdbaaa3d00bd659bc76";
+const ML_DSA_65_SEED1_RHO: &str =
+    "e50d03fff3b3a70961abbb92a390008dec1283f603f50cdbaaa3d00bd659bc76";
 
 #[test]
 fn ml_dsa_65_keygen_seed1_rho() {
@@ -192,7 +194,8 @@ fn ml_dsa_65_keygen_sizes() {
 
 /// Expected rho for ML-DSA-87 with SEED_1
 /// SHAKE256(seed || K=8 || L=7)
-const ML_DSA_87_SEED1_RHO: &str = "bc89b367d4288f47c71a74679d0fcffbe041de41b5da2f5fc66d8e28c5899494";
+const ML_DSA_87_SEED1_RHO: &str =
+    "bc89b367d4288f47c71a74679d0fcffbe041de41b5da2f5fc66d8e28c5899494";
 
 #[test]
 fn ml_dsa_87_keygen_seed1_rho() {
@@ -363,7 +366,8 @@ fn ml_dsa_87_sigver_all_seeds() {
             assert!(
                 verify_internal::<Params87>(&pk, &msg, &sig),
                 "ML-DSA-87 verification failed for seed={} msg={}",
-                &seed_hex[..8], &msg_hex[..msg_hex.len().min(8)]
+                &seed_hex[..8],
+                &msg_hex[..msg_hex.len().min(8)]
             );
         }
     }
@@ -488,7 +492,11 @@ fn ml_dsa_44_batch_verification_100() {
         }
     }
 
-    assert_eq!(failures, 0, "ML-DSA-44 had {} failures in 100 iterations", failures);
+    assert_eq!(
+        failures, 0,
+        "ML-DSA-44 had {} failures in 100 iterations",
+        failures
+    );
 }
 
 #[test]
@@ -505,7 +513,11 @@ fn ml_dsa_65_batch_verification_100() {
         }
     }
 
-    assert_eq!(failures, 0, "ML-DSA-65 had {} failures in 100 iterations", failures);
+    assert_eq!(
+        failures, 0,
+        "ML-DSA-65 had {} failures in 100 iterations",
+        failures
+    );
 }
 
 #[test]
@@ -522,7 +534,11 @@ fn ml_dsa_87_batch_verification_100() {
         }
     }
 
-    assert_eq!(failures, 0, "ML-DSA-87 had {} failures in 100 iterations", failures);
+    assert_eq!(
+        failures, 0,
+        "ML-DSA-87 had {} failures in 100 iterations",
+        failures
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -531,7 +547,8 @@ fn ml_dsa_87_batch_verification_100() {
 
 /// ML-DSA-44 with zero seed - first 32 bytes of public key (rho)
 /// This serves as a regression test to detect any changes to key generation
-const ML_DSA_44_SEED2_PK_PREFIX: &str = "ba71f9f64e11baeb58fa9c6fbb6e14e61f18643dab495b47539a9166ca019813";
+const ML_DSA_44_SEED2_PK_PREFIX: &str =
+    "ba71f9f64e11baeb58fa9c6fbb6e14e61f18643dab495b47539a9166ca019813";
 
 #[test]
 fn ml_dsa_44_keygen_seed2_pk_prefix() {
@@ -551,7 +568,8 @@ fn ml_dsa_44_keygen_seed2_pk_prefix() {
 }
 
 /// ML-DSA-65 with zero seed - first 32 bytes of public key
-const ML_DSA_65_SEED2_PK_PREFIX: &str = "424b2f267e58d5b3b44d71acfc6a656bb26950d57c61db1c880bcfa1feab443f";
+const ML_DSA_65_SEED2_PK_PREFIX: &str =
+    "424b2f267e58d5b3b44d71acfc6a656bb26950d57c61db1c880bcfa1feab443f";
 
 #[test]
 fn ml_dsa_65_keygen_seed2_pk_prefix() {
@@ -570,7 +588,8 @@ fn ml_dsa_65_keygen_seed2_pk_prefix() {
 }
 
 /// ML-DSA-87 with zero seed - first 32 bytes of public key
-const ML_DSA_87_SEED2_PK_PREFIX: &str = "aca5d6d55d71f0a13dc87a4d0e8e4c1a1e2a3c4b5d6e7f8091a2b3c4d5e6f708";
+const ML_DSA_87_SEED2_PK_PREFIX: &str =
+    "aca5d6d55d71f0a13dc87a4d0e8e4c1a1e2a3c4b5d6e7f8091a2b3c4d5e6f708";
 
 #[test]
 fn ml_dsa_87_keygen_seed2_pk_prefix() {
@@ -604,9 +623,18 @@ fn cross_param_different_keys() {
     let kp87 = generate_keypair_internal::<Params87>(&seed_arr);
 
     // rho should be different because K and L are different
-    assert_ne!(kp44.rho, kp65.rho, "ML-DSA-44 and 65 should have different rho");
-    assert_ne!(kp65.rho, kp87.rho, "ML-DSA-65 and 87 should have different rho");
-    assert_ne!(kp44.rho, kp87.rho, "ML-DSA-44 and 87 should have different rho");
+    assert_ne!(
+        kp44.rho, kp65.rho,
+        "ML-DSA-44 and 65 should have different rho"
+    );
+    assert_ne!(
+        kp65.rho, kp87.rho,
+        "ML-DSA-65 and 87 should have different rho"
+    );
+    assert_ne!(
+        kp44.rho, kp87.rho,
+        "ML-DSA-44 and 87 should have different rho"
+    );
 }
 
 /// Verify signature from one parameter set doesn't verify with another

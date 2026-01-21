@@ -82,7 +82,10 @@ unsafe fn montgomery_reduce_avx2(a_lo: __m256i, a_hi: __m256i) -> __m256i {
         let t_q_hi_hi = _mm256_srli_epi64(t_q_hi, 32);
 
         // Interleave to get the high 32 bits for each lane
-        let result_even = _mm256_sub_epi32(a_hi, _mm256_castsi128_si256(_mm256_castsi256_si128(t_q_lo_hi)));
+        let result_even = _mm256_sub_epi32(
+            a_hi,
+            _mm256_castsi128_si256(_mm256_castsi256_si128(t_q_lo_hi)),
+        );
         let result_odd = _mm256_sub_epi32(
             _mm256_srli_epi64(a_hi, 32),
             _mm256_castsi128_si256(_mm256_castsi256_si128(t_q_hi_hi)),
@@ -475,7 +478,7 @@ pub fn has_avx2() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ml_dsa::ntt::{inv_ntt, ntt, from_mont, reduce32};
+    use crate::ml_dsa::ntt::{from_mont, inv_ntt, ntt, reduce32};
 
     #[test]
     fn test_ntt_avx2_matches_scalar() {
@@ -497,7 +500,9 @@ mod tests {
         ntt(&mut coeffs_scalar);
 
         // Run AVX2 NTT
-        unsafe { ntt_avx2(&mut coeffs_avx2); }
+        unsafe {
+            ntt_avx2(&mut coeffs_avx2);
+        }
 
         // Compare results
         for i in 0..N {
@@ -530,7 +535,9 @@ mod tests {
         inv_ntt(&mut coeffs_scalar);
 
         // Run AVX2 inverse NTT
-        unsafe { inv_ntt_avx2(&mut coeffs_avx2); }
+        unsafe {
+            inv_ntt_avx2(&mut coeffs_avx2);
+        }
 
         // Compare results
         for i in 0..N {

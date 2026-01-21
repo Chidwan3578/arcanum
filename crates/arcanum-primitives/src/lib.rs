@@ -146,7 +146,7 @@ pub mod prelude {
     pub use crate::sha2::{Sha256, Sha384, Sha512};
 
     #[cfg(feature = "shake")]
-    pub use crate::shake::{Shake128, Shake256, Shake128Reader, Shake256Reader};
+    pub use crate::shake::{Shake128, Shake128Reader, Shake256, Shake256Reader};
 
     #[cfg(feature = "blake3")]
     pub use crate::blake3::Blake3;

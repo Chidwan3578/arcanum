@@ -350,16 +350,12 @@ fn bench_slh_dsa_128f(c: &mut Criterion) {
     // Key generation is slow for SLH-DSA, use fewer samples
     group.sample_size(10);
 
-    group.bench_function("keygen", |b| {
-        b.iter(|| SlhDsaSha2_128f::generate_keypair())
-    });
+    group.bench_function("keygen", |b| b.iter(|| SlhDsaSha2_128f::generate_keypair()));
 
     let (sk, vk) = SlhDsaSha2_128f::generate_keypair();
     let message = b"benchmark message for SLH-DSA-SHA2-128f";
 
-    group.bench_function("sign", |b| {
-        b.iter(|| SlhDsaSha2_128f::sign(&sk, message))
-    });
+    group.bench_function("sign", |b| b.iter(|| SlhDsaSha2_128f::sign(&sk, message)));
 
     let signature = SlhDsaSha2_128f::sign(&sk, message);
 
@@ -386,16 +382,12 @@ fn bench_slh_dsa_128s(c: &mut Criterion) {
     // SLH-DSA-128s has smaller signatures but slower signing
     group.sample_size(10);
 
-    group.bench_function("keygen", |b| {
-        b.iter(|| SlhDsaSha2_128s::generate_keypair())
-    });
+    group.bench_function("keygen", |b| b.iter(|| SlhDsaSha2_128s::generate_keypair()));
 
     let (sk, vk) = SlhDsaSha2_128s::generate_keypair();
     let message = b"benchmark message for SLH-DSA-SHA2-128s";
 
-    group.bench_function("sign", |b| {
-        b.iter(|| SlhDsaSha2_128s::sign(&sk, message))
-    });
+    group.bench_function("sign", |b| b.iter(|| SlhDsaSha2_128s::sign(&sk, message)));
 
     let signature = SlhDsaSha2_128s::sign(&sk, message);
 
@@ -411,7 +403,12 @@ fn bench_slh_dsa_128s(c: &mut Criterion) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Full feature set: ml-kem + ml-dsa + hybrid + slh-dsa
-#[cfg(all(feature = "ml-kem", feature = "ml-dsa", feature = "hybrid", feature = "slh-dsa"))]
+#[cfg(all(
+    feature = "ml-kem",
+    feature = "ml-dsa",
+    feature = "hybrid",
+    feature = "slh-dsa"
+))]
 criterion_group!(
     benches,
     bench_ml_kem_512,
@@ -427,7 +424,12 @@ criterion_group!(
 );
 
 // ml-kem + ml-dsa + hybrid (no slh-dsa)
-#[cfg(all(feature = "ml-kem", feature = "ml-dsa", feature = "hybrid", not(feature = "slh-dsa")))]
+#[cfg(all(
+    feature = "ml-kem",
+    feature = "ml-dsa",
+    feature = "hybrid",
+    not(feature = "slh-dsa")
+))]
 criterion_group!(
     benches,
     bench_ml_kem_512,
@@ -441,7 +443,12 @@ criterion_group!(
 );
 
 // ml-kem + ml-dsa + slh-dsa (no hybrid)
-#[cfg(all(feature = "ml-kem", feature = "ml-dsa", feature = "slh-dsa", not(feature = "hybrid")))]
+#[cfg(all(
+    feature = "ml-kem",
+    feature = "ml-dsa",
+    feature = "slh-dsa",
+    not(feature = "hybrid")
+))]
 criterion_group!(
     benches,
     bench_ml_kem_512,
@@ -455,7 +462,12 @@ criterion_group!(
 );
 
 // ml-kem + ml-dsa only
-#[cfg(all(feature = "ml-kem", feature = "ml-dsa", not(feature = "hybrid"), not(feature = "slh-dsa")))]
+#[cfg(all(
+    feature = "ml-kem",
+    feature = "ml-dsa",
+    not(feature = "hybrid"),
+    not(feature = "slh-dsa")
+))]
 criterion_group!(
     benches,
     bench_ml_kem_512,
@@ -478,7 +490,12 @@ criterion_group!(
 );
 
 // ml-kem only
-#[cfg(all(feature = "ml-kem", not(feature = "ml-dsa"), not(feature = "ml-dsa-native"), not(feature = "slh-dsa")))]
+#[cfg(all(
+    feature = "ml-kem",
+    not(feature = "ml-dsa"),
+    not(feature = "ml-dsa-native"),
+    not(feature = "slh-dsa")
+))]
 criterion_group!(
     benches,
     bench_ml_kem_512,
@@ -506,7 +523,12 @@ criterion_group!(benches, bench_ml_dsa_44, bench_ml_dsa_65, bench_ml_dsa_87,);
 criterion_group!(benches, bench_slh_dsa_128f, bench_slh_dsa_128s,);
 
 // ml-dsa-native only
-#[cfg(all(feature = "ml-dsa-native", not(feature = "ml-kem"), not(feature = "ml-dsa"), not(feature = "slh-dsa")))]
+#[cfg(all(
+    feature = "ml-dsa-native",
+    not(feature = "ml-kem"),
+    not(feature = "ml-dsa"),
+    not(feature = "slh-dsa")
+))]
 criterion_group!(
     benches,
     bench_ml_dsa_native_44,
@@ -515,7 +537,12 @@ criterion_group!(
 );
 
 // ml-kem + ml-dsa-native
-#[cfg(all(feature = "ml-kem", feature = "ml-dsa-native", not(feature = "ml-dsa"), not(feature = "slh-dsa")))]
+#[cfg(all(
+    feature = "ml-kem",
+    feature = "ml-dsa-native",
+    not(feature = "ml-dsa"),
+    not(feature = "slh-dsa")
+))]
 criterion_group!(
     benches,
     bench_ml_kem_512,
@@ -527,7 +554,12 @@ criterion_group!(
 );
 
 // No features enabled
-#[cfg(not(any(feature = "ml-kem", feature = "ml-dsa", feature = "ml-dsa-native", feature = "slh-dsa")))]
+#[cfg(not(any(
+    feature = "ml-kem",
+    feature = "ml-dsa",
+    feature = "ml-dsa-native",
+    feature = "slh-dsa"
+)))]
 criterion_group!(benches,);
 
 criterion_main!(benches);

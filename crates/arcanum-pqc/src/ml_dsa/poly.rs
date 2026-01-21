@@ -18,11 +18,11 @@ use super::params::{N, Q};
 
 // Import SIMD functions when feature is enabled
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]
-use super::poly_simd::{has_avx2, poly_add_avx2, poly_sub_avx2, poly_reduce_avx2};
+use super::poly_simd::{has_avx2, poly_add_avx2, poly_reduce_avx2, poly_sub_avx2};
 
 // Import AVX2 NTT when feature is enabled
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]
-use super::ntt_avx2::{ntt_avx2, inv_ntt_avx2};
+use super::ntt_avx2::{inv_ntt_avx2, ntt_avx2};
 
 /// A polynomial in R_q with 256 coefficients
 ///
@@ -60,7 +60,9 @@ impl Poly {
         #[cfg(all(feature = "simd", target_arch = "x86_64"))]
         {
             if has_avx2() {
-                unsafe { poly_add_avx2(self, other, &mut result); }
+                unsafe {
+                    poly_add_avx2(self, other, &mut result);
+                }
                 return result;
             }
         }
@@ -81,7 +83,9 @@ impl Poly {
         #[cfg(all(feature = "simd", target_arch = "x86_64"))]
         {
             if has_avx2() {
-                unsafe { poly_sub_avx2(self, other, &mut result); }
+                unsafe {
+                    poly_sub_avx2(self, other, &mut result);
+                }
                 return result;
             }
         }
@@ -118,7 +122,9 @@ impl Poly {
         #[cfg(all(feature = "simd", target_arch = "x86_64"))]
         {
             if has_avx2() {
-                unsafe { ntt_avx2(&mut self.coeffs); }
+                unsafe {
+                    ntt_avx2(&mut self.coeffs);
+                }
                 return;
             }
         }
@@ -134,7 +140,9 @@ impl Poly {
         #[cfg(all(feature = "simd", target_arch = "x86_64"))]
         {
             if has_avx2() {
-                unsafe { inv_ntt_avx2(&mut self.coeffs); }
+                unsafe {
+                    inv_ntt_avx2(&mut self.coeffs);
+                }
                 return;
             }
         }
@@ -183,8 +191,7 @@ impl Poly {
     pub fn scalar_mul(&self, scalar: i32) -> Poly {
         let mut result = Poly::zero();
         for i in 0..N {
-            result.coeffs[i] =
-                montgomery_reduce(self.coeffs[i] as i64 * scalar as i64);
+            result.coeffs[i] = montgomery_reduce(self.coeffs[i] as i64 * scalar as i64);
         }
         result
     }
@@ -412,7 +419,11 @@ mod tests {
         p.reduce_centered();
 
         for i in 0..N {
-            assert_eq!(p.coeffs[i], original.coeffs[i], "NTT roundtrip failed at {}", i);
+            assert_eq!(
+                p.coeffs[i], original.coeffs[i],
+                "NTT roundtrip failed at {}",
+                i
+            );
         }
     }
 

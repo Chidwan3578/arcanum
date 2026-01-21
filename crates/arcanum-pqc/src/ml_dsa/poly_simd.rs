@@ -219,14 +219,18 @@ mod tests {
         }
 
         let mut result_simd = Poly::zero();
-        unsafe { poly_add_avx2(&a, &b, &mut result_simd); }
+        unsafe {
+            poly_add_avx2(&a, &b, &mut result_simd);
+        }
 
         // Compare with scalar
         for i in 0..N {
             let expected = a.coeffs[i] + b.coeffs[i];
-            assert_eq!(result_simd.coeffs[i], expected,
+            assert_eq!(
+                result_simd.coeffs[i], expected,
                 "Mismatch at index {}: SIMD={}, expected={}",
-                i, result_simd.coeffs[i], expected);
+                i, result_simd.coeffs[i], expected
+            );
         }
     }
 
@@ -245,7 +249,9 @@ mod tests {
         }
 
         let mut result_simd = Poly::zero();
-        unsafe { poly_sub_avx2(&a, &b, &mut result_simd); }
+        unsafe {
+            poly_sub_avx2(&a, &b, &mut result_simd);
+        }
 
         for i in 0..N {
             let expected = a.coeffs[i] - b.coeffs[i];

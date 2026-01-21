@@ -109,9 +109,9 @@ impl<P: MlDsaParams> MlDsaSigningKey<P> {
             return None;
         }
         Some(Self {
-            rho: [0; 32],   // TODO: Extract from bytes
-            key: [0; 32],   // TODO: Extract from bytes
-            tr: [0; 64],    // TODO: Extract from bytes
+            rho: [0; 32], // TODO: Extract from bytes
+            key: [0; 32], // TODO: Extract from bytes
+            tr: [0; 64],  // TODO: Extract from bytes
             bytes: bytes.to_vec(),
             _params: PhantomData,
         })
@@ -287,14 +287,7 @@ impl<P: MlDsaParams> MlDsa<P> for MlDsaNative<P> {
 
         // 10. Pack keys for output
         let pk_bytes = keygen::pack_pk::<P>(&kp.rho, &kp.t1);
-        let sk_bytes = keygen::pack_sk::<P>(
-            &kp.rho,
-            &kp.key,
-            &kp.tr,
-            &kp.s1,
-            &kp.s2,
-            &kp.t0,
-        );
+        let sk_bytes = keygen::pack_sk::<P>(&kp.rho, &kp.key, &kp.tr, &kp.s1, &kp.s2, &kp.t0);
 
         let sk = MlDsaSigningKey {
             rho: kp.rho,

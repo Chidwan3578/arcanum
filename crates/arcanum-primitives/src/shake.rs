@@ -70,18 +70,30 @@ const PADDING_END: u8 = 0x80;
 
 /// Round constants for ι (iota) step
 const RC: [u64; 24] = [
-    0x0000000000000001, 0x0000000000008082,
-    0x800000000000808a, 0x8000000080008000,
-    0x000000000000808b, 0x0000000080000001,
-    0x8000000080008081, 0x8000000000008009,
-    0x000000000000008a, 0x0000000000000088,
-    0x0000000080008009, 0x000000008000000a,
-    0x000000008000808b, 0x800000000000008b,
-    0x8000000000008089, 0x8000000000008003,
-    0x8000000000008002, 0x8000000000000080,
-    0x000000000000800a, 0x800000008000000a,
-    0x8000000080008081, 0x8000000000008080,
-    0x0000000080000001, 0x8000000080008008,
+    0x0000000000000001,
+    0x0000000000008082,
+    0x800000000000808a,
+    0x8000000080008000,
+    0x000000000000808b,
+    0x0000000080000001,
+    0x8000000080008081,
+    0x8000000000008009,
+    0x000000000000008a,
+    0x0000000000000088,
+    0x0000000080008009,
+    0x000000008000000a,
+    0x000000008000808b,
+    0x800000000000008b,
+    0x8000000000008089,
+    0x8000000000008003,
+    0x8000000000008002,
+    0x8000000000000080,
+    0x000000000000800a,
+    0x800000008000000a,
+    0x8000000080008081,
+    0x8000000000008080,
+    0x0000000080000001,
+    0x8000000080008008,
 ];
 
 /// Rotation offsets for ρ (rho) step (FIPS 202 Table 2)
@@ -168,7 +180,9 @@ pub fn keccak_p(state: &mut KeccakState) {
     #[cfg(all(feature = "simd", target_arch = "x86_64"))]
     {
         if has_avx2() {
-            unsafe { keccak_p_avx2(state); }
+            unsafe {
+                keccak_p_avx2(state);
+            }
             return;
         }
     }
@@ -546,10 +560,9 @@ mod tests {
 
         // Expected first 32 bytes of SHAKE128("")
         let expected = [
-            0x7f, 0x9c, 0x2b, 0xa4, 0xe8, 0x8f, 0x82, 0x7d,
-            0x61, 0x60, 0x45, 0x50, 0x76, 0x05, 0x85, 0x3e,
-            0xd7, 0x3b, 0x80, 0x93, 0xf6, 0xef, 0xbc, 0x88,
-            0xeb, 0x1a, 0x6e, 0xac, 0xfa, 0x66, 0xef, 0x26,
+            0x7f, 0x9c, 0x2b, 0xa4, 0xe8, 0x8f, 0x82, 0x7d, 0x61, 0x60, 0x45, 0x50, 0x76, 0x05,
+            0x85, 0x3e, 0xd7, 0x3b, 0x80, 0x93, 0xf6, 0xef, 0xbc, 0x88, 0xeb, 0x1a, 0x6e, 0xac,
+            0xfa, 0x66, 0xef, 0x26,
         ];
 
         assert_eq!(output, expected, "SHAKE128 empty input mismatch");
@@ -562,7 +575,10 @@ mod tests {
         Shake128::digest(b"abc", &mut output);
 
         // Verify output is not zero (basic sanity)
-        assert!(output.iter().any(|&b| b != 0), "Output should not be all zeros");
+        assert!(
+            output.iter().any(|&b| b != 0),
+            "Output should not be all zeros"
+        );
     }
 
     #[test]
@@ -620,10 +636,9 @@ mod tests {
         Shake256::digest(&[], &mut output);
 
         let expected = [
-            0x46, 0xb9, 0xdd, 0x2b, 0x0b, 0xa8, 0x8d, 0x13,
-            0x23, 0x3b, 0x3f, 0xeb, 0x74, 0x3e, 0xeb, 0x24,
-            0x3f, 0xcd, 0x52, 0xea, 0x62, 0xb8, 0x1b, 0x82,
-            0xb5, 0x0c, 0x27, 0x64, 0x6e, 0xd5, 0x76, 0x2f,
+            0x46, 0xb9, 0xdd, 0x2b, 0x0b, 0xa8, 0x8d, 0x13, 0x23, 0x3b, 0x3f, 0xeb, 0x74, 0x3e,
+            0xeb, 0x24, 0x3f, 0xcd, 0x52, 0xea, 0x62, 0xb8, 0x1b, 0x82, 0xb5, 0x0c, 0x27, 0x64,
+            0x6e, 0xd5, 0x76, 0x2f,
         ];
 
         assert_eq!(output, expected, "SHAKE256 empty input mismatch");
@@ -633,7 +648,10 @@ mod tests {
     fn test_shake256_short_input() {
         let mut output = [0u8; 32];
         Shake256::digest(b"abc", &mut output);
-        assert!(output.iter().any(|&b| b != 0), "Output should not be all zeros");
+        assert!(
+            output.iter().any(|&b| b != 0),
+            "Output should not be all zeros"
+        );
     }
 
     #[test]
@@ -681,7 +699,11 @@ mod tests {
         Shake256::digest(b"seed", &mut output);
 
         // Verify output spans multiple blocks (not just repeated)
-        assert_ne!(&output[0..136], &output[136..272], "Different blocks should differ");
+        assert_ne!(
+            &output[0..136],
+            &output[136..272],
+            "Different blocks should differ"
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────────────
