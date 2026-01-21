@@ -408,6 +408,187 @@ pub fn use_hint(h: bool, r: i32, alpha: i32) -> i32;
 
 ---
 
+## 5.5 Key Generation Seed Expansion (FIPS 204 Algorithm 6)
+
+**CRITICAL**: FIPS 204 requires domain separation via K and L parameters in the seed expansion.
+
+```
+Input: ξ (32-byte seed)
+Output: (ρ, ρ', K) - public seed, secret seed, signing key
+
+1. (ρ, ρ', K) ← H(ξ || K || L)
+   - Input to SHAKE256 is EXACTLY 34 bytes: ξ (32 bytes) || K (1 byte) || L (1 byte)
+   - K and L are the dimension parameters for the security level
+   - Output: 32 + 64 + 32 = 128 bytes squeezed from SHAKE256
+```
+
+| Security Level | K | L | Input bytes |
+|----------------|---|---|-------------|
+| ML-DSA-44 | 4 | 4 | ξ ∥ 0x04 ∥ 0x04 |
+| ML-DSA-65 | 6 | 5 | ξ ∥ 0x06 ∥ 0x05 |
+| ML-DSA-87 | 8 | 7 | ξ ∥ 0x08 ∥ 0x07 |
+
+**Why this matters for ACVP**: NIST test vectors assume this exact domain separation.
+Without appending K and L, the derived keys will differ from NIST KAT vectors.
+
+---
+
+## 5.6 Hint Mechanism (FIPS 204 Algorithms 37-38)
+
+The hint mechanism enables signature compression while allowing verification to recover
+the correct high bits for challenge reconstruction.
+
+### 5.6.1 Core Invariants
+
+**Signing produces**: `w₁ = HighBits(w)` where `w = Ay`
+
+**Verification recovers**: `w'₁ = UseHint(h, w')` where `w' = Az - ct₁·2^d`
+
+**Critical relationship**:
+```
+w' = Az - ct₁·2^d
+   = A(y + cs₁) - ct₁·2^d        [since z = y + cs₁]
+   = Ay + cAs₁ - ct₁·2^d
+   = w + c(t - s₂) - ct₁·2^d     [since As₁ = t - s₂]
+   = w + ct - cs₂ - ct₁·2^d
+   = w + ct₀ - cs₂               [since t = t₁·2^d + t₀]
+```
+
+Therefore: **w' = w - cs₂ + ct₀**
+
+### 5.6.2 MakeHint (Algorithm 37)
+
+```rust
+/// MakeHint(z, r, γ₂) → {0, 1}
+/// Returns 1 if HighBits(r) ≠ HighBits(r + z), 0 otherwise
+fn make_hint(z: i32, r: i32, gamma2: i32) -> bool {
+    high_bits(r, gamma2) != high_bits(r + z, gamma2)
+}
+```
+
+**In signing**: `h = MakeHint(-ct₀, w - cs₂ + ct₀)`
+- This checks if `HighBits(w - cs₂ + ct₀) ≠ HighBits(w - cs₂)`
+
+### 5.6.3 UseHint (Algorithm 38)
+
+```rust
+/// UseHint(h, r, γ₂) → r₁
+/// Recovers HighBits(r + z) from HighBits(r) using hint h
+fn use_hint(h: bool, r: i32, gamma2: i32) -> i32 {
+    let (r1, r0) = decompose(r, gamma2);
+
+    if !h {
+        return r1;  // No correction needed
+    }
+
+    // m = (q - 1) / (2γ₂) - 1 (maximum valid r₁ after corner case adjustment)
+    let alpha = 2 * gamma2;
+    let m = (Q - 1) / alpha - 1;
+
+    // Adjust based on sign of r₀
+    if r0 > 0 {
+        if r1 == m { 0 } else { r1 + 1 }
+    } else {
+        if r1 == 0 { m } else { r1 - 1 }
+    }
+}
+```
+
+**Critical**: The value `m = (q-1)/(2γ₂) - 1` accounts for the corner case in Decompose
+where `r - r₀ = q - 1` causes `r₁` to wrap to 0.
+
+| Param | γ₂ | Theoretical max | Actual m |
+|-------|-----|-----------------|----------|
+| ML-DSA-44 | (q-1)/88 | 44 | 43 |
+| ML-DSA-65 | (q-1)/32 | 16 | 15 |
+| ML-DSA-87 | (q-1)/32 | 16 | 15 |
+
+### 5.6.4 Verification Condition
+
+For verification to succeed, the hint must satisfy:
+```
+UseHint(h, w') = HighBits(w - cs₂) = HighBits(w) = w₁
+```
+
+This equality `HighBits(w - cs₂) = HighBits(w)` is ensured by rejection sampling
+in signing, which rejects when `||LowBits(w - cs₂)||∞ ≥ γ₂ - β`.
+
+---
+
+## 5.7 Decompose Corner Case (FIPS 204 Algorithm 36)
+
+The Decompose function has a critical corner case that must be handled correctly:
+
+```rust
+fn decompose(r: i32, gamma2: i32) -> (i32, i32) {
+    let r = if r < 0 { r + Q } else { r % Q };  // Normalize to [0, q)
+    let alpha = 2 * gamma2;
+
+    // Standard decomposition
+    let mut r0 = r % alpha;
+    if r0 > gamma2 {
+        r0 -= alpha;
+    }
+    let mut r1 = (r - r0) / alpha;
+
+    // CRITICAL CORNER CASE: when r - r₀ = q - 1
+    // This happens when r is near q-1 and r₀ would cause r₁ to exceed bounds
+    if r - r0 == Q - 1 {
+        r1 = 0;
+        r0 = r0 - 1;
+    }
+
+    (r1, r0)
+}
+```
+
+**Why this matters**: Without this corner case handling, `r₁` could equal `(q-1)/α`,
+which exceeds the valid range `[0, m]` where `m = (q-1)/α - 1`.
+
+---
+
+## 5.8 Verification w' Computation (FIPS 204 Algorithm 3, Step 10)
+
+**CRITICAL**: The w' computation must properly handle reduction to ensure consistency
+with the signing algorithm's w computation.
+
+### 5.8.1 Algorithm
+
+```
+Input: A (public matrix), z (response), c (challenge), t₁ (public key high bits)
+Output: w' (reconstructed commitment)
+
+1. Az ← NTT⁻¹(Â · ẑ)              // Matrix-vector multiply in NTT domain, then inv_ntt
+2. ct₁ ← NTT⁻¹(ĉ · t̂₁)           // Challenge times t₁ in NTT domain
+3. For each coefficient:
+   w'[i] = Az[i] - ct₁[i] · 2^d   // Subtract scaled ct₁
+   w'[i] = w'[i] mod⁺ q           // Reduce to [0, q)
+```
+
+### 5.8.2 Reduction Consistency
+
+Both signing and verification must use the same reduction for HighBits to match:
+
+| Operation | Domain | Reduction |
+|-----------|--------|-----------|
+| w = Ay (signing) | After inv_ntt | Reduce to [0, q) |
+| w' = Az - ct₁·2^d (verify) | After computation | Reduce to [0, q) |
+| HighBits input | Both | Must be in [0, q) |
+| UseHint input | Verify only | Must be in [0, q) |
+
+**Failure mode**: If reductions differ, HighBits(w) in signing won't match
+UseHint output in verification, causing spurious verification failures.
+
+### 5.8.3 Numerical Stability
+
+The computation `Az - ct₁·2^d` requires care:
+- ct₁ coefficients can be in centered form after inv_ntt: [-q/2, q/2]
+- Scaled by 2^d = 8192, range becomes ≈ [-34 billion, +34 billion]
+- Use 64-bit arithmetic to avoid overflow
+- Final reduction must produce values in [0, q)
+
+---
+
 ## 6. Hash Functions (FIPS 204 Section 8)
 
 ### 6.1 Required Primitives
