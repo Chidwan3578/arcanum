@@ -42,16 +42,24 @@ pub fn sample_poly_uniform(rho: &[u8; 32], i: u8, j: u8) -> Poly {
     let mut reader = shake.finalize_xof();
 
     // Sample coefficients using rejection sampling
+    // Squeeze larger blocks to reduce function call overhead and Keccak permutations
+    // SHAKE128 rate is 168 bytes; we use 504 bytes (3 blocks) for efficiency
     let mut idx = 0;
-    let mut buf = [0u8; 3];
+    let mut buf = [0u8; 504]; // 504 = 168 * 3, divisible by 3
+    let mut buf_pos = 504; // Start exhausted to trigger initial fill
 
     while idx < N {
-        reader.squeeze(&mut buf);
+        // Refill buffer when exhausted
+        if buf_pos >= 504 {
+            reader.squeeze(&mut buf);
+            buf_pos = 0;
+        }
 
         // Extract 24 bits and interpret as two 12-bit samples
         // Following FIPS 204 Algorithm 6
-        let d1 = ((buf[0] as i32) | ((buf[1] as i32 & 0x0F) << 8)) as i32;
-        let d2 = (((buf[1] as i32) >> 4) | ((buf[2] as i32) << 4)) as i32;
+        let d1 = (buf[buf_pos] as i32) | ((buf[buf_pos + 1] as i32 & 0x0F) << 8);
+        let d2 = ((buf[buf_pos + 1] as i32) >> 4) | ((buf[buf_pos + 2] as i32) << 4);
+        buf_pos += 3;
 
         // Reject samples >= q
         if d1 < REJECTION_BOUND {
@@ -176,12 +184,21 @@ pub fn sample_poly_eta(seed: &[u8; 64], nonce: u16, eta: usize) -> Poly {
     let mut reader = shake.finalize_xof();
 
     // Sample coefficients using rejection sampling
+    // Squeeze larger blocks to reduce function call overhead and Keccak permutations
+    // SHAKE256 rate is 136 bytes; we use 272 bytes (2 blocks) for efficiency
     let mut idx = 0;
-    let mut buf = [0u8; 1];
+    let mut buf = [0u8; 272];
+    let mut buf_pos = 272; // Start exhausted to trigger initial fill
 
     while idx < N {
-        reader.squeeze(&mut buf);
-        let b = buf[0];
+        // Refill buffer when exhausted
+        if buf_pos >= 272 {
+            reader.squeeze(&mut buf);
+            buf_pos = 0;
+        }
+
+        let b = buf[buf_pos];
+        buf_pos += 1;
 
         if eta == 2 {
             // η = 2: extract two 4-bit samples, reject > 4
@@ -265,16 +282,19 @@ pub fn sample_poly_gamma1(seed: &[u8], nonce: u16, gamma1: u32) -> Poly {
 /// Sample coefficients for γ₁ = 2^17 (18 bits per coefficient)
 fn sample_gamma1_17(reader: &mut arcanum_primitives::shake::Shake256Reader, poly: &mut Poly) {
     const GAMMA1: i32 = 1 << 17;
-    let mut buf = [0u8; 9]; // 9 bytes = 72 bits = 4 × 18 bits
+    // Squeeze all needed bytes at once: 256 coeffs * 18 bits / 8 = 576 bytes
+    // Round up to rate boundary for efficiency
+    let mut buf = [0u8; 576];
+    reader.squeeze(&mut buf);
 
     for chunk in 0..(N / 4) {
-        reader.squeeze(&mut buf);
+        let b = &buf[9 * chunk..9 * chunk + 9];
 
         // Extract four 18-bit values
-        let r0 = (buf[0] as i32) | ((buf[1] as i32) << 8) | (((buf[2] as i32) & 0x03) << 16);
-        let r1 = ((buf[2] as i32) >> 2) | ((buf[3] as i32) << 6) | (((buf[4] as i32) & 0x0F) << 14);
-        let r2 = ((buf[4] as i32) >> 4) | ((buf[5] as i32) << 4) | (((buf[6] as i32) & 0x3F) << 12);
-        let r3 = ((buf[6] as i32) >> 6) | ((buf[7] as i32) << 2) | ((buf[8] as i32) << 10);
+        let r0 = (b[0] as i32) | ((b[1] as i32) << 8) | (((b[2] as i32) & 0x03) << 16);
+        let r1 = ((b[2] as i32) >> 2) | ((b[3] as i32) << 6) | (((b[4] as i32) & 0x0F) << 14);
+        let r2 = ((b[4] as i32) >> 4) | ((b[5] as i32) << 4) | (((b[6] as i32) & 0x3F) << 12);
+        let r3 = ((b[6] as i32) >> 6) | ((b[7] as i32) << 2) | ((b[8] as i32) << 10);
 
         // Map [0, 2*gamma1) to (-gamma1, gamma1]
         // coefficient = gamma1 - r
@@ -288,14 +308,16 @@ fn sample_gamma1_17(reader: &mut arcanum_primitives::shake::Shake256Reader, poly
 /// Sample coefficients for γ₁ = 2^19 (20 bits per coefficient)
 fn sample_gamma1_19(reader: &mut arcanum_primitives::shake::Shake256Reader, poly: &mut Poly) {
     const GAMMA1: i32 = 1 << 19;
-    let mut buf = [0u8; 5]; // 5 bytes = 40 bits = 2 × 20 bits
+    // Squeeze all needed bytes at once: 256 coeffs * 20 bits / 8 = 640 bytes
+    let mut buf = [0u8; 640];
+    reader.squeeze(&mut buf);
 
     for chunk in 0..(N / 2) {
-        reader.squeeze(&mut buf);
+        let b = &buf[5 * chunk..5 * chunk + 5];
 
         // Extract two 20-bit values
-        let r0 = (buf[0] as i32) | ((buf[1] as i32) << 8) | (((buf[2] as i32) & 0x0F) << 16);
-        let r1 = ((buf[2] as i32) >> 4) | ((buf[3] as i32) << 4) | ((buf[4] as i32) << 12);
+        let r0 = (b[0] as i32) | ((b[1] as i32) << 8) | (((b[2] as i32) & 0x0F) << 16);
+        let r1 = ((b[2] as i32) >> 4) | ((b[3] as i32) << 4) | ((b[4] as i32) << 12);
 
         // Map [0, 2*gamma1) to (-gamma1, gamma1]
         poly.coeffs[2 * chunk] = GAMMA1 - r0;
