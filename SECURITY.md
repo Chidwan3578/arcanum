@@ -1,5 +1,33 @@
 # Security Policy
 
+## ⚠️ Important Security Notice
+
+**This cryptographic library has NOT undergone a formal third-party security audit.**
+
+While we have made every effort to implement cryptographic algorithms correctly and securely, using unaudited cryptographic code in production systems carries inherent risks. Users should carefully evaluate whether this library meets their security requirements.
+
+### Current Security Posture
+
+**What We Have Done:**
+- NIST Standards Compliance (FIPS 203, 204, 205)
+- ACVP test vector validation
+- Constant-time design for critical operations
+- Memory safety through Rust
+- Internal code review and CI testing
+
+**What We Have NOT Done:**
+- Formal third-party security audit
+- Formal verification (machine-checked proofs)
+- Hardware-level side-channel testing
+- Comprehensive fuzzing campaign
+
+### Recommendations
+
+- **For evaluation/research**: Suitable as-is
+- **For production**: Conduct your own security review or wait for audit
+
+---
+
 ## Supported Versions
 
 | Component | Version | Supported          |
