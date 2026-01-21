@@ -7,61 +7,89 @@
 
 #[cfg(test)]
 mod integration {
-    use crate::ml_dsa::params::{Params44, Params65, Params87};
+    use crate::ml_dsa::{MlDsa, MlDsa44, MlDsa65, MlDsa87};
 
     /// Test that ML-DSA-44 sign/verify roundtrip works
     #[test]
-    #[should_panic]
     fn test_ml_dsa_44_sign_verify_roundtrip() {
-        // TODO: Will fail until full implementation is complete
-        panic!("ML-DSA-44 not yet implemented");
-
-        // Future implementation:
-        // let (sk, vk) = MlDsa44::generate_keypair();
-        // let message = b"test message";
-        // let sig = MlDsa44::sign(&sk, message);
-        // assert!(MlDsa44::verify(&vk, message, &sig).is_ok());
+        let (sk, vk) = MlDsa44::generate_keypair();
+        let message = b"Test message for ML-DSA-44 integration test";
+        let sig = MlDsa44::sign(&sk, message);
+        assert!(
+            MlDsa44::verify(&vk, message, &sig).is_ok(),
+            "ML-DSA-44 sign/verify roundtrip failed"
+        );
     }
 
     /// Test that ML-DSA-65 sign/verify roundtrip works
     #[test]
-    #[should_panic]
     fn test_ml_dsa_65_sign_verify_roundtrip() {
-        // TODO: Will fail until full implementation is complete
-        panic!("ML-DSA-65 not yet implemented");
+        let (sk, vk) = MlDsa65::generate_keypair();
+        let message = b"Test message for ML-DSA-65 integration test";
+        let sig = MlDsa65::sign(&sk, message);
+        assert!(
+            MlDsa65::verify(&vk, message, &sig).is_ok(),
+            "ML-DSA-65 sign/verify roundtrip failed"
+        );
     }
 
     /// Test that ML-DSA-87 sign/verify roundtrip works
     #[test]
-    #[should_panic]
     fn test_ml_dsa_87_sign_verify_roundtrip() {
-        // TODO: Will fail until full implementation is complete
-        panic!("ML-DSA-87 not yet implemented");
+        let (sk, vk) = MlDsa87::generate_keypair();
+        let message = b"Test message for ML-DSA-87 integration test";
+        let sig = MlDsa87::sign(&sk, message);
+        assert!(
+            MlDsa87::verify(&vk, message, &sig).is_ok(),
+            "ML-DSA-87 sign/verify roundtrip failed"
+        );
     }
 
     /// Test that wrong message fails verification
     #[test]
-    #[should_panic]
     fn test_wrong_message_fails() {
-        panic!("ML-DSA not yet implemented");
-
-        // Future implementation:
-        // let (sk, vk) = MlDsa65::generate_keypair();
-        // let sig = MlDsa65::sign(&sk, b"message 1");
-        // assert!(MlDsa65::verify(&vk, b"message 2", &sig).is_err());
+        let (sk, vk) = MlDsa65::generate_keypair();
+        let sig = MlDsa65::sign(&sk, b"message 1");
+        assert!(
+            MlDsa65::verify(&vk, b"message 2", &sig).is_err(),
+            "Verification should fail for wrong message"
+        );
     }
 
     /// Test that wrong key fails verification
     #[test]
-    #[should_panic]
     fn test_wrong_key_fails() {
-        panic!("ML-DSA not yet implemented");
+        let (sk1, _vk1) = MlDsa65::generate_keypair();
+        let (_sk2, vk2) = MlDsa65::generate_keypair();
+        let sig = MlDsa65::sign(&sk1, b"test message");
+        assert!(
+            MlDsa65::verify(&vk2, b"test message", &sig).is_err(),
+            "Verification should fail with wrong key"
+        );
+    }
 
-        // Future implementation:
-        // let (sk1, _) = MlDsa65::generate_keypair();
-        // let (_, vk2) = MlDsa65::generate_keypair();
-        // let sig = MlDsa65::sign(&sk1, b"test");
-        // assert!(MlDsa65::verify(&vk2, b"test", &sig).is_err());
+    /// Test signing and verification with empty message
+    #[test]
+    fn test_empty_message() {
+        let (sk, vk) = MlDsa44::generate_keypair();
+        let message = b"";
+        let sig = MlDsa44::sign(&sk, message);
+        assert!(
+            MlDsa44::verify(&vk, message, &sig).is_ok(),
+            "Empty message sign/verify failed"
+        );
+    }
+
+    /// Test signing and verification with large message
+    #[test]
+    fn test_large_message() {
+        let (sk, vk) = MlDsa65::generate_keypair();
+        let message = vec![0xABu8; 100_000]; // 100KB message
+        let sig = MlDsa65::sign(&sk, &message);
+        assert!(
+            MlDsa65::verify(&vk, &message, &sig).is_ok(),
+            "Large message sign/verify failed"
+        );
     }
 }
 

@@ -2,7 +2,7 @@
 //!
 //! Native implementation of FIPS 204 for Arcanum.
 //!
-//! **Status**: TDD Scaffold (Red Phase) - Implementation pending.
+//! **Status**: Core implementation complete (Green Phase).
 //!
 //! ## Overview
 //!
@@ -17,15 +17,14 @@
 //! | ML-DSA-65 | Level 3 | 192-bit |
 //! | ML-DSA-87 | Level 5 | 256-bit |
 //!
-//! ## Prerequisites
+//! ## Dependencies
 //!
-//! This implementation requires SHAKE128/SHAKE256 in arcanum-primitives,
-//! which is not yet implemented. The TDD scaffold is complete and ready
-//! for implementation once SHAKE primitives are available.
+//! This implementation uses SHAKE256 from arcanum-primitives for
+//! hashing, sampling, and XOF operations as specified in FIPS 204.
 //!
-//! ## Example (Future API)
+//! ## Example
 //!
-//! ```ignore
+//! ```
 //! use arcanum_pqc::ml_dsa::{MlDsa65, MlDsa};
 //!
 //! // Generate keypair
@@ -45,12 +44,12 @@
 //! - [x] Polynomial types (poly.rs)
 //! - [x] NTT constants (ZETAS from Dilithium reference)
 //! - [x] NTT implementation (forward/inverse, Montgomery arithmetic)
-//! - [x] Sampling functions (ExpandA, ExpandS, SampleInBall)
+//! - [x] Sampling functions (ExpandA, ExpandS, ExpandMask, SampleInBall)
 //! - [x] Rounding functions (Power2Round, Decompose, MakeHint, UseHint)
 //! - [x] Key generation (keygen.rs)
-//! - [ ] Signing
-//! - [ ] Verification
-//! - [ ] KAT tests
+//! - [x] Signing (sign.rs)
+//! - [x] Verification (verify.rs)
+//! - [ ] KAT tests (NIST FIPS 204 vectors)
 
 #![allow(dead_code)]
 
@@ -324,19 +323,12 @@ impl<P: MlDsaParams> MlDsa<P> for MlDsaNative<P> {
         message: &[u8],
         signature: &MlDsaSignature<P>,
     ) -> Result<(), MlDsaError> {
-        // TODO: Implement FIPS 204 Algorithm 3 (Verify)
-        //
-        // 1. (c̃, z, h) ← σ
-        // 2. A ← ExpandA(ρ)
-        // 3. μ ← H(H(pk) || M)
-        // 4. c ← SampleInBall(c̃)
-        // 5. w' ← Az - ct₁ · 2^d
-        // 6. w'₁ ← UseHint(h, w')
-        // 7. c̃' ← H(μ || w'₁)
-        // 8. return ||z||∞ < γ₁ - β and c̃ = c̃' and #ones(h) ≤ ω
-
-        let _ = (vk, message, signature);
-        todo!("ML-DSA verification not yet implemented - requires SHAKE primitives")
+        // FIPS 204 Algorithm 3 (ML-DSA.Verify)
+        if verify::verify_internal::<P>(&vk.bytes, message, &signature.bytes) {
+            Ok(())
+        } else {
+            Err(MlDsaError::VerificationFailed)
+        }
     }
 }
 
