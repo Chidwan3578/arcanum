@@ -528,13 +528,117 @@ pub fn expand_s<P: MlDsaParams>(seed: &[u8; 64]) -> (Vec<Poly>, Vec<Poly>) {
 ///
 /// Vector y with L polynomials
 pub fn expand_mask<P: MlDsaParams>(seed: &[u8], nonce: u16, gamma1: u32) -> Vec<Poly> {
-    let mut y = Vec::with_capacity(P::L);
+    // Use 4-way SIMD optimization when L is a multiple of 4 and SIMD is available
+    #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+    if P::L % 4 == 0 && is_x86_feature_detected!("avx2") {
+        return unsafe { expand_mask_x4::<P>(seed, nonce, gamma1) };
+    }
 
+    // Fallback: sequential sampling
+    let mut y = Vec::with_capacity(P::L);
     for i in 0..P::L {
         y.push(sample_poly_gamma1(seed, nonce + i as u16, gamma1));
     }
+    y
+}
+
+/// 4-way parallel expand_mask using AVX2 SIMD
+///
+/// Processes 4 polynomials in parallel using 4-way Keccak.
+/// Only used when L is a multiple of 4 (Arcanum-DSA parameters).
+#[cfg(all(feature = "simd", target_arch = "x86_64"))]
+#[target_feature(enable = "avx2")]
+unsafe fn expand_mask_x4<P: MlDsaParams>(seed: &[u8], nonce: u16, gamma1: u32) -> Vec<Poly> {
+    use arcanum_primitives::keccak_x4::Shake256X4;
+
+    let mut y = Vec::with_capacity(P::L);
+
+    // Process in batches of 4
+    let num_batches = P::L / 4;
+
+    for batch in 0..num_batches {
+        let base_nonce = nonce + (batch * 4) as u16;
+
+        // Initialize 4-way SHAKE256
+        let mut shake_x4 = Shake256X4::new();
+
+        // Absorb seed || nonce for each of the 4 states
+        for i in 0..4 {
+            let n = base_nonce + i as u16;
+            shake_x4.absorb(i, seed);
+            shake_x4.absorb(i, &n.to_le_bytes());
+        }
+
+        // Finalize all states
+        shake_x4.finalize();
+
+        // Squeeze and sample based on gamma1
+        if gamma1 == (1 << 17) {
+            // γ₁ = 2^17: need 576 bytes per polynomial (4.2 blocks of 136)
+            let mut bufs = [[0u8; 680]; 4];
+            shake_x4.squeeze_blocks_x4(&mut bufs, 5, 4);
+
+            for i in 0..4 {
+                y.push(decode_gamma1_17(&bufs[i]));
+            }
+        } else if gamma1 == (1 << 19) {
+            // γ₁ = 2^19: need 640 bytes per polynomial (4.7 blocks of 136)
+            let mut bufs = [[0u8; 680]; 4];
+            shake_x4.squeeze_blocks_x4(&mut bufs, 5, 4);
+
+            for i in 0..4 {
+                y.push(decode_gamma1_19(&bufs[i]));
+            }
+        }
+    }
 
     y
+}
+
+/// Decode polynomial coefficients from bytes for γ₁ = 2^17 (18 bits per coefficient)
+#[cfg(all(feature = "simd", target_arch = "x86_64"))]
+fn decode_gamma1_17(buf: &[u8]) -> Poly {
+    const GAMMA1: i32 = 1 << 17;
+    let mut poly = Poly::zero();
+
+    for chunk in 0..(N / 4) {
+        let b = &buf[9 * chunk..9 * chunk + 9];
+
+        // Extract four 18-bit values
+        let r0 = (b[0] as i32) | ((b[1] as i32) << 8) | (((b[2] as i32) & 0x03) << 16);
+        let r1 = ((b[2] as i32) >> 2) | ((b[3] as i32) << 6) | (((b[4] as i32) & 0x0F) << 14);
+        let r2 = ((b[4] as i32) >> 4) | ((b[5] as i32) << 4) | (((b[6] as i32) & 0x3F) << 12);
+        let r3 = ((b[6] as i32) >> 6) | ((b[7] as i32) << 2) | ((b[8] as i32) << 10);
+
+        // Map [0, 2*gamma1) to (-gamma1, gamma1]
+        poly.coeffs[4 * chunk] = GAMMA1 - r0;
+        poly.coeffs[4 * chunk + 1] = GAMMA1 - r1;
+        poly.coeffs[4 * chunk + 2] = GAMMA1 - r2;
+        poly.coeffs[4 * chunk + 3] = GAMMA1 - r3;
+    }
+
+    poly
+}
+
+/// Decode polynomial coefficients from bytes for γ₁ = 2^19 (20 bits per coefficient)
+#[cfg(all(feature = "simd", target_arch = "x86_64"))]
+fn decode_gamma1_19(buf: &[u8]) -> Poly {
+    const GAMMA1: i32 = 1 << 19;
+    let mut poly = Poly::zero();
+
+    for chunk in 0..(N / 2) {
+        let b = &buf[5 * chunk..5 * chunk + 5];
+
+        // Extract two 20-bit values
+        let r0 = (b[0] as i32) | ((b[1] as i32) << 8) | (((b[2] as i32) & 0x0F) << 16);
+        let r1 = ((b[2] as i32) >> 4) | ((b[3] as i32) << 4) | ((b[4] as i32) << 12);
+
+        // Map [0, 2*gamma1) to (-gamma1, gamma1]
+        poly.coeffs[2 * chunk] = GAMMA1 - r0;
+        poly.coeffs[2 * chunk + 1] = GAMMA1 - r1;
+    }
+
+    poly
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

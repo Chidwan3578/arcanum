@@ -459,27 +459,76 @@ fn functional_signature_sizes_match_params() {
     assert_eq!(sig87.to_bytes().len(), sizes_87::SIG_SIZE);
 }
 
-/// BENCHMARK: Benchmark expand_mask SIMD efficiency
+/// BENCHMARK: Comprehensive sign performance comparison
 #[test]
-#[ignore = "Benchmark - run manually with: cargo test --release benchmark_expand_mask"]
-fn benchmark_expand_mask_simd_efficiency() {
-    // This benchmark compares Arcanum-65 (L=8) vs ML-DSA-65 (L=5)
-    // Arcanum-65 should show better SIMD utilization with 2 full 4-way batches
-    // vs ML-DSA-65's 1 batch + 1 leftover
-
+#[ignore = "Benchmark - run manually with: cargo test --release benchmark"]
+fn benchmark_sign_performance() {
+    use crate::ml_dsa::{MlDsa, MlDsa44, MlDsa65, MlDsa87};
     use std::time::Instant;
 
-    const ITERATIONS: u32 = 1000;
+    const ITERATIONS: u32 = 500;
+    const WARMUP: u32 = 50;
 
-    // Benchmark Arcanum-65
-    let start = Instant::now();
-    for _ in 0..ITERATIONS {
-        let (sk, vk) = ArcanumDsa65::generate_keypair();
-        let sig = ArcanumDsa65::sign(&sk, b"benchmark");
-        let _ = ArcanumDsa65::verify(&vk, b"benchmark", &sig);
+    fn bench_sign<F: Fn()>(name: &str, iterations: u32, warmup: u32, f: F) -> std::time::Duration {
+        // Warmup
+        for _ in 0..warmup {
+            f();
+        }
+        // Timed run
+        let start = Instant::now();
+        for _ in 0..iterations {
+            f();
+        }
+        let elapsed = start.elapsed();
+        let avg = elapsed / iterations;
+        println!("{}: {:?} avg over {} iterations", name, avg, iterations);
+        avg
     }
-    let arcanum_time = start.elapsed();
 
-    println!("Arcanum-DSA-65 ({} iterations): {:?}", ITERATIONS, arcanum_time);
-    println!("Average per operation: {:?}", arcanum_time / ITERATIONS);
+    println!("\n╔════════════════════════════════════════════════════════════╗");
+    println!("║          SIGN PERFORMANCE BENCHMARK ({} iterations)       ║", ITERATIONS);
+    println!("╚════════════════════════════════════════════════════════════╝\n");
+
+    // Pre-generate keys to isolate sign performance
+    let (ml_sk44, _) = MlDsa44::generate_keypair();
+    let (ml_sk65, _) = MlDsa65::generate_keypair();
+    let (ml_sk87, _) = MlDsa87::generate_keypair();
+    let (ar_sk44, _) = ArcanumDsa44::generate_keypair();
+    let (ar_sk65, _) = ArcanumDsa65::generate_keypair();
+    let (ar_sk87, _) = ArcanumDsa87::generate_keypair();
+
+    let msg = b"benchmark message for sign performance testing";
+
+    println!("─── Level 2 (L=4 for both) ───");
+    let ml44 = bench_sign("ML-DSA-44 sign", ITERATIONS, WARMUP, || {
+        let _ = MlDsa44::sign(&ml_sk44, msg);
+    });
+    let ar44 = bench_sign("Arcanum-44 sign", ITERATIONS, WARMUP, || {
+        let _ = ArcanumDsa44::sign(&ar_sk44, msg);
+    });
+    println!("  Ratio: {:.2}x ({})\n",
+        ar44.as_nanos() as f64 / ml44.as_nanos() as f64,
+        if ar44 < ml44 { "Arcanum faster" } else { "ML-DSA faster" });
+
+    println!("─── Level 3 (ML-DSA L=5 scalar vs Arcanum L=8 SIMD) ───");
+    let ml65 = bench_sign("ML-DSA-65 sign", ITERATIONS, WARMUP, || {
+        let _ = MlDsa65::sign(&ml_sk65, msg);
+    });
+    let ar65 = bench_sign("Arcanum-65 sign", ITERATIONS, WARMUP, || {
+        let _ = ArcanumDsa65::sign(&ar_sk65, msg);
+    });
+    println!("  Ratio: {:.2}x ({})\n",
+        ar65.as_nanos() as f64 / ml65.as_nanos() as f64,
+        if ar65 < ml65 { "Arcanum faster" } else { "ML-DSA faster" });
+
+    println!("─── Level 5 (ML-DSA L=7 scalar vs Arcanum L=8 SIMD) ───");
+    let ml87 = bench_sign("ML-DSA-87 sign", ITERATIONS, WARMUP, || {
+        let _ = MlDsa87::sign(&ml_sk87, msg);
+    });
+    let ar87 = bench_sign("Arcanum-87 sign", ITERATIONS, WARMUP, || {
+        let _ = ArcanumDsa87::sign(&ar_sk87, msg);
+    });
+    println!("  Ratio: {:.2}x ({})\n",
+        ar87.as_nanos() as f64 / ml87.as_nanos() as f64,
+        if ar87 < ml87 { "Arcanum faster" } else { "ML-DSA faster" });
 }
