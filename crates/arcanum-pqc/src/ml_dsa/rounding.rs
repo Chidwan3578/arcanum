@@ -163,18 +163,14 @@ pub fn poly_low_bits(poly: &Poly, gamma2: i32) -> Poly {
 ///
 /// # Arguments
 ///
-/// * `z0` - The low bits of z (typically -ct₀)
-/// * `r1` - The high bits of r (typically w - cs₂ + ct₀)
+/// * `z` - The value to add (typically -ct₀)
+/// * `r` - The base value (typically w - cs₂ + ct₀)
 /// * `gamma2` - The decomposition parameter γ₂
 #[inline]
-pub fn make_hint(z0: i32, r1: i32, gamma2: i32) -> bool {
-    // Reconstruct r from r1
-    let alpha = 2 * gamma2;
-    let r = r1 * alpha;
-
-    // Compute HighBits(r) and HighBits(r + z0)
+pub fn make_hint(z: i32, r: i32, gamma2: i32) -> bool {
+    // Compute HighBits(r) and HighBits(r + z)
     let h0 = high_bits(r, gamma2);
-    let h1 = high_bits(r + z0, gamma2);
+    let h1 = high_bits(r + z, gamma2);
 
     h0 != h1
 }
@@ -198,10 +194,15 @@ pub fn use_hint(h: bool, r: i32, gamma2: i32) -> i32 {
     }
 
     // Determine the maximum value of r₁
+    // Note: Due to the corner case in decompose (when r - r0 = q - 1, r1 wraps to 0),
+    // the actual maximum r1 is one less than the theoretical (q-1)/(2γ₂).
+    // For ML-DSA-44: theoretical m = 44, actual max r1 = 43
+    // For ML-DSA-65/87: theoretical m = 16, actual max r1 = 15
     let alpha = 2 * gamma2;
-    let m = (Q - 1) / alpha;
+    let m = (Q - 1) / alpha - 1;
 
     // Adjust r₁ based on sign of r₀
+    // (r1 + 1) mod (m + 1) or (r1 - 1) mod (m + 1)
     if r0 > 0 {
         if r1 == m {
             0
@@ -218,12 +219,12 @@ pub fn use_hint(h: bool, r: i32, gamma2: i32) -> i32 {
 /// Apply MakeHint to all coefficients of two polynomials
 ///
 /// Returns the hint polynomial and the count of 1-bits
-pub fn poly_make_hint(z0: &Poly, r1: &Poly, gamma2: i32) -> (Poly, usize) {
+pub fn poly_make_hint(z: &Poly, r: &Poly, gamma2: i32) -> (Poly, usize) {
     let mut hint = Poly::zero();
     let mut count = 0;
 
     for i in 0..N {
-        if make_hint(z0.coeffs[i], r1.coeffs[i], gamma2) {
+        if make_hint(z.coeffs[i], r.coeffs[i], gamma2) {
             hint.coeffs[i] = 1;
             count += 1;
         }

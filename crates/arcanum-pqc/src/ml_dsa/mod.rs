@@ -60,6 +60,8 @@ pub mod params;
 pub mod poly;
 pub mod rounding;
 pub mod sampling;
+pub mod sign;
+pub mod verify;
 
 #[cfg(test)]
 mod tests;
@@ -307,31 +309,14 @@ impl<P: MlDsaParams> MlDsa<P> for MlDsaNative<P> {
     }
 
     fn sign(sk: &MlDsaSigningKey<P>, message: &[u8]) -> MlDsaSignature<P> {
-        // TODO: Implement FIPS 204 Algorithm 2 (Sign)
-        //
-        // 1. A ← ExpandA(ρ)
-        // 2. μ ← H(tr || M)
-        // 3. κ ← 0
-        // 4. (z, h) ← ⊥
-        // 5. while (z, h) = ⊥:
-        //    a. y ← ExpandMask(K, κ)
-        //    b. w ← Ay
-        //    c. w₁ ← HighBits(w)
-        //    d. c̃ ← H(μ || w₁)
-        //    e. c ← SampleInBall(c̃)
-        //    f. z ← y + cs₁
-        //    g. (r₀, r₁) ← Decompose(w - cs₂)
-        //    h. if ||z||∞ ≥ γ₁ - β or ||r₀||∞ ≥ γ₂ - β:
-        //       continue
-        //    i. h ← MakeHint(-ct₀, w - cs₂ + ct₀)
-        //    j. if ||ct₀||∞ ≥ γ₂ or #ones(h) > ω:
-        //       continue
-        //    k. κ ← κ + l
-        // 6. σ ← (c̃, z mod⁺ q, h)
-        // 7. return σ
+        // FIPS 204 Algorithm 2 (ML-DSA.Sign)
+        let sig_bytes = sign::sign_internal::<P>(&sk.bytes, message)
+            .expect("Signing failed - this should not happen with valid keys");
 
-        let _ = (sk, message);
-        todo!("ML-DSA signing not yet implemented - requires SHAKE primitives")
+        MlDsaSignature {
+            bytes: sig_bytes,
+            _params: PhantomData,
+        }
     }
 
     fn verify(

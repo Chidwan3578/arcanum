@@ -17,7 +17,7 @@
 
 #![allow(dead_code)]
 
-use super::ntt::{from_mont, reduce32};
+use super::ntt::reduce32;
 use super::params::{MlDsaParams, N, Q};
 use super::poly::Poly;
 use super::rounding::poly_power2round;
@@ -71,11 +71,12 @@ pub fn generate_keypair_internal<P: MlDsaParams>(seed: &[u8; 32]) -> KeyPairInte
     let a = expand_a::<P>(&rho);
 
     // Step 4: Generate secret vectors s₁, s₂ from ρ'
-    let (mut s1, s2) = expand_s::<P>(&rho_prime);
+    let (s1, s2) = expand_s::<P>(&rho_prime);
 
     // Step 5: Compute t = As₁ + s₂
-    // First, convert s₁ to NTT domain for efficient multiplication
-    for poly in &mut s1 {
+    // Convert s₁ to NTT domain for efficient multiplication (keep original for storage)
+    let mut s1_ntt = s1.clone();
+    for poly in &mut s1_ntt {
         poly.ntt();
     }
 
@@ -83,21 +84,17 @@ pub fn generate_keypair_internal<P: MlDsaParams>(seed: &[u8; 32]) -> KeyPairInte
     let mut t = vec![Poly::zero(); P::K];
     for i in 0..P::K {
         for j in 0..P::L {
-            let product = a[i][j].pointwise_mul(&s1[j]);
+            let product = a[i][j].pointwise_mul(&s1_ntt[j]);
             t[i] = t[i].add(&product);
         }
     }
 
-    // Convert t back from NTT domain and convert from Montgomery form
+    // Convert t back from NTT domain and reduce
+    // Note: After NTT multiplication + inv_ntt, result is already in standard form
+    // (the Montgomery factors cancel out in pointwise_mul and inv_ntt)
     for poly in &mut t {
         poly.inv_ntt();
-        // Convert each coefficient from Montgomery domain and reduce
-        for c in &mut poly.coeffs {
-            let val = from_mont(*c);
-            let reduced = reduce32(val);
-            // Ensure positive value in [0, q)
-            *c = if reduced < 0 { reduced + Q } else { reduced };
-        }
+        poly.reduce();
     }
 
     // Add s₂ to t
