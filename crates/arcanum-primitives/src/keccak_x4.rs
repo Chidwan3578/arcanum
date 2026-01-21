@@ -460,6 +460,100 @@ impl Shake128X4 {
     }
 }
 
+/// 4-way SHAKE256 for batch sampling
+///
+/// Processes 4 independent SHAKE256 instances in parallel.
+/// Used for ML-DSA's ExpandMask which needs L=5 gamma1 samples.
+#[cfg(target_arch = "x86_64")]
+pub struct Shake256X4 {
+    state: KeccakStateX4,
+    absorbed: [usize; 4],
+}
+
+#[cfg(target_arch = "x86_64")]
+impl Shake256X4 {
+    const RATE: usize = 136; // SHAKE256 rate = 1088 bits = 136 bytes
+
+    /// Create new 4-way SHAKE256
+    #[target_feature(enable = "avx2")]
+    pub unsafe fn new() -> Self {
+        Self {
+            state: KeccakStateX4::new(),
+            absorbed: [0; 4],
+        }
+    }
+
+    /// Absorb data into a specific state
+    #[target_feature(enable = "avx2")]
+    pub unsafe fn absorb(&mut self, state_idx: usize, data: &[u8]) {
+        let mut pos = 0;
+        while pos < data.len() {
+            let remaining = Self::RATE - self.absorbed[state_idx];
+            let to_absorb = remaining.min(data.len() - pos);
+
+            self.state.xor_bytes(state_idx, &data[pos..pos + to_absorb], Self::RATE);
+            self.absorbed[state_idx] += to_absorb;
+            pos += to_absorb;
+
+            if self.absorbed[state_idx] == Self::RATE {
+                self.state.permute();
+                self.absorbed[state_idx] = 0;
+            }
+        }
+    }
+
+    /// Finalize all 4 states (apply padding)
+    #[target_feature(enable = "avx2")]
+    pub unsafe fn finalize(&mut self) {
+        for i in 0..4 {
+            // SHAKE domain separator
+            self.state.xor_byte(i, self.absorbed[i], 0x1F);
+            // Final padding bit
+            self.state.xor_byte(i, Self::RATE - 1, 0x80);
+        }
+        self.state.permute();
+    }
+
+    /// Squeeze bytes from a specific state
+    #[target_feature(enable = "avx2")]
+    pub unsafe fn squeeze(&mut self, state_idx: usize, output: &mut [u8]) {
+        let mut pos = 0;
+        while pos < output.len() {
+            let to_squeeze = Self::RATE.min(output.len() - pos);
+            self.state.extract_bytes(state_idx, &mut output[pos..pos + to_squeeze], Self::RATE);
+            pos += to_squeeze;
+
+            if pos < output.len() {
+                self.state.permute();
+            }
+        }
+    }
+
+    /// Squeeze multiple blocks from all 4 states into fixed-size arrays
+    ///
+    /// For gamma1 sampling: 576 bytes for gamma1=2^17, 640 bytes for gamma1=2^19
+    /// We use 680 bytes (5 * 136) to cover both cases.
+    #[target_feature(enable = "avx2")]
+    pub unsafe fn squeeze_blocks_x4(
+        &mut self,
+        bufs: &mut [[u8; 680]; 4],
+        num_blocks: usize,
+        batch_size: usize,
+    ) {
+        debug_assert!(num_blocks <= 5); // 5 * 136 = 680
+
+        for block in 0..num_blocks {
+            let offset = block * Self::RATE;
+            for b in 0..batch_size {
+                self.state.extract_bytes(b, &mut bufs[b][offset..offset + Self::RATE], Self::RATE);
+            }
+            if block < num_blocks - 1 {
+                self.state.permute();
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
