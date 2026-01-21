@@ -694,3 +694,153 @@ fn report_performance_summary() {
     println!("\nTarget Status: MVO = Minimum Viable Optimization");
     println!("Gap > 1.0x means current performance exceeds target (needs optimization)");
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Arcanum-DSA vs ML-DSA Comparison
+// ═══════════════════════════════════════════════════════════════════════════════
+
+use arcanum_pqc::arcanum_dsa::{ArcanumDsa, ArcanumDsa44, ArcanumDsa65, ArcanumDsa87};
+
+/// Compare Arcanum-DSA vs ML-DSA performance
+#[test]
+fn report_arcanum_vs_mldsa_comparison() {
+    println!("\n╔══════════════════════════════════════════════════════════════╗");
+    println!("║       ARCANUM-DSA vs ML-DSA PERFORMANCE COMPARISON           ║");
+    println!("╚══════════════════════════════════════════════════════════════╝\n");
+
+    println!("Security note: Arcanum-DSA uses SIMD-optimized L values:");
+    println!("  - Arcanum-65: K=4, L=8 (dim 3072) vs ML-DSA-65: K=6, L=5 (dim 2816) → +9% security");
+    println!("  - Arcanum-87: K=8, L=8 (dim 4096) vs ML-DSA-87: K=8, L=7 (dim 3840) → +7% security\n");
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Level 2 (44) - Identical parameters
+    // ─────────────────────────────────────────────────────────────────────────────
+    println!("┌─────────────────────────────────────────────────────────────────┐");
+    println!("│ LEVEL 2 (44): Parameters identical (K=4, L=4)                   │");
+    println!("├─────────────────────────────────────────────────────────────────┤");
+
+    let ml_keygen44 = benchmark(|| { let _ = MlDsa44::generate_keypair(); }, 50);
+    let ar_keygen44 = benchmark(|| { let _ = ArcanumDsa44::generate_keypair(); }, 50);
+
+    let (ml_sk44, ml_vk44) = MlDsa44::generate_keypair();
+    let (ar_sk44, ar_vk44) = ArcanumDsa44::generate_keypair();
+
+    let ml_sign44 = benchmark(|| { let _ = MlDsa44::sign(&ml_sk44, b"msg"); }, 50);
+    let ar_sign44 = benchmark(|| { let _ = ArcanumDsa44::sign(&ar_sk44, b"msg"); }, 50);
+
+    let ml_sig44 = MlDsa44::sign(&ml_sk44, b"msg");
+    let ar_sig44 = ArcanumDsa44::sign(&ar_sk44, b"msg");
+
+    let ml_verify44 = benchmark(|| { let _ = MlDsa44::verify(&ml_vk44, b"msg", &ml_sig44); }, 100);
+    let ar_verify44 = benchmark(|| { let _ = ArcanumDsa44::verify(&ar_vk44, b"msg", &ar_sig44); }, 100);
+
+    println!("│ keygen:  ML-DSA {:>8.1?}  │  Arcanum {:>8.1?}  │  ratio: {:.2}x │",
+        ml_keygen44, ar_keygen44, ar_keygen44.as_nanos() as f64 / ml_keygen44.as_nanos() as f64);
+    println!("│ sign:    ML-DSA {:>8.1?}  │  Arcanum {:>8.1?}  │  ratio: {:.2}x │",
+        ml_sign44, ar_sign44, ar_sign44.as_nanos() as f64 / ml_sign44.as_nanos() as f64);
+    println!("│ verify:  ML-DSA {:>8.1?}  │  Arcanum {:>8.1?}  │  ratio: {:.2}x │",
+        ml_verify44, ar_verify44, ar_verify44.as_nanos() as f64 / ml_verify44.as_nanos() as f64);
+    println!("└─────────────────────────────────────────────────────────────────┘\n");
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Level 3 (65) - SIMD-optimized
+    // ─────────────────────────────────────────────────────────────────────────────
+    println!("┌─────────────────────────────────────────────────────────────────┐");
+    println!("│ LEVEL 3 (65): Arcanum K=4,L=8 vs ML-DSA K=6,L=5                 │");
+    println!("├─────────────────────────────────────────────────────────────────┤");
+
+    let ml_keygen65 = benchmark(|| { let _ = MlDsa65::generate_keypair(); }, 50);
+    let ar_keygen65 = benchmark(|| { let _ = ArcanumDsa65::generate_keypair(); }, 50);
+
+    let (ml_sk65, ml_vk65) = MlDsa65::generate_keypair();
+    let (ar_sk65, ar_vk65) = ArcanumDsa65::generate_keypair();
+
+    let ml_sign65 = benchmark(|| { let _ = MlDsa65::sign(&ml_sk65, b"msg"); }, 50);
+    let ar_sign65 = benchmark(|| { let _ = ArcanumDsa65::sign(&ar_sk65, b"msg"); }, 50);
+
+    let ml_sig65 = MlDsa65::sign(&ml_sk65, b"msg");
+    let ar_sig65 = ArcanumDsa65::sign(&ar_sk65, b"msg");
+
+    let ml_verify65 = benchmark(|| { let _ = MlDsa65::verify(&ml_vk65, b"msg", &ml_sig65); }, 100);
+    let ar_verify65 = benchmark(|| { let _ = ArcanumDsa65::verify(&ar_vk65, b"msg", &ar_sig65); }, 100);
+
+    println!("│ keygen:  ML-DSA {:>8.1?}  │  Arcanum {:>8.1?}  │  ratio: {:.2}x │",
+        ml_keygen65, ar_keygen65, ar_keygen65.as_nanos() as f64 / ml_keygen65.as_nanos() as f64);
+    println!("│ sign:    ML-DSA {:>8.1?}  │  Arcanum {:>8.1?}  │  ratio: {:.2}x │",
+        ml_sign65, ar_sign65, ar_sign65.as_nanos() as f64 / ml_sign65.as_nanos() as f64);
+    println!("│ verify:  ML-DSA {:>8.1?}  │  Arcanum {:>8.1?}  │  ratio: {:.2}x │",
+        ml_verify65, ar_verify65, ar_verify65.as_nanos() as f64 / ml_verify65.as_nanos() as f64);
+    println!("└─────────────────────────────────────────────────────────────────┘\n");
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Level 5 (87) - SIMD-optimized
+    // ─────────────────────────────────────────────────────────────────────────────
+    println!("┌─────────────────────────────────────────────────────────────────┐");
+    println!("│ LEVEL 5 (87): Arcanum K=8,L=8 vs ML-DSA K=8,L=7                 │");
+    println!("├─────────────────────────────────────────────────────────────────┤");
+
+    let ml_keygen87 = benchmark(|| { let _ = MlDsa87::generate_keypair(); }, 30);
+    let ar_keygen87 = benchmark(|| { let _ = ArcanumDsa87::generate_keypair(); }, 30);
+
+    let (ml_sk87, ml_vk87) = MlDsa87::generate_keypair();
+    let (ar_sk87, ar_vk87) = ArcanumDsa87::generate_keypair();
+
+    let ml_sign87 = benchmark(|| { let _ = MlDsa87::sign(&ml_sk87, b"msg"); }, 30);
+    let ar_sign87 = benchmark(|| { let _ = ArcanumDsa87::sign(&ar_sk87, b"msg"); }, 30);
+
+    let ml_sig87 = MlDsa87::sign(&ml_sk87, b"msg");
+    let ar_sig87 = ArcanumDsa87::sign(&ar_sk87, b"msg");
+
+    let ml_verify87 = benchmark(|| { let _ = MlDsa87::verify(&ml_vk87, b"msg", &ml_sig87); }, 50);
+    let ar_verify87 = benchmark(|| { let _ = ArcanumDsa87::verify(&ar_vk87, b"msg", &ar_sig87); }, 50);
+
+    println!("│ keygen:  ML-DSA {:>8.1?}  │  Arcanum {:>8.1?}  │  ratio: {:.2}x │",
+        ml_keygen87, ar_keygen87, ar_keygen87.as_nanos() as f64 / ml_keygen87.as_nanos() as f64);
+    println!("│ sign:    ML-DSA {:>8.1?}  │  Arcanum {:>8.1?}  │  ratio: {:.2}x │",
+        ml_sign87, ar_sign87, ar_sign87.as_nanos() as f64 / ml_sign87.as_nanos() as f64);
+    println!("│ verify:  ML-DSA {:>8.1?}  │  Arcanum {:>8.1?}  │  ratio: {:.2}x │",
+        ml_verify87, ar_verify87, ar_verify87.as_nanos() as f64 / ml_verify87.as_nanos() as f64);
+    println!("└─────────────────────────────────────────────────────────────────┘\n");
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Size comparison
+    // ─────────────────────────────────────────────────────────────────────────────
+    println!("┌─────────────────────────────────────────────────────────────────┐");
+    println!("│ SIZE COMPARISON (bytes)                                         │");
+    println!("├───────────┬─────────────┬─────────────┬─────────────────────────┤");
+    println!("│ Level     │   ML-DSA    │  Arcanum    │  Diff (Arcanum-ML-DSA)  │");
+    println!("├───────────┼─────────────┼─────────────┼─────────────────────────┤");
+
+    use arcanum_pqc::ml_dsa::params::{Params44 as MlParams44, Params65 as MlParams65, Params87 as MlParams87, MlDsaParams};
+    use arcanum_pqc::arcanum_dsa::params::{Params44 as ArParams44, Params65 as ArParams65, Params87 as ArParams87};
+
+    // Level 2 sizes
+    println!("│ L2 PK     │    {:>5}    │    {:>5}    │        {:>+6}           │",
+        MlParams44::PK_SIZE, ArParams44::PK_SIZE, ArParams44::PK_SIZE as i32 - MlParams44::PK_SIZE as i32);
+    println!("│ L2 SK     │    {:>5}    │    {:>5}    │        {:>+6}           │",
+        MlParams44::SK_SIZE, ArParams44::SK_SIZE, ArParams44::SK_SIZE as i32 - MlParams44::SK_SIZE as i32);
+    println!("│ L2 SIG    │    {:>5}    │    {:>5}    │        {:>+6}           │",
+        MlParams44::SIG_SIZE, ArParams44::SIG_SIZE, ArParams44::SIG_SIZE as i32 - MlParams44::SIG_SIZE as i32);
+    println!("├───────────┼─────────────┼─────────────┼─────────────────────────┤");
+
+    // Level 3 sizes
+    println!("│ L3 PK     │    {:>5}    │    {:>5}    │        {:>+6}           │",
+        MlParams65::PK_SIZE, ArParams65::PK_SIZE, ArParams65::PK_SIZE as i32 - MlParams65::PK_SIZE as i32);
+    println!("│ L3 SK     │    {:>5}    │    {:>5}    │        {:>+6}           │",
+        MlParams65::SK_SIZE, ArParams65::SK_SIZE, ArParams65::SK_SIZE as i32 - MlParams65::SK_SIZE as i32);
+    println!("│ L3 SIG    │    {:>5}    │    {:>5}    │        {:>+6}           │",
+        MlParams65::SIG_SIZE, ArParams65::SIG_SIZE, ArParams65::SIG_SIZE as i32 - MlParams65::SIG_SIZE as i32);
+    println!("├───────────┼─────────────┼─────────────┼─────────────────────────┤");
+
+    // Level 5 sizes
+    println!("│ L5 PK     │    {:>5}    │    {:>5}    │        {:>+6}           │",
+        MlParams87::PK_SIZE, ArParams87::PK_SIZE, ArParams87::PK_SIZE as i32 - MlParams87::PK_SIZE as i32);
+    println!("│ L5 SK     │    {:>5}    │    {:>5}    │        {:>+6}           │",
+        MlParams87::SK_SIZE, ArParams87::SK_SIZE, ArParams87::SK_SIZE as i32 - MlParams87::SK_SIZE as i32);
+    println!("│ L5 SIG    │    {:>5}    │    {:>5}    │        {:>+6}           │",
+        MlParams87::SIG_SIZE, ArParams87::SIG_SIZE, ArParams87::SIG_SIZE as i32 - MlParams87::SIG_SIZE as i32);
+    println!("└───────────┴─────────────┴─────────────┴─────────────────────────┘\n");
+
+    println!("Note: Ratio < 1.0 means Arcanum is faster, > 1.0 means slower");
+    println!("      Size differences reflect SIMD-friendly L values");
+}
