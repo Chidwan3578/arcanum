@@ -2,6 +2,11 @@
 //!
 //! SIMD-optimized parameters for Arcanum-DSA variants.
 //! All L values are multiples of 4 for efficient 4-way SIMD batching.
+//!
+//! These parameters implement `MlDsaParams` for compatibility with the
+//! existing ML-DSA keygen/sign/verify implementation.
+
+use crate::ml_dsa::params::MlDsaParams;
 
 /// Ring dimension (fixed for all variants)
 pub const N: usize = 256;
@@ -65,7 +70,7 @@ pub trait ArcanumDsaParams: Clone + Send + Sync + 'static {
 /// # Security
 /// - Dimension: 2048 (same as ML-DSA-44)
 /// - Security level: NIST Level 2 (~128-bit classical)
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Params44;
 
 impl ArcanumDsaParams for Params44 {
@@ -81,6 +86,24 @@ impl ArcanumDsaParams for Params44 {
     const ML_DSA_EQUIVALENT_DIM: usize = 2048;  // 256 * (4+4)
 }
 
+// Implement MlDsaParams for Params44 (identical to ML-DSA-44)
+impl MlDsaParams for Params44 {
+    const K: usize = 4;
+    const L: usize = 4;
+    const ETA: usize = 2;
+    const BETA: u32 = 78;
+    const GAMMA1: u32 = 1 << 17;
+    const GAMMA2: u32 = (Q as u32 - 1) / 88;
+    const TAU: usize = 39;
+    const LAMBDA: usize = 128;  // bits
+    const OMEGA: usize = 80;
+    const PK_SIZE: usize = 1312;   // 32 + 4×320
+    const SK_SIZE: usize = 2560;   // 32 + 32 + 64 + 4×96 + 4×96 + 4×416
+    const SIG_SIZE: usize = 2420;  // 32 + 4×576 + 84
+    const ALGORITHM: &'static str = "Arcanum-DSA-44";
+    const SECURITY_LEVEL: usize = 2;
+}
+
 /// Arcanum-DSA-65: NIST Level 3 equivalent (SIMD-optimized)
 ///
 /// Modified from ML-DSA-65: K=6,L=5 → K=4,L=8
@@ -93,7 +116,7 @@ impl ArcanumDsaParams for Params44 {
 /// # SIMD Benefit
 /// - expand_mask: 2 full batches of 4 (was 1 batch + 1 leftover)
 /// - expand_a: 8 batches of 4 (was ~8 batches with uneven distribution)
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Params65;
 
 impl ArcanumDsaParams for Params65 {
@@ -107,6 +130,28 @@ impl ArcanumDsaParams for Params65 {
     const OMEGA: usize = 55;
     const LAMBDA: usize = 48;  // 384 bits
     const ML_DSA_EQUIVALENT_DIM: usize = 2816;  // 256 * (6+5)
+}
+
+// Implement MlDsaParams for Params65 (K=4, L=8 variant)
+impl MlDsaParams for Params65 {
+    const K: usize = 4;
+    const L: usize = 8;
+    const ETA: usize = 4;
+    const BETA: u32 = 196;
+    const GAMMA1: u32 = 1 << 19;
+    const GAMMA2: u32 = (Q as u32 - 1) / 32;
+    const TAU: usize = 49;
+    const LAMBDA: usize = 192;  // bits (48 bytes)
+    const OMEGA: usize = 55;
+    // PK: ρ (32) + t₁ (K×320) = 32 + 4×320 = 1312
+    const PK_SIZE: usize = 1312;
+    // SK: ρ (32) + K (32) + tr (64) + s₁ (L×128) + s₂ (K×128) + t₀ (K×416)
+    //   = 32 + 32 + 64 + 8×128 + 4×128 + 4×416 = 3328
+    const SK_SIZE: usize = 3328;
+    // SIG: c̃ (48) + z (L×640) + h (ω+K) = 48 + 8×640 + 59 = 5227
+    const SIG_SIZE: usize = 5227;
+    const ALGORITHM: &'static str = "Arcanum-DSA-65";
+    const SECURITY_LEVEL: usize = 3;
 }
 
 /// Arcanum-DSA-87: NIST Level 5 equivalent (SIMD-optimized)
@@ -135,6 +180,28 @@ impl ArcanumDsaParams for Params87 {
     const OMEGA: usize = 75;
     const LAMBDA: usize = 64;  // 512 bits
     const ML_DSA_EQUIVALENT_DIM: usize = 3840;  // 256 * (8+7)
+}
+
+// Implement MlDsaParams for Params87 (K=8, L=8 variant)
+impl MlDsaParams for Params87 {
+    const K: usize = 8;
+    const L: usize = 8;
+    const ETA: usize = 2;
+    const BETA: u32 = 120;
+    const GAMMA1: u32 = 1 << 19;
+    const GAMMA2: u32 = (Q as u32 - 1) / 32;
+    const TAU: usize = 60;
+    const LAMBDA: usize = 256;  // bits (64 bytes)
+    const OMEGA: usize = 75;
+    // PK: ρ (32) + t₁ (K×320) = 32 + 8×320 = 2592
+    const PK_SIZE: usize = 2592;
+    // SK: ρ (32) + K (32) + tr (64) + s₁ (L×96) + s₂ (K×96) + t₀ (K×416)
+    //   = 32 + 32 + 64 + 8×96 + 8×96 + 8×416 = 4992
+    const SK_SIZE: usize = 4992;
+    // SIG: c̃ (64) + z (L×640) + h (ω+K) = 64 + 8×640 + 83 = 5267
+    const SIG_SIZE: usize = 5267;
+    const ALGORITHM: &'static str = "Arcanum-DSA-87";
+    const SECURITY_LEVEL: usize = 5;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
