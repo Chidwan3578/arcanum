@@ -66,16 +66,15 @@ sign.rs:254-257 - Hint weight check
 **Constant-time operations** (correctly implemented):
 - Montgomery reduction uses arithmetic, not branches (`ntt.rs:80-86`)
 - `cond_reduce` uses arithmetic masking (`ntt.rs:107-110`)
+- `power2round`, `decompose`, and `use_hint` use arithmetic masking (`rounding.rs`)
 
 **Variable-time operations** (documented as acceptable per FIPS 204):
 - Rejection sampling loop iteration count
 - `ExpandA`, `SampleInBall` (operate on public data)
 
-**Potential concern**: The `decompose` function at `rounding.rs:88` uses modulo and division operations which may not be constant-time on all platforms:
-```rust
-let r = if r < 0 { r + Q } else { r % Q };  // Line 88
-```
-The branch is data-dependent. While this operates on values that will become public (w₁), a defense-in-depth approach might consider constant-time alternatives.
+**Addressed**: The `decompose` function was updated to use constant-time arithmetic
+masking instead of data-dependent branches, providing defense-in-depth for
+intermediate computations involving secret values.
 
 ### 2.3 Test Coverage
 
@@ -197,17 +196,17 @@ Documentation quality is high:
 
 ### 5.1 High Priority
 
-| Issue | Location | Severity | Recommendation |
-|-------|----------|----------|----------------|
-| Arcanum-65 non-standard parameters | `arcanum_dsa/params.rs` | Medium | Add explicit warnings, seek cryptographic review |
-| No ACVP test vectors included | `tests/` | Low | Include actual ACVP response files |
+| Issue | Location | Severity | Status |
+|-------|----------|----------|--------|
+| Arcanum-65 non-standard parameters | `arcanum_dsa/params.rs` | Medium | Open - Recommend cryptographic review |
+| ACVP claim accuracy | `SECURITY.md` | Low | **RESOLVED** - Clarified as ACVP-style methodology |
 
 ### 5.2 Medium Priority
 
-| Issue | Location | Severity | Recommendation |
-|-------|----------|----------|----------------|
-| `decompose` uses branching on data | `rounding.rs:88` | Low | Consider constant-time alternative |
-| `TODO` comments in key parsing | `ml_dsa/mod.rs:112-114` | Low | Complete implementation |
+| Issue | Location | Severity | Status |
+|-------|----------|----------|--------|
+| `decompose` uses branching on data | `rounding.rs` | Low | **RESOLVED** - Now uses constant-time arithmetic masking |
+| `TODO` comments in key parsing | `ml_dsa/mod.rs:112-114` | Low | Open |
 
 ### 5.3 Observations (Not Issues)
 

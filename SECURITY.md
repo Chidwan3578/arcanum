@@ -10,10 +10,12 @@ While we have made every effort to implement cryptographic algorithms correctly 
 
 **What We Have Done:**
 - NIST Standards Compliance (FIPS 203, 204, 205)
-- ACVP test vector validation
+- Known Answer Test (KAT) validation using ACVP-style methodology
 - Constant-time design for critical operations
 - Memory safety through Rust
 - Internal code review and CI testing
+
+*Note: Our test suite follows ACVP methodology with internally-generated test vectors. Official NIST ACVP validation requires formal certification through an accredited lab.*
 
 **What We Have NOT Done:**
 - Formal third-party security audit

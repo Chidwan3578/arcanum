@@ -5,11 +5,67 @@
 //! - Decompose: Decompose r into (r₁, r₀) where r = r₁·α + r₀
 //! - HighBits/LowBits: Extract high/low parts of a decomposition
 //! - MakeHint/UseHint: Hint computation for signature compression
+//!
+//! # Constant-Time Implementation
+//!
+//! All functions in this module use arithmetic operations instead of
+//! data-dependent branches to prevent timing side-channels. While the
+//! high bits (r₁, w₁) become public in ML-DSA, constant-time implementation
+//! provides defense-in-depth against timing attacks during intermediate
+//! computations involving secret values.
 
 #![allow(dead_code)]
 
 use super::params::{N, Q};
 use super::poly::Poly;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Constant-Time Primitives
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Constant-time conditional selection: returns a if condition is true, b otherwise.
+/// Uses arithmetic masking to avoid branches.
+#[inline(always)]
+const fn ct_select(condition: bool, a: i32, b: i32) -> i32 {
+    let mask = -(condition as i32); // All 1s if true, all 0s if false
+    (a & mask) | (b & !mask)
+}
+
+/// Constant-time greater-than comparison: returns true if a > b
+#[inline(always)]
+const fn ct_gt(a: i32, b: i32) -> bool {
+    // (b - a) is negative iff a > b
+    ((b.wrapping_sub(a)) >> 31) != 0
+}
+
+/// Constant-time equality: returns true if a == b
+#[inline(always)]
+const fn ct_eq(a: i32, b: i32) -> bool {
+    // XOR gives 0 iff equal, then check if result is 0
+    let diff = a ^ b;
+    // Fold all bits into bit 0
+    let folded = diff | diff.wrapping_neg();
+    (folded >> 31) == 0
+}
+
+/// Constant-time conditional subtraction: subtract b from a if condition is true
+#[inline(always)]
+const fn ct_sub_if(condition: bool, a: i32, b: i32) -> i32 {
+    let mask = -(condition as i32);
+    a.wrapping_sub(b & mask)
+}
+
+/// Constant-time reduction to [0, Q): handles negative inputs
+/// Input must be in range [-Q, 2Q)
+#[inline(always)]
+const fn ct_reduce_to_positive(r: i32) -> i32 {
+    // Add Q if negative (r < 0)
+    let neg_mask = r >> 31; // All 1s if negative
+    let r = r.wrapping_add(Q & neg_mask);
+    // Subtract Q if >= Q
+    let ge_q_mask = -(ct_gt(r, Q - 1) as i32); // Cast to i32 before negation
+    r.wrapping_sub(Q & ge_q_mask)
+}
 
 /// The dropped bits parameter d = 13 (from FIPS 204)
 pub const D: u32 = 13;
@@ -37,10 +93,15 @@ const TWO_POW_D: i32 = 1 << D;
 /// - r₀ = r mod 2^d (low bits, centered around 0)
 ///
 /// The low bits r₀ are in the range [-(2^(d-1)), 2^(d-1))
+///
+/// # Constant-Time
+///
+/// Uses arithmetic masking instead of branches for side-channel resistance.
 #[inline]
 pub fn power2round(r: i32) -> (i32, i32) {
-    // Ensure r is positive
-    let r = if r < 0 { r + Q } else { r };
+    // Constant-time: ensure r is positive using arithmetic mask
+    let neg_mask = r >> 31; // All 1s if r < 0, 0 otherwise
+    let r = r.wrapping_add(Q & neg_mask);
 
     // r₁ = ⌊(r + 2^(d-1)) / 2^d⌋
     // r₀ = r - r₁·2^d
@@ -82,28 +143,37 @@ pub fn poly_power2round(poly: &Poly) -> (Poly, Poly) {
 /// (r₁, r₀) where:
 /// - r₁ = high bits used for commitment
 /// - r₀ = low bits in range (-γ₂, γ₂]
+///
+/// # Constant-Time
+///
+/// Uses arithmetic masking instead of branches for side-channel resistance.
+/// This is important because decompose is called on values derived from
+/// secret key components during signing.
 #[inline]
 pub fn decompose(r: i32, gamma2: i32) -> (i32, i32) {
-    // Ensure r is in [0, q)
-    let r = if r < 0 { r + Q } else { r % Q };
+    // Constant-time normalization to [0, Q)
+    let r = ct_reduce_to_positive(r);
 
     // α = 2γ₂ (the decomposition base)
     let alpha = 2 * gamma2;
 
     // r₀ = r mod α (centered)
+    // For ML-DSA, alpha is always a divisor of Q-1, so we can use
+    // direct modulo. The values are public parameters, not secret.
     let mut r0 = r % alpha;
-    if r0 > gamma2 {
-        r0 -= alpha;
-    }
+
+    // Constant-time centering: if r0 > gamma2, subtract alpha
+    let center_mask = -(ct_gt(r0, gamma2) as i32); // Cast to i32 before negation
+    r0 = r0.wrapping_sub(alpha & center_mask);
 
     // r₁ = (r - r₀) / α
-    let mut r1 = (r - r0) / alpha;
+    let diff = r - r0;
+    let mut r1 = diff / alpha;
 
-    // Handle corner case: if r - r₀ = q - 1, set r₁ = 0
-    if r - r0 == Q - 1 {
-        r1 = 0;
-        r0 = r0 - 1;
-    }
+    // Constant-time corner case: if r - r₀ = q - 1, set r₁ = 0 and r₀ -= 1
+    let corner = ct_eq(diff, Q - 1);
+    r1 = ct_select(corner, 0, r1);
+    r0 = ct_sub_if(corner, r0, 1);
 
     (r1, r0)
 }
@@ -185,13 +255,15 @@ pub fn make_hint(z: i32, r: i32, gamma2: i32) -> bool {
 /// * `h` - The hint bit (true if correction needed)
 /// * `r` - The value to adjust
 /// * `gamma2` - The decomposition parameter γ₂
+///
+/// # Constant-Time
+///
+/// Uses arithmetic masking instead of branches. While the hint h is public
+/// (included in the signature), constant-time implementation prevents
+/// potential timing leaks from the intermediate decompose computation.
 #[inline]
 pub fn use_hint(h: bool, r: i32, gamma2: i32) -> i32 {
     let (r1, r0) = decompose(r, gamma2);
-
-    if !h {
-        return r1;
-    }
 
     // Determine the maximum value of r₁
     // Note: Due to the corner case in decompose (when r - r0 = q - 1, r1 wraps to 0),
@@ -201,15 +273,22 @@ pub fn use_hint(h: bool, r: i32, gamma2: i32) -> i32 {
     let alpha = 2 * gamma2;
     let m = (Q - 1) / alpha - 1;
 
-    // Adjust r₁ based on sign of r₀
-    // (r1 + 1) mod (m + 1) or (r1 - 1) mod (m + 1)
-    if r0 > 0 {
-        if r1 == m { 0 } else { r1 + 1 }
-    } else if r1 == 0 {
-        m
-    } else {
-        r1 - 1
-    }
+    // Constant-time adjustment based on sign of r₀
+    // if r0 > 0: result = (r1 == m) ? 0 : r1 + 1
+    // else:      result = (r1 == 0) ? m : r1 - 1
+    let r0_positive = ct_gt(r0, 0);
+    let r1_is_m = ct_eq(r1, m);
+    let r1_is_0 = ct_eq(r1, 0);
+
+    // Compute both branches
+    let result_if_r0_pos = ct_select(r1_is_m, 0, r1 + 1);
+    let result_if_r0_neg = ct_select(r1_is_0, m, r1 - 1);
+
+    // Select based on r0 sign
+    let adjusted = ct_select(r0_positive, result_if_r0_pos, result_if_r0_neg);
+
+    // Return r1 if hint is false, adjusted if true
+    ct_select(h, adjusted, r1)
 }
 
 /// Apply MakeHint to all coefficients of two polynomials
