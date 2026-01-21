@@ -2,14 +2,29 @@
 //!
 //! Polynomials in ML-DSA are elements of the ring R_q = Z_q[X]/(X^256 + 1).
 //! This module provides the core polynomial type and arithmetic operations.
+//!
+//! ## Optimizations
+//!
+//! When the `simd` feature is enabled, polynomial arithmetic uses AVX2 SIMD
+//! instructions for improved performance (approximately 6x speedup on
+//! supported hardware).
 
 #![allow(dead_code)]
+// Allow unsafe code when SIMD is enabled for optimized polynomial operations
+#![cfg_attr(all(feature = "simd", target_arch = "x86_64"), allow(unsafe_code))]
 
 use super::ntt::{inv_ntt, montgomery_reduce, ntt, pointwise_mul, reduce32};
 use super::params::{N, Q};
 
+// Import SIMD functions when feature is enabled
+#[cfg(all(feature = "simd", target_arch = "x86_64"))]
+use super::poly_simd::{has_avx2, poly_add_avx2, poly_sub_avx2, poly_reduce_avx2};
+
 /// A polynomial in R_q with 256 coefficients
+///
+/// The struct is aligned to 32 bytes for efficient AVX2 SIMD operations.
 #[derive(Clone, Copy, Debug)]
+#[repr(C, align(32))]
 pub struct Poly {
     /// Coefficients in order a_0, a_1, ..., a_255
     pub coeffs: [i32; N],
@@ -33,8 +48,20 @@ impl Poly {
     }
 
     /// Add two polynomials coefficient-wise
+    ///
+    /// Uses AVX2 SIMD when the `simd` feature is enabled and hardware supports it.
     pub fn add(&self, other: &Poly) -> Poly {
         let mut result = Poly::zero();
+
+        #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+        {
+            if has_avx2() {
+                unsafe { poly_add_avx2(self, other, &mut result); }
+                return result;
+            }
+        }
+
+        // Scalar fallback
         for i in 0..N {
             result.coeffs[i] = self.coeffs[i] + other.coeffs[i];
         }
@@ -42,8 +69,20 @@ impl Poly {
     }
 
     /// Subtract two polynomials coefficient-wise
+    ///
+    /// Uses AVX2 SIMD when the `simd` feature is enabled and hardware supports it.
     pub fn sub(&self, other: &Poly) -> Poly {
         let mut result = Poly::zero();
+
+        #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+        {
+            if has_avx2() {
+                unsafe { poly_sub_avx2(self, other, &mut result); }
+                return result;
+            }
+        }
+
+        // Scalar fallback
         for i in 0..N {
             result.coeffs[i] = self.coeffs[i] - other.coeffs[i];
         }

@@ -22,6 +22,10 @@ ml-dsa-native = ["arcanum-primitives/shake"]
 # Native SLH-DSA implementation (FIPS 205) - no external dependency
 slh-dsa = []
 hybrid = ["ml-kem"]
+# Optimization features
+simd = ["std"]  # Enable SIMD optimizations (AVX2/NEON)
+parallel = ["dep:rayon", "std"]  # Enable parallel processing
+optimized = ["simd", "parallel"]  # All optimizations
 all = ["ml-kem", "ml-dsa", "ml-dsa-native", "slh-dsa", "hybrid"]
 
 [dependencies]
@@ -53,6 +57,9 @@ rand_core = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 hex = { workspace = true }
+
+# Parallel processing (optional)
+rayon = { version = "1.10", optional = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

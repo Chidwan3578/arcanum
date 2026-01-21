@@ -57,6 +57,9 @@ pub mod keygen;
 pub mod ntt;
 pub mod params;
 pub mod poly;
+#[cfg(all(feature = "simd", target_arch = "x86_64"))]
+#[allow(unsafe_code)]
+pub mod poly_simd;
 pub mod rounding;
 pub mod sampling;
 pub mod sign;
