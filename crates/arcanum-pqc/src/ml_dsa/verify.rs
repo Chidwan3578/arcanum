@@ -35,14 +35,14 @@ use arcanum_primitives::shake::Shake256;
 ///
 /// `true` if signature is valid, `false` otherwise
 pub fn verify_internal<P: MlDsaParams>(pk_bytes: &[u8], message: &[u8], sig_bytes: &[u8]) -> bool {
-    // Unpack public key
-    let (rho, t1) = match unpack_pk::<P>(pk_bytes) {
+    // Unpack public key (mutable for in-place NTT)
+    let (rho, mut t1) = match unpack_pk::<P>(pk_bytes) {
         Some(pk) => pk,
         None => return false,
     };
 
-    // Step 1: Unpack signature (c̃, z, h)
-    let (c_tilde, z, h) = match unpack_signature::<P>(sig_bytes) {
+    // Step 1: Unpack signature (c̃, z, h) - z is mutable for in-place NTT
+    let (c_tilde, mut z, h) = match unpack_signature::<P>(sig_bytes) {
         Some(sig) => sig,
         None => return false,
     };
@@ -57,7 +57,7 @@ pub fn verify_internal<P: MlDsaParams>(pk_bytes: &[u8], message: &[u8], sig_byte
         return false;
     }
 
-    // Check ||z||∞ < γ₁ - β
+    // Check ||z||∞ < γ₁ - β (before NTT conversion)
     let gamma1_minus_beta = P::GAMMA1 - P::BETA;
     for poly in &z {
         let norm = poly.infinity_norm();
@@ -89,15 +89,13 @@ pub fn verify_internal<P: MlDsaParams>(pk_bytes: &[u8], message: &[u8], sig_byte
     let mut c = sample_in_ball(&c_tilde, P::TAU);
     c.ntt();
 
-    // Convert z to NTT domain
-    let mut z_ntt = z.clone();
-    for poly in &mut z_ntt {
+    // Convert z to NTT domain (in-place, no clone needed)
+    for poly in &mut z {
         poly.ntt();
     }
 
-    // Convert t₁ to NTT domain
-    let mut t1_ntt = t1.clone();
-    for poly in &mut t1_ntt {
+    // Convert t₁ to NTT domain (in-place, no clone needed)
+    for poly in &mut t1 {
         poly.ntt();
     }
 
@@ -106,7 +104,7 @@ pub fn verify_internal<P: MlDsaParams>(pk_bytes: &[u8], message: &[u8], sig_byte
     let mut az_ntt = vec![Poly::zero(); P::K];
     for i in 0..P::K {
         for j in 0..P::L {
-            let product = a[i][j].pointwise_mul(&z_ntt[j]);
+            let product = a[i][j].pointwise_mul(&z[j]);
             az_ntt[i] = az_ntt[i].add(&product);
         }
     }
@@ -114,7 +112,7 @@ pub fn verify_internal<P: MlDsaParams>(pk_bytes: &[u8], message: &[u8], sig_byte
     // Compute ct₁ (in NTT domain)
     let mut ct1_ntt = vec![Poly::zero(); P::K];
     for i in 0..P::K {
-        ct1_ntt[i] = c.pointwise_mul(&t1_ntt[i]);
+        ct1_ntt[i] = c.pointwise_mul(&t1[i]);
     }
 
     // Convert Az and ct1 to coefficient domain
