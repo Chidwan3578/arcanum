@@ -199,6 +199,44 @@ pub unsafe fn poly_check_norm_avx2(poly: &Poly, bound: i32) -> bool {
     }
 }
 
+/// AVX2 infinity norm: compute max |coeff|
+///
+/// # Safety
+/// Requires AVX2 support.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+pub unsafe fn poly_infinity_norm_avx2(poly: &Poly) -> u32 {
+    unsafe {
+        let ptr = poly.coeffs.as_ptr();
+        let mut max_vec = _mm256_setzero_si256();
+
+        for i in 0..32 {
+            let offset = i * 8;
+            let v = _mm256_loadu_si256(ptr.add(offset) as *const __m256i);
+
+            // Compute absolute value: abs(x) = max(x, -x)
+            // For signed integers: abs = (x ^ (x >> 31)) - (x >> 31)
+            let sign = _mm256_srai_epi32(v, 31);
+            let abs_v = _mm256_sub_epi32(_mm256_xor_si256(v, sign), sign);
+
+            // Update running maximum
+            max_vec = _mm256_max_epi32(max_vec, abs_v);
+        }
+
+        // Horizontal max across the 8 lanes
+        // Extract high and low 128-bit parts
+        let high = _mm256_extracti128_si256(max_vec, 1);
+        let low = _mm256_castsi256_si128(max_vec);
+        let max128 = _mm_max_epi32(high, low);
+
+        // Continue reduction: 4 -> 2 -> 1
+        let max64 = _mm_max_epi32(max128, _mm_shuffle_epi32(max128, 0b10_11_00_01));
+        let max32 = _mm_max_epi32(max64, _mm_shuffle_epi32(max64, 0b01_00_11_10));
+
+        _mm_cvtsi128_si32(max32) as u32
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

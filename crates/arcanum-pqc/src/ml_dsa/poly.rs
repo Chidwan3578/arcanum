@@ -18,11 +18,11 @@ use super::params::{N, Q};
 
 // Import SIMD functions when feature is enabled
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]
-use super::poly_simd::{has_avx2, poly_add_avx2, poly_reduce_avx2, poly_sub_avx2};
+use super::poly_simd::{has_avx2, poly_add_avx2, poly_infinity_norm_avx2, poly_sub_avx2};
 
 // Import AVX2 NTT when feature is enabled
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]
-use super::ntt_avx2::{inv_ntt_avx2, ntt_avx2};
+use super::ntt_avx2::{inv_ntt_avx2, ntt_avx2, pointwise_mul_avx2};
 
 /// A polynomial in R_q with 256 coefficients
 ///
@@ -152,10 +152,24 @@ impl Poly {
     }
 
     /// Pointwise multiplication in NTT domain
+    ///
+    /// Uses AVX2 SIMD when the `simd` feature is enabled and hardware supports it.
     pub fn pointwise_mul(&self, other: &Poly) -> Poly {
-        Poly {
-            coeffs: pointwise_mul(&self.coeffs, &other.coeffs),
+        let mut result = Poly::zero();
+
+        #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+        {
+            if has_avx2() {
+                unsafe {
+                    pointwise_mul_avx2(&self.coeffs, &other.coeffs, &mut result.coeffs);
+                }
+                return result;
+            }
         }
+
+        // Scalar fallback
+        result.coeffs = pointwise_mul(&self.coeffs, &other.coeffs);
+        result
     }
 
     /// Check if all coefficients have absolute value < bound
@@ -175,7 +189,17 @@ impl Poly {
     }
 
     /// Compute infinity norm: max |a_i|
+    ///
+    /// Uses AVX2 SIMD when the `simd` feature is enabled and hardware supports it.
     pub fn infinity_norm(&self) -> u32 {
+        #[cfg(all(feature = "simd", target_arch = "x86_64"))]
+        {
+            if has_avx2() {
+                return unsafe { poly_infinity_norm_avx2(self) };
+            }
+        }
+
+        // Scalar fallback
         let mut max = 0u32;
         for i in 0..N {
             let coeff = self.coeffs[i];
