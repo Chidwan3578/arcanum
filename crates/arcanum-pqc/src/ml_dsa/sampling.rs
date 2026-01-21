@@ -122,7 +122,7 @@ pub fn expand_a_sequential<P: MlDsaParams>(rho: &[u8; 32]) -> Vec<Vec<Poly>> {
 /// 4-way SIMD ExpandA using batched Keccak
 ///
 /// Processes 4 matrix entries at a time using AVX2 parallel Keccak.
-/// This provides ~3x speedup over sequential sampling.
+/// Pre-squeezes data from all 4 states together to maximize parallelism.
 ///
 /// # Safety
 /// Requires AVX2 support.
@@ -162,10 +162,62 @@ unsafe fn expand_a_x4<P: MlDsaParams>(rho: &[u8; 32]) -> Vec<Vec<Poly>> {
         // Finalize all states
         shake_x4.finalize();
 
-        // Sample polynomials from each state
+        // Pre-squeeze 840 bytes from each state (5 * 168 = 840 bytes = 5 SHAKE128 blocks)
+        // This gives ~560 candidate coefficients, enough for 256 with ~55% rejection margin
+        let mut bufs = [[0u8; 840]; 4];
+        let mut buf_pos = [0usize; 4];
+        let mut poly_idx = [0usize; 4];
+        let mut polys = [Poly::zero(), Poly::zero(), Poly::zero(), Poly::zero()];
+
+        // Squeeze all 4 states together in parallel
+        shake_x4.squeeze_blocks_x4(&mut bufs, 5, batch_size);
+
+        // Sample from pre-squeezed buffers
+        for b in 0..batch_size {
+            while poly_idx[b] < N && buf_pos[b] + 2 < 840 {
+                let d1 = (bufs[b][buf_pos[b]] as i32)
+                    | ((bufs[b][buf_pos[b] + 1] as i32 & 0x0F) << 8);
+                let d2 = ((bufs[b][buf_pos[b] + 1] as i32) >> 4)
+                    | ((bufs[b][buf_pos[b] + 2] as i32) << 4);
+                buf_pos[b] += 3;
+
+                if d1 < REJECTION_BOUND && poly_idx[b] < N {
+                    polys[b].coeffs[poly_idx[b]] = d1;
+                    poly_idx[b] += 1;
+                }
+                if d2 < REJECTION_BOUND && poly_idx[b] < N {
+                    polys[b].coeffs[poly_idx[b]] = d2;
+                    poly_idx[b] += 1;
+                }
+            }
+
+            // Rare case: need more data (very unlikely with 840 bytes)
+            while poly_idx[b] < N {
+                let mut extra = [0u8; 168];
+                shake_x4.squeeze_one_block(b, &mut extra);
+
+                let mut pos = 0;
+                while poly_idx[b] < N && pos + 2 < 168 {
+                    let d1 = (extra[pos] as i32) | ((extra[pos + 1] as i32 & 0x0F) << 8);
+                    let d2 = ((extra[pos + 1] as i32) >> 4) | ((extra[pos + 2] as i32) << 4);
+                    pos += 3;
+
+                    if d1 < REJECTION_BOUND && poly_idx[b] < N {
+                        polys[b].coeffs[poly_idx[b]] = d1;
+                        poly_idx[b] += 1;
+                    }
+                    if d2 < REJECTION_BOUND && poly_idx[b] < N {
+                        polys[b].coeffs[poly_idx[b]] = d2;
+                        poly_idx[b] += 1;
+                    }
+                }
+            }
+        }
+
+        // Store results and apply NTT
         for b in 0..batch_size {
             let (i, j) = indices[idx + b];
-            a[i][j] = sample_poly_from_shake_x4(&mut shake_x4, b);
+            a[i][j] = polys[b].clone();
             a[i][j].ntt();
         }
 
@@ -173,43 +225,6 @@ unsafe fn expand_a_x4<P: MlDsaParams>(rho: &[u8; 32]) -> Vec<Vec<Poly>> {
     }
 
     a
-}
-
-/// Sample a polynomial from a specific state of a 4-way SHAKE128
-#[cfg(all(feature = "simd", target_arch = "x86_64"))]
-#[target_feature(enable = "avx2")]
-unsafe fn sample_poly_from_shake_x4(
-    shake: &mut arcanum_primitives::keccak_x4::Shake128X4,
-    state_idx: usize,
-) -> Poly {
-    let mut poly = Poly::zero();
-    let mut idx = 0;
-
-    // Squeeze larger blocks for efficiency
-    let mut buf = [0u8; 504];
-    let mut buf_pos = 504;
-
-    while idx < N {
-        if buf_pos >= 504 {
-            shake.squeeze(state_idx, &mut buf);
-            buf_pos = 0;
-        }
-
-        let d1 = (buf[buf_pos] as i32) | ((buf[buf_pos + 1] as i32 & 0x0F) << 8);
-        let d2 = ((buf[buf_pos + 1] as i32) >> 4) | ((buf[buf_pos + 2] as i32) << 4);
-        buf_pos += 3;
-
-        if d1 < REJECTION_BOUND {
-            poly.coeffs[idx] = d1;
-            idx += 1;
-        }
-        if idx < N && d2 < REJECTION_BOUND {
-            poly.coeffs[idx] = d2;
-            idx += 1;
-        }
-    }
-
-    poly
 }
 
 /// Parallel ExpandA using Rayon

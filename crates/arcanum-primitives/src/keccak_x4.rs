@@ -422,6 +422,42 @@ impl Shake128X4 {
             }
         }
     }
+
+    /// Squeeze multiple blocks from all 4 states into fixed-size arrays
+    ///
+    /// This is optimized for batch sampling where all 4 states need the same amount of data.
+    /// Squeezes `num_blocks` × 168 bytes from each state.
+    ///
+    /// # Arguments
+    /// * `bufs` - 4 output buffers (must have at least num_blocks * 168 bytes each)
+    /// * `num_blocks` - Number of 168-byte blocks to squeeze
+    /// * `batch_size` - How many of the 4 states to actually use (1-4)
+    #[target_feature(enable = "avx2")]
+    pub unsafe fn squeeze_blocks_x4(
+        &mut self,
+        bufs: &mut [[u8; 840]; 4],
+        num_blocks: usize,
+        batch_size: usize,
+    ) {
+        debug_assert!(num_blocks <= 5); // 5 * 168 = 840
+
+        for block in 0..num_blocks {
+            let offset = block * Self::RATE;
+            for b in 0..batch_size {
+                self.state.extract_bytes(b, &mut bufs[b][offset..offset + Self::RATE], Self::RATE);
+            }
+            if block < num_blocks - 1 {
+                self.state.permute();
+            }
+        }
+    }
+
+    /// Squeeze one more block from all states (after initial squeeze_blocks_x4)
+    #[target_feature(enable = "avx2")]
+    pub unsafe fn squeeze_one_block(&mut self, state_idx: usize, buf: &mut [u8; 168]) {
+        self.state.permute();
+        self.state.extract_bytes(state_idx, buf, Self::RATE);
+    }
 }
 
 #[cfg(test)]
