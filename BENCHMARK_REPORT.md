@@ -35,6 +35,27 @@ For very large single messages (64MB+), Arcanum's `MinimalAlloc` function provid
 | Single file (<64MB) | blake3 crate | Well-optimized reference |
 | Auto-selection | `hash_adaptive` | Picks optimal strategy |
 
+### Poly1305-SIMD (1.4x Speedup)
+
+Arcanum's SIMD-accelerated Poly1305 implementation outperforms RustCrypto:
+
+| Implementation | Throughput (4KB) | vs RustCrypto |
+|----------------|------------------|---------------|
+| Arcanum SIMD | 3.47 GiB/s | **1.4x faster** |
+| RustCrypto | 2.44 GiB/s | baseline |
+| Arcanum scalar | 1.11 GiB/s | 0.45x |
+
+### BLAKE3 Monolithic Compression (Competitive)
+
+At the chunk-processing level, Arcanum's monolithic implementation matches the reference:
+
+| Implementation | Throughput (16KB) |
+|----------------|-------------------|
+| Monolithic | 7.53 GiB/s |
+| Per-Round ASM | 6.20 GiB/s |
+
+**Note:** Some experimental implementations (Hyper, Ultra, ASM full-file) underperform the reference crate and require further optimization.
+
 ---
 
 ## Test Environment
