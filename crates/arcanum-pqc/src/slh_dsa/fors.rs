@@ -14,7 +14,7 @@
 use super::address::{Address, AddressType};
 use super::hash::SlhDsaHash;
 use super::params::SlhDsaParams;
-use alloc::vec::Vec;
+use std::vec::Vec;
 use core::marker::PhantomData;
 
 /// FORS signature containing k secret values and k authentication paths

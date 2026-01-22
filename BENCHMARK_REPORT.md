@@ -39,8 +39,10 @@ For large single messages, Arcanum's `hash_apex` function exceeds the reference:
 
 ## Test Environment
 
-- **Platform**: Linux 4.4.0
-- **Date**: 2025-12-23
+- **CPU**: AMD Ryzen Threadripper PRO 7955WX 16-Cores (32 threads)
+- **Platform**: Linux 6.6.87 (WSL2)
+- **Rust**: 1.92.0
+- **Date**: 2026-01-21
 - **Benchmarking Framework**: Criterion 0.5
 
 ## Benchmark Results
@@ -49,62 +51,66 @@ For large single messages, Arcanum's `hash_apex` function exceeds the reference:
 
 | Data Size | RustCrypto | ring | ring Speedup |
 |-----------|------------|------|--------------|
-| 64 bytes | 298.67 ns (204 MiB/s) | 310.73 ns (196 MiB/s) | **0.96x** (RustCrypto wins) |
-| 256 bytes | 448.38 ns (544 MiB/s) | 333.07 ns (733 MiB/s) | **1.35x** |
-| 1 KB | 1.13 µs (867 MiB/s) | 467.80 ns (2.04 GiB/s) | **2.4x** |
-| 4 KB | 3.67 µs (1.04 GiB/s) | 930.25 ns (4.10 GiB/s) | **3.9x** |
-| 16 KB | 13.56 µs (1.12 GiB/s) | 2.58 µs (5.91 GiB/s) | **5.3x** |
-| 64 KB | 54.43 µs (1.12 GiB/s) | 10.96 µs (5.57 GiB/s) | **5.0x** |
+| 64 bytes | 250 ns (244 MiB/s) | 230 ns (265 MiB/s) | **1.09x** |
+| 256 bytes | 343 ns (712 MiB/s) | 256 ns (954 MiB/s) | **1.34x** |
+| 1 KB | 796 ns (1.20 GiB/s) | 335 ns (2.85 GiB/s) | **2.38x** |
+| 4 KB | 2.44 µs (1.57 GiB/s) | 663 ns (5.75 GiB/s) | **3.68x** |
+| 16 KB | 9.07 µs (1.68 GiB/s) | 1.85 µs (8.24 GiB/s) | **4.90x** |
+| 64 KB | 35.9 µs (1.70 GiB/s) | 6.99 µs (8.73 GiB/s) | **5.13x** |
 
-**Analysis**: ring leverages AES-NI hardware instructions through BoringSSL, which explains its 4-5x advantage on larger messages. RustCrypto's pure Rust implementation performs competitively on small messages (64 bytes) and still achieves over 1 GiB/s throughput.
+**Analysis**: ring leverages AES-NI hardware instructions through BoringSSL, which explains its 3-5x advantage on larger messages. RustCrypto's pure Rust implementation performs competitively on small messages and achieves 1.7 GiB/s throughput on large messages.
 
 ### 2. ChaCha20-Poly1305 (Symmetric Encryption)
 
 | Data Size | RustCrypto | ring | ring Speedup |
 |-----------|------------|------|--------------|
-| 64 bytes | 1.66 µs (37 MiB/s) | 270.48 ns (226 MiB/s) | **6.1x** |
-| 256 bytes | 1.68 µs (145 MiB/s) | 413.79 ns (590 MiB/s) | **4.1x** |
-| 1 KB | 2.29 µs (427 MiB/s) | 802.24 ns (1.19 GiB/s) | **2.9x** |
-| 4 KB | 4.63 µs (843 MiB/s) | 2.38 µs (1.60 GiB/s) | **1.9x** |
-| 16 KB | 13.76 µs (1.11 GiB/s) | 8.88 µs (1.72 GiB/s) | **1.5x** |
-| 64 KB | 51.72 µs (1.18 GiB/s) | 33.48 µs (1.82 GiB/s) | **1.5x** |
+| 64 bytes | 1.27 µs (48 MiB/s) | 186 ns (328 MiB/s) | **6.8x** |
+| 256 bytes | 1.30 µs (188 MiB/s) | 269 ns (909 MiB/s) | **4.8x** |
+| 1 KB | 1.69 µs (577 MiB/s) | 521 ns (1.83 GiB/s) | **3.2x** |
+| 4 KB | 3.20 µs (1.19 GiB/s) | 1.42 µs (2.69 GiB/s) | **2.25x** |
+| 16 KB | 9.41 µs (1.62 GiB/s) | 5.17 µs (2.95 GiB/s) | **1.82x** |
+| 64 KB | 33.0 µs (1.85 GiB/s) | 20.1 µs (3.03 GiB/s) | **1.64x** |
 
-**Analysis**: ChaCha20-Poly1305 shows smaller performance gaps as message size increases. ring's advantage shrinks from 6x (small messages) to 1.5x (large messages), as both implementations scale similarly. RustCrypto achieves excellent throughput (>1 GiB/s) on 16KB+ messages.
+**Analysis**: ChaCha20-Poly1305 shows ring maintaining a 2-7x advantage. RustCrypto achieves excellent throughput (>1.8 GiB/s) on large messages. The gap narrows as message size increases, suggesting RustCrypto's implementation scales well.
 
 ### 3. Ed25519 Digital Signatures
 
-| Operation | RustCrypto | ring | Difference |
-|-----------|------------|------|------------|
-| Key Generation | ~21 µs | ~28 µs | **RustCrypto 1.3x faster** |
-| Sign (32 bytes) | ~24 µs | ~22 µs | ring 1.1x faster |
-| Sign (4 KB) | ~37 µs | ~34 µs | ring 1.1x faster |
-| Verify (32 bytes) | ~48 µs | ~44 µs | ring 1.1x faster |
-| Verify (4 KB) | ~60 µs | ~55 µs | ring 1.1x faster |
+| Operation | RustCrypto | ring | Winner |
+|-----------|------------|------|--------|
+| Key Generation | 13.6 µs | 35.2 µs | **RustCrypto 2.6x faster** |
+| Sign (32 bytes) | 13.8 µs | 18.0 µs | **RustCrypto 1.3x faster** |
+| Sign (4 KB) | 24.3 µs | 28.4 µs | **RustCrypto 1.2x faster** |
+| Verify (32 bytes) | 23.8 µs | 32.9 µs | **RustCrypto 1.4x faster** |
+| Verify (4 KB) | 28.8 µs | 37.8 µs | **RustCrypto 1.3x faster** |
 
-**Analysis**: Ed25519 performance is remarkably close between implementations. RustCrypto (ed25519-dalek) has faster key generation, while ring has a slight edge in signing/verification. Both implementations are suitable for production use.
+**Analysis**: RustCrypto (ed25519-dalek) outperforms ring across all Ed25519 operations, with particularly strong key generation performance (2.6x faster). This makes RustCrypto the recommended choice for Ed25519 operations.
 
 ### 4. Hash Functions
 
 #### SHA-256
 
-| Data Size | RustCrypto | ring | ring Speedup |
-|-----------|------------|------|--------------|
-| 64 bytes | ~188 ns | ~172 ns | 1.1x |
-| 256 bytes | ~296 ns | ~232 ns | 1.3x |
-| 1 KB | ~675 ns | ~432 ns | 1.6x |
-| 4 KB | ~2.3 µs | ~1.2 µs | 1.9x |
-| 64 KB | ~34 µs | ~18 µs | 1.9x |
+| Data Size | RustCrypto | ring | Comparison |
+|-----------|------------|------|------------|
+| 64 bytes | 74.6 ns (818 MiB/s) | 104 ns (584 MiB/s) | **RustCrypto 1.4x faster** |
+| 256 bytes | 157 ns (1.52 GiB/s) | 188 ns (1.27 GiB/s) | **RustCrypto 1.2x faster** |
+| 1 KB | 486 ns (1.96 GiB/s) | 520 ns (1.83 GiB/s) | **RustCrypto 1.07x faster** |
+| 4 KB | 1.81 µs (2.11 GiB/s) | 1.83 µs (2.08 GiB/s) | ~Equal |
+| 64 KB | 28.2 µs (2.17 GiB/s) | 28.1 µs (2.17 GiB/s) | ~Equal |
+
+**Analysis**: RustCrypto's SHA-256 is faster for small messages (1.4x at 64 bytes) and converges to equal performance on large messages. Both achieve ~2.1 GiB/s throughput on bulk data.
 
 #### BLAKE3
 
-| Data Size | BLAKE3 Throughput |
-|-----------|-------------------|
-| 64 bytes | ~520 MiB/s |
-| 1 KB | ~2.8 GiB/s |
-| 4 KB | ~5.2 GiB/s |
-| 64 KB | ~7.4 GiB/s |
+| Data Size | Time | Throughput |
+|-----------|------|------------|
+| 64 bytes | 60.7 ns | 1.00 GiB/s |
+| 256 bytes | 227 ns | 1.05 GiB/s |
+| 1 KB | 825 ns | 1.16 GiB/s |
+| 4 KB | 1.10 µs | 3.47 GiB/s |
+| 16 KB | 2.06 µs | 7.39 GiB/s |
+| 64 KB | 7.83 µs | 7.80 GiB/s |
 
-**Analysis**: BLAKE3 significantly outperforms both SHA-256 implementations, achieving up to 7.4 GiB/s. ring's SHA-256 is faster than RustCrypto's due to hardware optimizations.
+**Analysis**: BLAKE3 demonstrates excellent performance, reaching 7.8 GiB/s on larger inputs. The parallel tree structure allows it to efficiently utilize SIMD and multi-threading capabilities.
 
 ## Performance Summary
 
@@ -112,13 +118,13 @@ For large single messages, Arcanum's `hash_apex` function exceeds the reference:
 
 | Algorithm | Implementation | Throughput | Notes |
 |-----------|---------------|------------|-------|
-| **BLAKE3** | blake3 crate | 5.2 GiB/s | Fastest hash option |
-| AES-256-GCM | ring | 4.1 GiB/s | Hardware-accelerated |
-| ChaCha20-Poly1305 | ring | 1.6 GiB/s | SIMD optimized |
-| ChaCha20-Poly1305 | RustCrypto | 843 MiB/s | Pure Rust |
-| AES-256-GCM | RustCrypto | 1.04 GiB/s | Pure Rust, no AES-NI |
-| SHA-256 | ring | 3.2 GiB/s | Hardware-accelerated |
-| SHA-256 | RustCrypto | 1.7 GiB/s | Pure Rust |
+| **AES-256-GCM** | ring | 5.75 GiB/s | Hardware-accelerated (AES-NI) |
+| **BLAKE3** | blake3 crate | 3.47 GiB/s | Parallel tree hashing |
+| ChaCha20-Poly1305 | ring | 2.69 GiB/s | SIMD optimized |
+| SHA-256 | RustCrypto | 2.11 GiB/s | Pure Rust |
+| SHA-256 | ring | 2.08 GiB/s | Hardware-accelerated |
+| AES-256-GCM | RustCrypto | 1.57 GiB/s | Pure Rust, no AES-NI |
+| ChaCha20-Poly1305 | RustCrypto | 1.19 GiB/s | Pure Rust |
 
 ## Trade-off Analysis
 

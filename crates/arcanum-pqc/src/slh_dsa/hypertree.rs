@@ -15,7 +15,7 @@ use super::address::Address;
 use super::hash::SlhDsaHash;
 use super::params::SlhDsaParams;
 use super::xmss::{Xmss, XmssSignature};
-use alloc::vec::Vec;
+use std::vec::Vec;
 use core::marker::PhantomData;
 use subtle::ConstantTimeEq;
 

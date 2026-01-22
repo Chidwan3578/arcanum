@@ -15,7 +15,7 @@
 
 use super::address::Address;
 use super::params::SlhDsaParams;
-use alloc::vec::Vec;
+use std::vec::Vec;
 use arcanum_primitives::sha2::Sha256;
 use core::marker::PhantomData;
 

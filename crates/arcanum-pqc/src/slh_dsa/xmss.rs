@@ -14,7 +14,7 @@ use super::address::{Address, AddressType};
 use super::hash::SlhDsaHash;
 use super::params::SlhDsaParams;
 use super::wots::{Wots, WotsSignature};
-use alloc::vec::Vec;
+use std::vec::Vec;
 use core::marker::PhantomData;
 
 /// XMSS signature containing WOTS+ signature and authentication path
