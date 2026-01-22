@@ -2,6 +2,10 @@
 
 Contributions are welcome. Please follow these guidelines.
 
+## New to Open Source?
+
+Check out our **[Good First Issues Program](docs/GOOD_FIRST_ISSUES.md)** - we have beginner-friendly issues that take 5-15 minutes and require no Rust or cryptography experience. It's a great way to get started!
+
 ## Getting Started
 
 1. Fork the repository
