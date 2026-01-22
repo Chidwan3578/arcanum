@@ -1,0 +1,69 @@
+[package]
+name = "arcanum-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+
+# Core crates to fuzz
+arcanum-core = { path = "../crates/arcanum-core" }
+arcanum-symmetric = { path = "../crates/arcanum-symmetric" }
+arcanum-asymmetric = { path = "../crates/arcanum-asymmetric" }
+arcanum-signatures = { path = "../crates/arcanum-signatures" }
+arcanum-hash = { path = "../crates/arcanum-hash" }
+arcanum-pqc = { path = "../crates/arcanum-pqc" }
+
+# Fuzz targets for AEAD
+[[bin]]
+name = "fuzz_aes_gcm"
+path = "fuzz_targets/fuzz_aes_gcm.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_chacha20poly1305"
+path = "fuzz_targets/fuzz_chacha20poly1305.rs"
+test = false
+doc = false
+bench = false
+
+# Fuzz targets for signatures
+[[bin]]
+name = "fuzz_ed25519"
+path = "fuzz_targets/fuzz_ed25519.rs"
+test = false
+doc = false
+bench = false
+
+# Fuzz targets for key exchange
+[[bin]]
+name = "fuzz_x25519"
+path = "fuzz_targets/fuzz_x25519.rs"
+test = false
+doc = false
+bench = false
+
+# Fuzz targets for hashing
+[[bin]]
+name = "fuzz_blake3"
+path = "fuzz_targets/fuzz_blake3.rs"
+test = false
+doc = false
+bench = false
+
+# Fuzz targets for PQC
+[[bin]]
+name = "fuzz_ml_kem"
+path = "fuzz_targets/fuzz_ml_kem.rs"
+test = false
+doc = false
+bench = false

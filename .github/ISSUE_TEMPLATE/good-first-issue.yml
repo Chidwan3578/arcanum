@@ -1,0 +1,83 @@
+name: "Good First Issue: Add Test Vector"
+description: Add a NIST/Wycheproof test vector to improve coverage
+title: "[Test Vector] "
+labels: ["good first issue", "test", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing to Arcanum! Adding test vectors helps ensure our cryptographic implementations are correct.
+
+        **No Rust experience required** - this is a copy/paste task that takes ~5 minutes.
+
+  - type: dropdown
+    id: algorithm
+    attributes:
+      label: Algorithm
+      description: Which algorithm is this test vector for?
+      options:
+        - ML-KEM-512 (FIPS 203)
+        - ML-KEM-768 (FIPS 203)
+        - ML-KEM-1024 (FIPS 203)
+        - ML-DSA-44 (FIPS 204)
+        - ML-DSA-65 (FIPS 204)
+        - ML-DSA-87 (FIPS 204)
+        - SLH-DSA-SHA2-128f (FIPS 205)
+        - SLH-DSA-SHA2-128s (FIPS 205)
+        - AES-256-GCM
+        - ChaCha20-Poly1305
+        - Ed25519
+        - X25519
+        - SHA-256
+        - SHA-3
+        - BLAKE3
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: Vector Source
+      description: Where is this test vector from?
+      options:
+        - NIST CAVP
+        - NIST ACVP
+        - Wycheproof
+        - RFC
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: vector-id
+    attributes:
+      label: Vector ID/Number
+      description: The specific test case number or identifier
+      placeholder: "e.g., KAT #47, tcId 15, Test Case 3"
+    validations:
+      required: true
+
+  - type: textarea
+    id: vector-data
+    attributes:
+      label: Test Vector Data
+      description: The hex-encoded test vector data (will be formatted as code)
+      render: text
+      placeholder: |
+        key: 0x...
+        nonce: 0x...
+        plaintext: 0x...
+        ciphertext: 0x...
+        tag: 0x...
+    validations:
+      required: true
+
+  - type: input
+    id: source-url
+    attributes:
+      label: Source URL
+      description: Link to the original test vector document
+      placeholder: "https://csrc.nist.gov/..."
+    validations:
+      required: false

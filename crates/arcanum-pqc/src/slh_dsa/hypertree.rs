@@ -15,8 +15,8 @@ use super::address::Address;
 use super::hash::SlhDsaHash;
 use super::params::SlhDsaParams;
 use super::xmss::{Xmss, XmssSignature};
-use alloc::vec::Vec;
 use core::marker::PhantomData;
+use std::vec::Vec;
 use subtle::ConstantTimeEq;
 
 /// Hypertree signature containing d XMSS signatures

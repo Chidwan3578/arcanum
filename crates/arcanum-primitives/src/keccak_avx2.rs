@@ -9,6 +9,8 @@
 
 #![allow(dead_code)]
 #![allow(unsafe_code)]
+// Intentional identity operations (0 * 5 + y) for clarity - shows 5x5 state indexing
+#![allow(clippy::identity_op, clippy::erasing_op)]
 
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::*;

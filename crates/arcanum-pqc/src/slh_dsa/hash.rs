@@ -15,9 +15,9 @@
 
 use super::address::Address;
 use super::params::SlhDsaParams;
-use alloc::vec::Vec;
 use arcanum_primitives::sha2::Sha256;
 use core::marker::PhantomData;
+use std::vec::Vec;
 
 /// Hash function trait for SLH-DSA
 ///

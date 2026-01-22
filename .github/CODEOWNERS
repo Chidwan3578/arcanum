@@ -1,0 +1,7 @@
+# Default owners for everything in the repo
+* @Daemoniorum-LLC/maintainers
+
+# Security-sensitive code requires additional review
+/crates/arcanum-pqc/ @Daemoniorum-LLC/maintainers
+/crates/arcanum-core/ @Daemoniorum-LLC/maintainers
+/SECURITY.md @Daemoniorum-LLC/maintainers

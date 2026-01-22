@@ -13,8 +13,8 @@
 use super::address::{Address, AddressType};
 use super::hash::SlhDsaHash;
 use super::params::SlhDsaParams;
-use alloc::vec::Vec;
 use core::marker::PhantomData;
+use std::vec::Vec;
 
 /// WOTS+ signature
 #[derive(Clone)]
