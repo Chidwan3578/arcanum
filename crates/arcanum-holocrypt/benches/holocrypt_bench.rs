@@ -6,7 +6,7 @@
 //! - Selective disclosure (Merkle proofs)
 //! - Property proofs
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 use serde::{Deserialize, Serialize};
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -83,7 +83,12 @@ fn bench_holocrypt_keygen(c: &mut Criterion) {
 // PQC CONTAINER BENCHMARKS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-#[cfg(all(feature = "pqc", feature = "encryption", feature = "merkle", feature = "signatures"))]
+#[cfg(all(
+    feature = "pqc",
+    feature = "encryption",
+    feature = "merkle",
+    feature = "signatures"
+))]
 fn bench_pqc_container(c: &mut Criterion) {
     use arcanum_holocrypt::pqc::{PqcContainer, PqcKeyPair};
 
@@ -108,7 +113,9 @@ fn bench_pqc_container(c: &mut Criterion) {
 
         group.bench_with_input(BenchmarkId::new("unseal", size), &size, |b, _| {
             b.iter(|| {
-                let recovered: TestData = sealed.unseal(black_box(keypair.decapsulation_key())).unwrap();
+                let recovered: TestData = sealed
+                    .unseal(black_box(keypair.decapsulation_key()))
+                    .unwrap();
                 black_box(recovered)
             })
         });
@@ -139,7 +146,8 @@ fn bench_pqc_envelope(c: &mut Criterion) {
 
     group.bench_function("wrap", |b| {
         b.iter(|| {
-            let envelope = PqcEnvelope::wrap(black_box(&content_key), keypair.encapsulation_key()).unwrap();
+            let envelope =
+                PqcEnvelope::wrap(black_box(&content_key), keypair.encapsulation_key()).unwrap();
             black_box(envelope)
         })
     });
@@ -148,7 +156,9 @@ fn bench_pqc_envelope(c: &mut Criterion) {
 
     group.bench_function("unwrap", |b| {
         b.iter(|| {
-            let key = envelope.unwrap(black_box(keypair.decapsulation_key())).unwrap();
+            let key = envelope
+                .unwrap(black_box(keypair.decapsulation_key()))
+                .unwrap();
             black_box(key)
         })
     });
@@ -162,7 +172,7 @@ fn bench_pqc_envelope(c: &mut Criterion) {
 
 #[cfg(feature = "merkle")]
 fn bench_merkle_proof(c: &mut Criterion) {
-    use arcanum_holocrypt::selective::{ChunkProof, MerkleTreeBuilder};
+    use arcanum_holocrypt::selective::MerkleTreeBuilder;
 
     let mut group = c.benchmark_group("HoloCrypt/selective_disclosure");
 
@@ -280,7 +290,12 @@ criterion_group!(
     bench_holocrypt_keygen,
 );
 
-#[cfg(all(feature = "pqc", feature = "encryption", feature = "merkle", feature = "signatures"))]
+#[cfg(all(
+    feature = "pqc",
+    feature = "encryption",
+    feature = "merkle",
+    feature = "signatures"
+))]
 criterion_group!(
     benches_pqc,
     bench_pqc_container,

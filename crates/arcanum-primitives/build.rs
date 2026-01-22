@@ -11,7 +11,10 @@ fn main() {
         // Also check if library exists and warn if not
         let lib_path = format!("{}/libblake3_cuda.so", cuda_lib_path);
         if !std::path::Path::new(&lib_path).exists() {
-            println!("cargo:warning=CUDA library not found at {}. Build it with:", lib_path);
+            println!(
+                "cargo:warning=CUDA library not found at {}. Build it with:",
+                lib_path
+            );
             println!("cargo:warning=nvcc -O3 -arch=sm_89 --shared --compiler-options '-fPIC' blake3_cuda.cu -o libblake3_cuda.so");
         }
 

@@ -1265,11 +1265,7 @@ fn bench_cuda_blake3_small_batch(c: &mut Criterion) {
 
         group.bench_function(format!("CUDA-Optimized ({})", label), |b| {
             b.iter(|| {
-                hasher.hash_small_batch(
-                    black_box(&messages),
-                    msg_size as u32,
-                    num_messages as u32,
-                )
+                hasher.hash_small_batch(black_box(&messages), msg_size as u32, num_messages as u32)
             })
         });
     }
