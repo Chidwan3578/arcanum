@@ -1188,6 +1188,95 @@ fn bench_merkle_tree(c: &mut Criterion) {
     group.finish();
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// CUDA BENCHMARKS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+#[cfg(feature = "cuda")]
+fn bench_cuda_blake3_batch(c: &mut Criterion) {
+    use arcanum_primitives::blake3_cuda_ffi::CudaHasher;
+
+    // Try to initialize CUDA hasher
+    let mut hasher = match CudaHasher::new(64 * 1024 * 1024, 100_000) {
+        Ok(h) => h,
+        Err(e) => {
+            eprintln!("CUDA benchmark skipped: {}", e);
+            return;
+        }
+    };
+
+    let mut group = c.benchmark_group("BLAKE3-CUDA");
+
+    // Test with various batch sizes
+    for (num_messages, msg_size) in [(1000, 256), (1000, 1024), (10000, 256), (10000, 1024)] {
+        let messages: Vec<Vec<u8>> = (0..num_messages)
+            .map(|i| vec![(i % 256) as u8; msg_size])
+            .collect();
+        let msg_refs: Vec<&[u8]> = messages.iter().map(|m| m.as_slice()).collect();
+
+        let total_bytes = num_messages * msg_size;
+        group.throughput(Throughput::Bytes(total_bytes as u64));
+
+        let label = format!("{}x{}B", num_messages, msg_size);
+
+        group.bench_function(format!("CUDA ({})", label), |b| {
+            b.iter(|| hasher.hash_batch(black_box(&msg_refs)))
+        });
+
+        // Compare with sequential CPU
+        group.bench_function(format!("CPU-Sequential ({})", label), |b| {
+            b.iter(|| {
+                let mut results = Vec::with_capacity(num_messages);
+                for msg in &msg_refs {
+                    results.push(*blake3::hash(black_box(msg)).as_bytes());
+                }
+                results
+            })
+        });
+    }
+
+    group.finish();
+}
+
+#[cfg(feature = "cuda")]
+fn bench_cuda_blake3_small_batch(c: &mut Criterion) {
+    use arcanum_primitives::blake3_cuda_ffi::CudaHasher;
+
+    let mut hasher = match CudaHasher::new(64 * 1024 * 1024, 100_000) {
+        Ok(h) => h,
+        Err(e) => {
+            eprintln!("CUDA small batch benchmark skipped: {}", e);
+            return;
+        }
+    };
+
+    let mut group = c.benchmark_group("BLAKE3-CUDA-SmallBatch");
+
+    // Fixed-size small message batches (optimized CUDA path)
+    for (num_messages, msg_size) in [(10000, 64), (10000, 256), (10000, 512), (10000, 1024)] {
+        let messages: Vec<u8> = (0..num_messages * msg_size)
+            .map(|i| (i % 256) as u8)
+            .collect();
+
+        let total_bytes = num_messages * msg_size;
+        group.throughput(Throughput::Bytes(total_bytes as u64));
+
+        let label = format!("{}x{}B", num_messages, msg_size);
+
+        group.bench_function(format!("CUDA-Optimized ({})", label), |b| {
+            b.iter(|| {
+                hasher.hash_small_batch(
+                    black_box(&messages),
+                    msg_size as u32,
+                    num_messages as u32,
+                )
+            })
+        });
+    }
+
+    group.finish();
+}
+
 #[cfg(all(feature = "simd", target_arch = "x86_64"))]
 criterion_group!(
     benches_simd,
@@ -1213,8 +1302,22 @@ criterion_group!(
     bench_poly1305_simd_various_sizes,
 );
 
-#[cfg(feature = "simd")]
+#[cfg(feature = "cuda")]
+criterion_group!(
+    benches_cuda,
+    bench_cuda_blake3_batch,
+    bench_cuda_blake3_small_batch,
+);
+
+// Main entry points based on feature combinations
+#[cfg(all(feature = "simd", feature = "cuda"))]
+criterion_main!(benches, benches_simd, benches_cuda);
+
+#[cfg(all(feature = "simd", not(feature = "cuda")))]
 criterion_main!(benches, benches_simd);
 
-#[cfg(not(feature = "simd"))]
+#[cfg(all(not(feature = "simd"), feature = "cuda"))]
+criterion_main!(benches, benches_cuda);
+
+#[cfg(all(not(feature = "simd"), not(feature = "cuda")))]
 criterion_main!(benches);

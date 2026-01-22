@@ -2,211 +2,349 @@
 
 ## Executive Summary
 
-This report compares **Arcanum's cryptographic backend** against reference implementations. The benchmarks validate the trade-offs documented in ADR-0001 regarding the choice of pure Rust implementations over C-based alternatives.
+This report provides **full transparency** on Arcanum's cryptographic implementation performance. Arcanum provides specialized optimizations for specific use cases while leveraging excellent reference implementations from the Rust cryptography ecosystem where appropriate.
 
-**Key Finding (Updated 2026-01-21):** Arcanum's BLAKE3 batch implementation achieves up to **2.4x speedup** over sequential hashing through AVX-512 SIMD parallelism.
-
-## BLAKE3 Performance Highlights
-
-### Batch Hashing (2.4x Speedup)
-
-Arcanum's `hash_batch_8` function processes 8 independent messages simultaneously using AVX-512 SIMD:
-
-| Scenario | Arcanum Batch | Sequential | Speedup |
-|----------|---------------|------------|---------|
-| 8×256B messages | 2.63 GiB/s (726 ns) | 1.11 GiB/s (1.72 µs) | **2.4x** |
-| 8×64B messages | 2.25 GiB/s (211 ns) | 954 MiB/s (509 ns) | **2.4x** |
-
-### Large Single Messages
-
-For very large single messages (64MB+), Arcanum's `MinimalAlloc` function provides a modest advantage:
-
-| Data Size | Arcanum MinimalAlloc | blake3 crate | Speedup |
-|-----------|---------------------|--------------|---------|
-| 16MB | 4.94 GiB/s | 6.94 GiB/s | 0.71x |
-| 64MB | 8.39 GiB/s | 7.55 GiB/s | **1.11x** |
-
-### When to Use Each
-
-| Use Case | Recommended | Why |
-|----------|-------------|-----|
-| Multiple small files | `hash_batch_8` | 2.4x parallel speedup |
-| Single very large file (≥64MB) | `MinimalAlloc` | Slightly faster |
-| Single file (<64MB) | blake3 crate | Well-optimized reference |
-| Auto-selection | `hash_adaptive` | Picks optimal strategy |
-
-### Poly1305-SIMD (1.4x Speedup)
-
-Arcanum's SIMD-accelerated Poly1305 implementation outperforms RustCrypto:
-
-| Implementation | Throughput (4KB) | vs RustCrypto |
-|----------------|------------------|---------------|
-| Arcanum SIMD | 3.47 GiB/s | **1.4x faster** |
-| RustCrypto | 2.44 GiB/s | baseline |
-| Arcanum scalar | 1.11 GiB/s | 0.45x |
-
-### BLAKE3 Monolithic Compression (Competitive)
-
-At the chunk-processing level, Arcanum's monolithic implementation matches the reference:
-
-| Implementation | Throughput (16KB) |
-|----------------|-------------------|
-| Monolithic | 7.53 GiB/s |
-| Per-Round ASM | 6.20 GiB/s |
-
-**Note:** Some experimental implementations (Hyper, Ultra, ASM full-file) underperform the reference crate and require further optimization.
+**Key Design Goals:**
+- Batch operations for processing multiple items efficiently
+- SIMD optimizations for throughput-critical paths
+- Pure Rust implementations for safety and portability
 
 ---
 
 ## Test Environment
 
 - **CPU**: AMD Ryzen Threadripper PRO 7955WX 16-Cores (32 threads)
+- **GPU**: NVIDIA RTX 4500 Ada (Ada Lovelace, sm_89)
 - **Platform**: Linux 6.6.87 (WSL2)
 - **Rust**: 1.92.0
+- **CUDA**: 12.0
 - **Date**: 2026-01-21
-- **Benchmarking Framework**: Criterion 0.5
-
-## Benchmark Results
-
-### 1. AES-256-GCM (Symmetric Encryption)
-
-| Data Size | RustCrypto | ring | ring Speedup |
-|-----------|------------|------|--------------|
-| 64 bytes | 250 ns (244 MiB/s) | 230 ns (265 MiB/s) | **1.09x** |
-| 256 bytes | 343 ns (712 MiB/s) | 256 ns (954 MiB/s) | **1.34x** |
-| 1 KB | 796 ns (1.20 GiB/s) | 335 ns (2.85 GiB/s) | **2.38x** |
-| 4 KB | 2.44 µs (1.57 GiB/s) | 663 ns (5.75 GiB/s) | **3.68x** |
-| 16 KB | 9.07 µs (1.68 GiB/s) | 1.85 µs (8.24 GiB/s) | **4.90x** |
-| 64 KB | 35.9 µs (1.70 GiB/s) | 6.99 µs (8.73 GiB/s) | **5.13x** |
-
-**Analysis**: ring leverages AES-NI hardware instructions through BoringSSL, which explains its 3-5x advantage on larger messages. RustCrypto's pure Rust implementation performs competitively on small messages and achieves 1.7 GiB/s throughput on large messages.
-
-### 2. ChaCha20-Poly1305 (Symmetric Encryption)
-
-| Data Size | RustCrypto | ring | ring Speedup |
-|-----------|------------|------|--------------|
-| 64 bytes | 1.27 µs (48 MiB/s) | 186 ns (328 MiB/s) | **6.8x** |
-| 256 bytes | 1.30 µs (188 MiB/s) | 269 ns (909 MiB/s) | **4.8x** |
-| 1 KB | 1.69 µs (577 MiB/s) | 521 ns (1.83 GiB/s) | **3.2x** |
-| 4 KB | 3.20 µs (1.19 GiB/s) | 1.42 µs (2.69 GiB/s) | **2.25x** |
-| 16 KB | 9.41 µs (1.62 GiB/s) | 5.17 µs (2.95 GiB/s) | **1.82x** |
-| 64 KB | 33.0 µs (1.85 GiB/s) | 20.1 µs (3.03 GiB/s) | **1.64x** |
-
-**Analysis**: ChaCha20-Poly1305 shows ring maintaining a 2-7x advantage over RustCrypto.
-
-#### Arcanum Native ChaCha20-Poly1305
-
-Arcanum's native implementation outperforms RustCrypto:
-
-| Data Size | Arcanum Native | RustCrypto | Speedup |
-|-----------|----------------|------------|---------|
-| 1 KB | 729 ns (1.31 GiB/s) | 1.80 µs (541 MiB/s) | **2.5x** |
-| 4 KB | 2.27 µs (1.68 GiB/s) | 3.50 µs (1.09 GiB/s) | **1.5x** |
-| 16 KB | 8.42 µs (1.81 GiB/s) | 10.03 µs (1.52 GiB/s) | **1.2x** |
-
-This makes Arcanum's native implementation the recommended choice for ChaCha20-Poly1305 when ring is not an option.
-
-### 3. Ed25519 Digital Signatures
-
-| Operation | RustCrypto | ring | Winner |
-|-----------|------------|------|--------|
-| Key Generation | 13.6 µs | 35.2 µs | **RustCrypto 2.6x faster** |
-| Sign (32 bytes) | 13.8 µs | 18.0 µs | **RustCrypto 1.3x faster** |
-| Sign (4 KB) | 24.3 µs | 28.4 µs | **RustCrypto 1.2x faster** |
-| Verify (32 bytes) | 23.8 µs | 32.9 µs | **RustCrypto 1.4x faster** |
-| Verify (4 KB) | 28.8 µs | 37.8 µs | **RustCrypto 1.3x faster** |
-
-**Analysis**: RustCrypto (ed25519-dalek) outperforms ring across all Ed25519 operations, with particularly strong key generation performance (2.6x faster). This makes RustCrypto the recommended choice for Ed25519 operations.
-
-### 4. Hash Functions
-
-#### SHA-256
-
-| Data Size | RustCrypto | ring | Comparison |
-|-----------|------------|------|------------|
-| 64 bytes | 74.6 ns (818 MiB/s) | 104 ns (584 MiB/s) | **RustCrypto 1.4x faster** |
-| 256 bytes | 157 ns (1.52 GiB/s) | 188 ns (1.27 GiB/s) | **RustCrypto 1.2x faster** |
-| 1 KB | 486 ns (1.96 GiB/s) | 520 ns (1.83 GiB/s) | **RustCrypto 1.07x faster** |
-| 4 KB | 1.81 µs (2.11 GiB/s) | 1.83 µs (2.08 GiB/s) | ~Equal |
-| 64 KB | 28.2 µs (2.17 GiB/s) | 28.1 µs (2.17 GiB/s) | ~Equal |
-
-**Analysis**: RustCrypto's SHA-256 is faster for small messages (1.4x at 64 bytes) and converges to equal performance on large messages. Both achieve ~2.1 GiB/s throughput on bulk data.
-
-#### BLAKE3
-
-| Data Size | Time | Throughput |
-|-----------|------|------------|
-| 64 bytes | 60.7 ns | 1.00 GiB/s |
-| 256 bytes | 227 ns | 1.05 GiB/s |
-| 1 KB | 825 ns | 1.16 GiB/s |
-| 4 KB | 1.10 µs | 3.47 GiB/s |
-| 16 KB | 2.06 µs | 7.39 GiB/s |
-| 64 KB | 7.83 µs | 7.80 GiB/s |
-
-**Analysis**: BLAKE3 demonstrates excellent performance, reaching 7.8 GiB/s on larger inputs. The parallel tree structure allows it to efficiently utilize SIMD and multi-threading capabilities.
-
-## Performance Summary
-
-### Algorithm Comparison (4KB message)
-
-| Algorithm | Implementation | Throughput | Notes |
-|-----------|---------------|------------|-------|
-| **AES-256-GCM** | ring | 5.75 GiB/s | Hardware-accelerated (AES-NI) |
-| **BLAKE3** | blake3 crate | 3.47 GiB/s | Parallel tree hashing |
-| ChaCha20-Poly1305 | ring | 2.69 GiB/s | SIMD optimized |
-| SHA-256 | RustCrypto | 2.11 GiB/s | Pure Rust |
-| SHA-256 | ring | 2.08 GiB/s | Hardware-accelerated |
-| AES-256-GCM | RustCrypto | 1.57 GiB/s | Pure Rust, no AES-NI |
-| ChaCha20-Poly1305 | RustCrypto | 1.19 GiB/s | Pure Rust |
-
-## Trade-off Analysis
-
-### Why Arcanum Uses RustCrypto
-
-1. **Memory Safety**: Pure Rust eliminates entire classes of vulnerabilities (buffer overflows, use-after-free)
-2. **Auditability**: Rust code is easier to audit than C/assembly
-3. **Portability**: Works on any platform Rust supports (no C toolchain required)
-4. **No FFI Overhead**: Avoids foreign function interface costs for small operations
-5. **Consistent Behavior**: Same implementation across all platforms
-
-### When Performance Matters
-
-For workloads that are encryption-bound:
-- **High-throughput scenarios** (>10 GiB/s requirement): Consider ring or hardware acceleration
-- **Small message dominance** (< 256 bytes): RustCrypto is competitive, sometimes faster
-- **Batch operations**: Both libraries perform well; design matters more than implementation
-
-### Practical Impact
-
-| Use Case | Recommended |
-|----------|-------------|
-| TLS connections | RustCrypto (good balance) |
-| File encryption | Either (throughput sufficient) |
-| Database encryption | RustCrypto (safety > speed) |
-| High-frequency trading | ring (latency critical) |
-| Embedded systems | RustCrypto (no C deps) |
-
-## Conclusion
-
-Arcanum's choice of RustCrypto provides:
-- **Excellent absolute performance** (1+ GiB/s for most operations)
-- **Superior safety guarantees** (pure Rust, no unsafe FFI)
-- **Acceptable performance delta** (1.5-5x slower than ring, but still fast)
-
-For most applications, RustCrypto's performance is more than sufficient. The safety and auditability benefits outweigh the performance cost, especially given that:
-1. Most applications are not crypto-bound
-2. Network I/O typically dominates latency
-3. Memory safety bugs in crypto libraries are catastrophic
-
-The benchmarks validate ADR-0001's decision to prioritize safety over raw performance while maintaining production-ready throughput levels.
-
-## Recommendations
-
-1. **Keep RustCrypto** as the default backend for safety
-2. **Consider optional ring feature** for performance-critical paths
-3. **Use BLAKE3** instead of SHA-256 when possible (7x faster)
-4. **Prefer ChaCha20-Poly1305** on non-AES-NI platforms (smaller performance gap)
+- **Benchmarking Framework**: Criterion 0.5 + built-in timing tests
 
 ---
+
+## BLAKE3 Performance Analysis
+
+### Size-Dependent Performance Characteristics
+
+Arcanum's parallel BLAKE3 implementations use multi-threaded chunk processing, which has different performance characteristics depending on data size:
+
+| Data Size | Arcanum Apex Mono | blake3 crate | Notes |
+|-----------|-------------------|--------------|-------|
+| 4MB       | 2.16 GiB/s | 7.80 GiB/s  | Threading overhead dominates |
+| 16MB      | 4.89 GiB/s | 7.87 GiB/s  | Overhead still significant |
+| 64MB      | 1.79 GiB/s | 5.67 GiB/s  | Memory bandwidth effects |
+| 128MB     | 2.96 GiB/s | 5.61 GiB/s  | Approaching crossover |
+| 256MB     | 4.43 GiB/s | 5.80 GiB/s  | Near parity |
+| **512MB** | **7.86 GiB/s** | 5.85 GiB/s | Parallelism benefits realized |
+
+### Understanding the Tradeoffs
+
+The `blake3` crate is an excellent, well-optimized implementation that performs exceptionally across all data sizes. Arcanum's parallel implementations are specifically designed for very large file processing (512MB+) where thread coordination overhead is amortized across enough work to benefit from multi-core parallelism.
+
+### BLAKE3 Batch Hashing
+
+For processing **multiple independent messages simultaneously**, Arcanum provides batch APIs:
+
+| Scenario | Arcanum Batch | Sequential Processing |
+|----------|---------------|----------------------|
+| 8×256B messages | 2.45 GiB/s | 1.08 GiB/s |
+| 8×64B messages | 2.13 GiB/s | ~0.9 GiB/s |
+
+This is useful when hashing many small files or blocks in parallel.
+
+### BLAKE3 Monolithic Compression
+
+At the compression function level, Arcanum's AVX-512 implementation:
+
+| Implementation | Throughput (16KB, 16 chunks) |
+|----------------|------------------------------|
+| Monolithic     | 7.53 GiB/s |
+| Per-Round ASM  | 6.15 GiB/s |
+
+### Recommended Usage
+
+| Use Case | Recommendation | Rationale |
+|----------|----------------|-----------|
+| Single file <64MB | `blake3` crate | Well-optimized for this range |
+| Single file 64-256MB | `blake3` crate | Still more efficient |
+| Single file 512MB+ | `hash_apex_monolithic()` | Parallel benefits realized |
+| Multiple small files | `hash_batch_8()` | SIMD parallel processing |
+
+---
+
+## ChaCha20-Poly1305 Performance
+
+Arcanum provides a native implementation optimized for throughput:
+
+| Implementation | Throughput (4KB) |
+|----------------|------------------|
+| Arcanum Native | 1.63 GiB/s (encrypt), 1.66 GiB/s (decrypt) |
+| RustCrypto     | 1.11 GiB/s |
+
+Both implementations are correct and secure. Arcanum's implementation uses additional SIMD optimizations that provide higher throughput for bulk encryption workloads.
+
+---
+
+## Poly1305 SIMD Performance
+
+Arcanum provides SIMD-accelerated Poly1305:
+
+| Implementation | Throughput (4KB) |
+|----------------|------------------|
+| Arcanum SIMD   | 3.44 GiB/s |
+| RustCrypto     | 2.44 GiB/s |
+| Arcanum scalar | 1.12 GiB/s |
+
+---
+
+## SHA-256 Performance
+
+| Implementation | Throughput (4KB) |
+|----------------|------------------|
+| RustCrypto (with SHA-NI) | 2.14 GiB/s |
+| Arcanum Native | 1.87 GiB/s |
+
+RustCrypto's SHA-256 leverages hardware SHA-NI instructions when available, providing excellent performance. For single-message hashing, it's the recommended choice. Arcanum's batch SHA-256 API (`BatchSha256x4`) provides parallel processing for multiple messages.
+
+---
+
+## Post-Quantum Cryptography Performance
+
+### ML-KEM (FIPS 203) - Key Encapsulation
+
+| Security Level | Keygen | Encapsulate | Decapsulate |
+|---------------|--------|-------------|-------------|
+| ML-KEM-512 | ~15 µs | ~18 µs | ~20 µs |
+| ML-KEM-768 | ~25 µs | ~30 µs | ~35 µs |
+| ML-KEM-1024 | ~35 µs | ~45 µs | ~50 µs |
+
+### ML-DSA (FIPS 204) - Digital Signatures
+
+| Security Level | Keygen | Sign | Verify |
+|---------------|--------|------|--------|
+| ML-DSA-44 | ~140 µs | ~350 µs | ~120 µs |
+| ML-DSA-65 | ~197 µs | ~400 µs | ~143 µs |
+| ML-DSA-87 | ~324 µs | ~432 µs | ~246 µs |
+
+### SLH-DSA (FIPS 205) - Stateless Hash-Based Signatures
+
+SLH-DSA provides conservative, stateless signatures based on hash functions. The "-f" variants optimize for speed while "-s" variants optimize for signature size.
+
+| Variant | Keygen | Sign | Verify | Signature Size |
+|---------|--------|------|--------|----------------|
+| SLH-DSA-SHA2-128f | 348 µs | **15.6 ms** | 491 µs | 17,088 bytes |
+| SLH-DSA-SHA2-128s | 21.9 ms | **333 ms** | 158 µs | 7,856 bytes |
+
+**Note**: SLH-DSA signing is inherently slow due to its hash-based security model. The "-f" (fast) variant is recommended for most use cases. The "-s" (small) variant is useful when signature size is critical and signing latency is acceptable.
+
+### PQC Algorithm Selection Guide
+
+| Use Case | Recommendation | Rationale |
+|----------|----------------|-----------|
+| Key exchange | ML-KEM-768 | Balanced security and performance |
+| Frequent signing | ML-DSA-65 | Fast signing, reasonable key sizes |
+| High-security signing | ML-DSA-87 | NIST Level 5 security |
+| Signature archival | SLH-DSA-128s | Conservative, minimal assumptions |
+| Real-time signing | SLH-DSA-128f | Faster than -s variant |
+
+---
+
+## HoloCrypt Container Performance
+
+HoloCrypt provides composable multi-layer cryptographic containers combining encryption, commitments, Merkle trees, and signatures.
+
+### Container Seal/Unseal
+
+| Data Size | Seal | Unseal |
+|-----------|------|--------|
+| 256 B | 17.8 µs | 31.3 µs |
+| 1 KB | 23.4 µs | 35.6 µs |
+| 4 KB | 42.1 µs | 58.7 µs |
+| 16 KB | 98.5 µs | 125.3 µs |
+| 64 KB | 352 µs | 428 µs |
+| 262 KB | 3.4 ms | 4.5 ms |
+
+### PQC Container (ML-KEM-768 wrapped)
+
+| Data Size | Seal | Unseal |
+|-----------|------|--------|
+| 256 B | 68.7 µs | 85.2 µs |
+| 1 KB | 72.4 µs | 89.6 µs |
+| 4 KB | 95.3 µs | 112.8 µs |
+| 16 KB | 158.4 µs | 182.1 µs |
+
+### Selective Disclosure (Merkle Proofs)
+
+| Tree Size | Build Tree | Generate Proof | Verify Proof |
+|-----------|------------|----------------|--------------|
+| 16 chunks | 52.4 µs | 23.1 ns | 0.9 µs |
+| 64 chunks | 215.3 µs | 35.7 ns | 1.3 µs |
+| 256 chunks | 86.2 µs | 58.4 ns | 1.8 µs |
+| 1024 chunks | 345.6 µs | 90.6 ns | 2.2 µs |
+
+Note: Proof generation is O(log n) - extremely fast. Verification scales with proof depth (logarithmic in tree size).
+
+### Property Proofs (Zero-Knowledge)
+
+| Proof Type | Build | Verify |
+|------------|-------|--------|
+| Range proof (64-bit) | 1.61 ms | 802 µs |
+| Greater-than proof | 9.93 ms | ~1 ms |
+| Hash preimage proof | 175 ns | ~200 ns |
+
+Range proofs use Bulletproofs internally, providing compact proofs without trusted setup. The ~1.6ms build time enables real-time range proof generation.
+
+### HoloCrypt Use Case Guide
+
+| Scenario | Approach | Performance |
+|----------|----------|-------------|
+| Simple encryption + signing | `HoloCrypt::seal()` | 17.8 µs (256B) |
+| Quantum-resistant containers | `PqcContainer::seal()` | 68.7 µs (256B) |
+| Prove ownership of chunk | `MerkleTreeBuilder` + proof | 2.2 µs verify |
+| Prove value in range | `PropertyProofBuilder::build_range_proof()` | 1.6 ms |
+| Threshold decryption | FROST integration | See threshold benchmarks |
+
+---
+
+## Feature Flags Reference
+
+### arcanum-primitives
+
+| Feature | Description | When to Enable |
+|---------|-------------|----------------|
+| `default` | std, alloc, simd, sha2, blake3, chacha20poly1305 | Standard usage |
+| `simd` | SSE2/AVX2/AVX-512 acceleration | Always on x86_64 |
+| `rayon` | Multi-threaded parallel hashing | Large file processing (512MB+) |
+| `cuda` | NVIDIA GPU batch hashing | GPU-accelerated workloads |
+| `shake` | SHAKE128/SHAKE256 (Keccak XOF) | ML-DSA native |
+
+### arcanum-pqc
+
+| Feature | Description | When to Enable |
+|---------|-------------|----------------|
+| `ml-kem` | ML-KEM (FIPS 203) key encapsulation | Post-quantum key exchange |
+| `ml-dsa` | ML-DSA (FIPS 204) via external crate | Post-quantum signatures |
+| `ml-dsa-native` | Native ML-DSA implementation | Avoiding external deps |
+| `slh-dsa` | SLH-DSA (FIPS 205) native | Stateless hash-based sigs |
+| `simd` | SIMD optimizations | Performance |
+| `parallel` | Parallel processing | Large workloads |
+
+### arcanum-holocrypt
+
+| Feature | Description | When to Enable |
+|---------|-------------|----------------|
+| `full` | All HoloCrypt features | Full container functionality |
+| `encryption` | Symmetric encryption layer | Basic containers |
+| `merkle` | Merkle tree support | Selective disclosure |
+| `zkp` | Zero-knowledge proofs | Property proofs |
+| `pqc` | Post-quantum envelope | Quantum resistance |
+| `threshold` | Threshold access | k-of-n decryption |
+| `signatures` | Digital signatures | Container signing |
+
+---
+
+## CUDA GPU Acceleration
+
+Arcanum provides CUDA-accelerated batch BLAKE3 hashing for GPU workloads. The GPU excels at processing large batches of messages in parallel.
+
+### CUDA Batch Hashing Performance
+
+| Batch Configuration | CUDA (RTX 4500) | CPU Sequential | GPU Advantage |
+|---------------------|-----------------|----------------|---------------|
+| 1,000 × 256B | 1.05 GiB/s | 1.13 GiB/s | CPU faster (overhead) |
+| 1,000 × 1024B | 2.08 GiB/s | 1.17 GiB/s | **1.78× faster** |
+| 10,000 × 256B | 2.69 GiB/s | 1.12 GiB/s | **2.4× faster** |
+| 10,000 × 1024B | 3.12 GiB/s | 1.17 GiB/s | **2.67× faster** |
+
+### CUDA Optimized Small-Batch Path
+
+For uniform message sizes, the optimized kernel provides higher throughput:
+
+| Batch Configuration | CUDA Optimized |
+|---------------------|----------------|
+| 10,000 × 64B | 1.78 GiB/s |
+| 10,000 × 256B | 3.29 GiB/s |
+| 10,000 × 512B | 3.63 GiB/s |
+| 10,000 × 1024B | **3.91 GiB/s** |
+
+### When to Use CUDA
+
+| Scenario | Recommendation |
+|----------|----------------|
+| <1,000 messages | CPU (transfer overhead dominates) |
+| 1,000-10,000 small messages | GPU provides 2-3× speedup |
+| 10,000+ messages | GPU strongly preferred |
+| Variable-length messages | Use general batch API |
+| Uniform-length messages | Use optimized small-batch API |
+
+### Setup Requirements
+
+1. NVIDIA GPU with CUDA support
+2. CUDA toolkit installed
+3. Build the shared library:
+   ```bash
+   cd crates/arcanum-primitives/src
+   nvcc -O3 -arch=sm_89 --shared --compiler-options '-fPIC' blake3_cuda.cu -o libblake3_cuda.so
+   ```
+4. Enable the `cuda` feature flag
+5. Run benchmarks:
+   ```bash
+   cargo bench -p arcanum-primitives --features "simd,rayon,cuda" -- "BLAKE3-CUDA"
+   ```
+
+---
+
+## Benchmark Invocation Reference
+
+```bash
+# Run all primitives benchmarks
+cargo bench -p arcanum-primitives --features "simd,rayon"
+
+# Run specific benchmark groups
+cargo bench -p arcanum-primitives --features "simd,rayon" -- "BLAKE3-Batch"
+cargo bench -p arcanum-primitives --features "simd,rayon" -- "Poly1305-SIMD"
+cargo bench -p arcanum-primitives --features "simd,rayon" -- "ChaCha20-Poly1305"
+
+# Run PQC benchmarks
+cargo bench -p arcanum-pqc --features "ml-kem"
+cargo bench -p arcanum-pqc --features "slh-dsa"
+
+# Run HoloCrypt benchmarks
+cargo bench -p arcanum-holocrypt
+
+# Run large-scale timing tests
+cargo test -p arcanum-primitives --features "simd,rayon" --release -- bench_all_implementations --nocapture
+```
+
+---
+
+## Design Philosophy
+
+Arcanum is designed to complement the excellent Rust cryptography ecosystem:
+
+- **RustCrypto** provides well-audited, portable implementations
+- **blake3 crate** provides an optimized reference implementation
+- **Arcanum** provides specialized optimizations for specific use cases:
+  - Batch processing APIs
+  - SIMD-accelerated primitives
+  - Very large file processing
+
+The goal is to provide the right tool for each job, not to replace existing libraries.
+
+---
+
+## Tradeoffs
+
+| Approach | Strengths | Considerations |
+|----------|-----------|----------------|
+| Arcanum Batch APIs | Efficient multi-item processing | Requires batching workload |
+| Arcanum Parallel BLAKE3 | Excellent for 512MB+ files | Threading overhead at smaller sizes |
+| Arcanum SIMD Poly1305 | High throughput | x86_64 specific |
+| RustCrypto | Portable, audited, consistent | General-purpose |
+| blake3 crate | Optimized across all sizes | Single-item focused |
+
+---
+
 *Generated by Arcanum Benchmarking Suite*
-*Benchmarks run using Criterion 0.5 with 100 samples per test*
+*Benchmark data reflects specific hardware and conditions*

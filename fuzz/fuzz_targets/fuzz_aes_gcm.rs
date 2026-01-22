@@ -33,8 +33,11 @@ fuzz_target!(|data: &[u8]| {
             let decrypted = Aes256Gcm::decrypt(key, nonce, &ciphertext, Some(aad));
             assert!(decrypted.is_ok());
 
-            // Wrong AAD should fail
-            let wrong_aad = [0u8; 16];
+            // Wrong AAD should fail - XOR with 0xFF to guarantee it's different
+            let mut wrong_aad = [0u8; 16];
+            for (i, &b) in aad.iter().enumerate() {
+                wrong_aad[i] = b ^ 0xFF;
+            }
             let result = Aes256Gcm::decrypt(key, nonce, &ciphertext, Some(&wrong_aad));
             assert!(result.is_err());
         }
