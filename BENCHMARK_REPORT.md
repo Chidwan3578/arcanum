@@ -4,36 +4,36 @@
 
 This report compares **Arcanum's cryptographic backend** against reference implementations. The benchmarks validate the trade-offs documented in ADR-0001 regarding the choice of pure Rust implementations over C-based alternatives.
 
-**Key Finding (Updated 2025-01-03):** Arcanum's BLAKE3 implementation achieves up to **3.05x speedup** over the reference `blake3` crate through batch hashing optimizations.
+**Key Finding (Updated 2026-01-21):** Arcanum's BLAKE3 batch implementation achieves up to **2.4x speedup** over sequential hashing through AVX-512 SIMD parallelism.
 
 ## BLAKE3 Performance Highlights
 
-### Batch Hashing (3x Speedup)
+### Batch Hashing (2.4x Speedup)
 
 Arcanum's `hash_batch_8` function processes 8 independent messages simultaneously using AVX-512 SIMD:
 
-| Scenario | Arcanum | blake3 crate | Speedup |
-|----------|---------|--------------|---------|
-| 8×16MB batch | 17.43 GiB/s | 5.71 GiB/s | **3.05x** |
+| Scenario | Arcanum Batch | Sequential | Speedup |
+|----------|---------------|------------|---------|
+| 8×256B messages | 2.63 GiB/s (726 ns) | 1.11 GiB/s (1.72 µs) | **2.4x** |
+| 8×64B messages | 2.25 GiB/s (211 ns) | 954 MiB/s (509 ns) | **2.4x** |
 
-### Large Single Messages (1.9x Speedup)
+### Large Single Messages
 
-For large single messages, Arcanum's `hash_apex` function exceeds the reference:
+For very large single messages (64MB+), Arcanum's `MinimalAlloc` function provides a modest advantage:
 
-| Data Size | Arcanum | blake3 crate | Speedup |
-|-----------|---------|--------------|---------|
-| 64MB | 11.14 GiB/s | 5.81 GiB/s | **1.92x** |
-| 1GB | 8.12 GiB/s | 5.86 GiB/s | **1.39x** |
-| 3GB | 11.14 GiB/s | 5.81 GiB/s | **1.92x** |
+| Data Size | Arcanum MinimalAlloc | blake3 crate | Speedup |
+|-----------|---------------------|--------------|---------|
+| 16MB | 4.94 GiB/s | 6.94 GiB/s | 0.71x |
+| 64MB | 8.39 GiB/s | 7.55 GiB/s | **1.11x** |
 
 ### When to Use Each
 
 | Use Case | Recommended | Why |
 |----------|-------------|-----|
-| Multiple files | `hash_batch_8` | 3x faster |
-| Single large file (≥64MB) | `hash_apex` | 1.5-2x faster |
-| Single small file (<64MB) | Reference crate | Optimized for small |
-| Auto-selection | `hash_adaptive` | Picks optimal |
+| Multiple small files | `hash_batch_8` | 2.4x parallel speedup |
+| Single very large file (≥64MB) | `MinimalAlloc` | Slightly faster |
+| Single file (<64MB) | blake3 crate | Well-optimized reference |
+| Auto-selection | `hash_adaptive` | Picks optimal strategy |
 
 ---
 
@@ -71,7 +71,19 @@ For large single messages, Arcanum's `hash_apex` function exceeds the reference:
 | 16 KB | 9.41 µs (1.62 GiB/s) | 5.17 µs (2.95 GiB/s) | **1.82x** |
 | 64 KB | 33.0 µs (1.85 GiB/s) | 20.1 µs (3.03 GiB/s) | **1.64x** |
 
-**Analysis**: ChaCha20-Poly1305 shows ring maintaining a 2-7x advantage. RustCrypto achieves excellent throughput (>1.8 GiB/s) on large messages. The gap narrows as message size increases, suggesting RustCrypto's implementation scales well.
+**Analysis**: ChaCha20-Poly1305 shows ring maintaining a 2-7x advantage over RustCrypto.
+
+#### Arcanum Native ChaCha20-Poly1305
+
+Arcanum's native implementation outperforms RustCrypto:
+
+| Data Size | Arcanum Native | RustCrypto | Speedup |
+|-----------|----------------|------------|---------|
+| 1 KB | 729 ns (1.31 GiB/s) | 1.80 µs (541 MiB/s) | **2.5x** |
+| 4 KB | 2.27 µs (1.68 GiB/s) | 3.50 µs (1.09 GiB/s) | **1.5x** |
+| 16 KB | 8.42 µs (1.81 GiB/s) | 10.03 µs (1.52 GiB/s) | **1.2x** |
+
+This makes Arcanum's native implementation the recommended choice for ChaCha20-Poly1305 when ring is not an option.
 
 ### 3. Ed25519 Digital Signatures
 
