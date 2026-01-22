@@ -1,16 +1,17 @@
 [package]
 name = "arcanum-asymmetric"
-version = "0.1.0"
-edition = "2024"
-authors = ["Daemoniorum <daemoniorum@persona.dev>"]
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
 description = "Asymmetric cryptography: RSA, ECIES, key exchange"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/daemoniorum/arcanum"
 keywords = ["cryptography", "rsa", "ecies", "x25519", "ecdh"]
 categories = ["cryptography"]
 
 [dependencies]
-arcanum-core = { path = "../arcanum-core" }
+arcanum-core = { version = "0.1.0", path = "../arcanum-core" }
 
 # RSA
 rsa = { version = "0.9", features = ["sha2", "hazmat"] }

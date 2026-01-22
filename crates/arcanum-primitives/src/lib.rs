@@ -1,3 +1,7 @@
+// Allow unsafe operations in unsafe functions (Rust 2024 default changed)
+// TODO: Refactor to use explicit unsafe blocks in future version
+#![allow(unsafe_op_in_unsafe_fn)]
+
 //! # Arcanum Primitives
 //!
 //! Native cryptographic primitive implementations for the Arcanum engine.
