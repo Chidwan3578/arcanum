@@ -8,6 +8,31 @@
 //! - **Parallelism**: Can utilize multiple cores
 //!
 //! We use **Argon2id** which combines Argon2i and Argon2d for best security.
+//!
+//! ## Example
+//!
+//! ```rust
+//! use arcanum_hash::prelude::*;
+//!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! // 1. Choose parameters (Moderate is recommended for general use)
+//! let params = Argon2Params::moderate();
+//!
+//! // 2. Hash a password
+//! // Salt is automatically generated using OsRng
+//! let password = b"correct horse battery staple";
+//! let hash = Argon2::hash_password(password, &params)?;
+//!
+//! // 3. Verify a password
+//! let is_valid = Argon2::verify_password(password, &hash)?;
+//! assert!(is_valid);
+//!
+//! // 4. Key Derivation (e.g., for encryption)
+//! let salt = [0u8; 16]; // In practice, use a unique, random salt
+//! let derived_key = Argon2::derive_key(password, &salt, &params, 32)?;
+//! # Ok(())
+//! # }
+//! ```
 
 use crate::traits::PasswordHash;
 use arcanum_core::error::{Error, Result};
