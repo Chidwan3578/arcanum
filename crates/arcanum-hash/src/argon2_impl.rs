@@ -28,7 +28,10 @@
 //! assert!(is_valid);
 //!
 //! // 4. Key Derivation (e.g., for encryption)
-//! let salt = [0u8; 16]; // In practice, use a unique, random salt
+//! use rand::rngs::OsRng;
+//! use rand::RngCore;
+//! let mut salt = [0u8; 16];
+//! OsRng.fill_bytes(&mut salt);
 //! let derived_key = Argon2::derive_key(password, &salt, &params, 32)?;
 //! # Ok(())
 //! # }
